@@ -22,6 +22,7 @@ public class SecurityConfig {
                     }
                     auth.requestMatchers("/auth/**").permitAll()
                             .requestMatchers("/users/me").permitAll()
+                            .requestMatchers("/map/**", "/risk").permitAll()
                             .anyRequest().authenticated();
                 });
 
