@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../data/mock_data.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
+import 'alerts_feed_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
@@ -25,88 +26,160 @@ class HomeScreen extends StatelessWidget {
     final riskColor = _riskColor(risk);
 
     return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          AppSpacing.md,
-          AppSpacing.md,
-          120,
-        ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const _LogoStrip(),
-                const SizedBox(height: AppSpacing.md),
-                _TopBar(
-                  location: MockData.campusLocation,
-                  onProfileTap: onOpenProfile,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _RiskSection(
-                  riskLabel: riskLabel,
-                  riskLevelLabel: riskLevelLabel,
-                  color: riskColor,
-                  onDebugCycle: appState.cycleRiskLevel,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _MapPreviewCard(onTap: onOpenMap),
-                const SizedBox(height: AppSpacing.md),
-                _BluetoothCard(
-                  color: riskColor,
-                  message: _bluetoothMessage(risk),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'BASILI TUT: YARDIM CAGIR',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.body.copyWith(
-                    letterSpacing: 0.8,
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                const Divider(color: Colors.white24, height: 1),
-                const SizedBox(height: AppSpacing.md),
-                Center(
-                  child: GestureDetector(
-                    onLongPress: appState.activateEmergency,
-                    child: Container(
-                      width: 122,
-                      height: 122,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const RadialGradient(
-                          colors: [Color(0xFFFF4D59), Color(0xFFC21D34)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFF304D).withValues(alpha: 0.35),
-                            blurRadius: 26,
-                            spreadRadius: 2,
-                          ),
-                        ],
+      child: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              120,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _LogoStrip(),
+                    const SizedBox(height: AppSpacing.md),
+                    _TopBar(
+                      location: MockData.campusLocation,
+                      onProfileTap: onOpenProfile,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _RiskSection(
+                      riskLabel: riskLabel,
+                      riskLevelLabel: riskLevelLabel,
+                      color: riskColor,
+                      onDebugCycle: appState.cycleRiskLevel,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _MapPreviewCard(onTap: onOpenMap),
+                    const SizedBox(height: AppSpacing.md),
+                    _BluetoothCard(
+                      color: riskColor,
+                      message: _bluetoothMessage(risk),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'BASILI TUT: YARDIM CAGIR',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.body.copyWith(
+                        letterSpacing: 0.8,
+                        color: Colors.white70,
                       ),
-                      child: Center(
-                        child: Text(
-                          'ACIL',
-                          style: AppTextStyles.title.copyWith(
-                            fontSize: 34,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    const Divider(color: Colors.white24, height: 1),
+                    const SizedBox(height: AppSpacing.md),
+                    Center(
+                      child: GestureDetector(
+                        onLongPress: appState.activateEmergency,
+                        child: Container(
+                          width: 122,
+                          height: 122,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const RadialGradient(
+                              colors: [Color(0xFFFF4D59), Color(0xFFC21D34)],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF304D).withValues(alpha: 0.35),
+                                blurRadius: 26,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              'ACIL',
+                              style: AppTextStyles.title.copyWith(
+                                fontSize: 34,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Center(
+                      child: SizedBox(
+                        width: 220,
+                        child: OutlinedButton.icon(
+                          onPressed: appState.activateEmergency,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFFFB6BC),
+                            side: const BorderSide(color: Color(0xFFFF6B75)),
+                          ),
+                          icon: const Icon(Icons.touch_app_rounded),
+                          label: const Text('Tek Tikla Acil Ac'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: -8,
+            top: 186,
+            child: _LeftQuickTrigger(
+              onTap: () => _openQuickPanel(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openQuickPanel(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF0F2B4E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Hizli Panel', style: AppTextStyles.title.copyWith(fontSize: 22)),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  '${MockData.campusLocation} konumundaki en guncel bildirimleri goruntule.',
+                  style: AppTextStyles.body.copyWith(color: Colors.white70),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                  tileColor: const Color(0xFF244A73),
+                  leading: const Icon(Icons.notifications_active_rounded, color: Color(0xFF84F5BB)),
+                  title: const Text('Guncel bildirim ve ihbarlar'),
+                  subtitle: const Text('Konum tabanli canli akis'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => AlertsFeedScreen(appState: appState),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -151,6 +224,37 @@ class HomeScreen extends StatelessWidget {
       case RiskLevel.high:
         return 'Aktif Tarama: Supheli cihaz yakinligi var. Uzun sureli takip gorunuyor.';
     }
+  }
+}
+
+class _LeftQuickTrigger extends StatelessWidget {
+  const _LeftQuickTrigger({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 52,
+        height: 106,
+        decoration: const BoxDecoration(
+          color: Color(0xFF6B9E66),
+          borderRadius: BorderRadius.only(
+            topRight: Radius.circular(50),
+            bottomRight: Radius.circular(50),
+          ),
+        ),
+        child: const Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Icon(Icons.chevron_right_rounded, color: Colors.white, size: 34),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -258,65 +362,72 @@ class _RiskSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0D2140).withValues(alpha: 0.88),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF102A4C), Color(0xFF0C2240)],
+        ),
         borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: Colors.white10),
       ),
       padding: const EdgeInsets.all(AppSpacing.md),
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Column(
+          Row(
             children: [
-              const SizedBox(height: AppSpacing.sm),
-              Container(
-                width: 170,
-                height: 170,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: color, width: 4),
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.45),
-                      blurRadius: 20,
+              Icon(
+                Icons.notifications_rounded,
+                color: Colors.white.withValues(alpha: 0.0),
+              ),
+              const Spacer(),
+              Icon(Icons.notifications_rounded, color: Colors.white.withValues(alpha: 0.9)),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Center(
+            child: Container(
+              width: 176,
+              height: 176,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: color, width: 4),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.45),
+                    blurRadius: 20,
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      riskLabel,
+                      style: AppTextStyles.title.copyWith(
+                        color: color,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Risk Seviyesi: $riskLevelLabel',
+                      style: AppTextStyles.body.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        riskLabel,
-                        style: AppTextStyles.title.copyWith(
-                          color: color,
-                          fontSize: 23,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'Risk Seviyesi: $riskLevelLabel',
-                        style: AppTextStyles.body.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
               ),
-              const SizedBox(height: AppSpacing.xs),
-            ],
+            ),
           ),
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Icon(Icons.notifications_rounded, color: Colors.white.withValues(alpha: 0.9)),
-          ),
-          Positioned(
-            left: 0,
-            bottom: 0,
+          Align(
+            alignment: Alignment.bottomLeft,
             child: GestureDetector(
               onLongPress: onDebugCycle,
               child: const SizedBox(width: 28, height: 28),

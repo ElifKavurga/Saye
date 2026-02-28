@@ -5,6 +5,8 @@ import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'emergency_info_screen.dart';
 import 'permissions_screen.dart';
+import 'rules_screen.dart';
+import 'safe_contacts_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key, required this.appState});
@@ -34,79 +36,87 @@ class SettingsScreen extends StatelessWidget {
                 _InfoCard(
                   title: 'Hesabini guvene almamiza yardimci ol!',
                   body:
-                      'Bilgilerini gozden gecirmeni ve hesabina ilave giris korumasi eklemeni tavsiye ediyoruz. Dogru bilgiler, hesabinda guvenlik sorunu olmasi durumunda iletisime gecmemize yardimci olur.',
-                  onTap: () => _openSecurityRouteSelector(context),
+                      'Bilgilerini gozden gecirmeni ve hesabina ilave giris korumasi eklemeni tavsiye ediyoruz. Dogru bilgiler, guvenlik sorunu durumunda iletisime gecmemize yardimci olur.',
+                  footerLabel: 'Acil Durum Ilk Cagri Kisileri',
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => SafeContactsScreen(appState: appState),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _InfoCard(
-                  title: 'Hesap Bilgileri:',
+                  title: 'Hesap Bilgileri',
                   body:
                       'Ad: ${user?.username.isNotEmpty == true ? user!.username : MockData.profile.name}\nE-mail: ${user?.email.isNotEmpty == true ? user!.email : MockData.profile.email}\nTelefon: ${user?.phone.isNotEmpty == true ? user!.phone : '-'}',
+                  footerLabel: 'Profil ekranina git',
                   onTap: () => appState.setIndex(3),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _InfoCard(
+                  title: 'Profil Gorunurlugu',
+                  body:
+                      'Yapilan ihbarlarda profil adin gorunsun mu? Bu ayar acik oldugunda bildirim gecmisinde hesabin iliskilendirilir.',
+                  trailing: Switch.adaptive(
+                    value: appState.isProfileVisibleInAlerts,
+                    onChanged: appState.setProfileVisibilityInAlerts,
+                  ),
+                  footerLabel: appState.isProfileVisibleInAlerts ? 'Aktif' : 'Kapali',
+                  onTap: () {},
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MiniActionCard(
+                        icon: Icons.health_and_safety_rounded,
+                        label: 'Acil Bilgiler',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => EmergencyInfoScreen(appState: appState),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _MiniActionCard(
+                        icon: Icons.verified_user_rounded,
+                        label: 'Izinler',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => PermissionsScreen(appState: appState),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _MiniActionCard(
+                        icon: Icons.rule_rounded,
+                        label: 'Kurallar',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const RulesScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Future<void> _openSecurityRouteSelector(BuildContext context) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF17365A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Yonlendirme Sec', style: AppTextStyles.title),
-                const SizedBox(height: AppSpacing.sm),
-                ListTile(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  tileColor: const Color(0xFF244A73),
-                  leading: const Icon(Icons.verified_user_rounded),
-                  title: const Text('Izinler Ekrani (Modul 7)'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => PermissionsScreen(appState: appState),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                ListTile(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  tileColor: const Color(0xFF244A73),
-                  leading: const Icon(Icons.health_and_safety_rounded),
-                  title: const Text('Acil Durum Bilgileri (Modul 6)'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => EmergencyInfoScreen(appState: appState),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -152,11 +162,15 @@ class _InfoCard extends StatelessWidget {
     required this.title,
     required this.body,
     required this.onTap,
+    this.footerLabel,
+    this.trailing,
   });
 
   final String title;
   final String body;
   final VoidCallback onTap;
+  final String? footerLabel;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +178,7 @@ class _InfoCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadius.md),
       child: Container(
-        constraints: const BoxConstraints(minHeight: 190, maxHeight: 240),
+        constraints: const BoxConstraints(minHeight: 170),
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -178,26 +192,83 @@ class _InfoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: AppTextStyles.title.copyWith(
-                color: Colors.white,
-                fontSize: 36,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Text(
-                  body,
-                  style: AppTextStyles.body.copyWith(
-                    color: Colors.white.withValues(alpha: 0.92),
-                    fontSize: 23,
-                    height: 1.35,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppTextStyles.title.copyWith(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
+                // ignore: use_null_aware_elements
+                if (trailing case final trailingWidget?) trailingWidget,
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              body,
+              style: AppTextStyles.body.copyWith(
+                color: Colors.white.withValues(alpha: 0.92),
+                fontSize: 20,
+                height: 1.35,
               ),
+            ),
+            if (footerLabel case final footerText?) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  footerText,
+                  style: AppTextStyles.caption.copyWith(color: Colors.white70),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniActionCard extends StatelessWidget {
+  const _MiniActionCard({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1B3A63).withValues(alpha: 0.94),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: const Color(0xFFBFEFD2), size: 24),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: AppTextStyles.caption.copyWith(color: Colors.white),
             ),
           ],
         ),
