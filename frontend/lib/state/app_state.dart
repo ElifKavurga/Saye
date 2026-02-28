@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
@@ -154,6 +156,7 @@ class AppState extends ChangeNotifier {
             phone: '0555 444 55 66',
           ),
         ];
+  final Random _random = Random();
 
   int _selectedIndex = 0;
   final List<SettingOption> _settings;
@@ -162,6 +165,7 @@ class AppState extends ChangeNotifier {
   SessionUser? _currentUser;
   RiskLevel _riskLevel = RiskLevel.low;
   bool _emergencyActive = false;
+  bool _showRiskDecision = false;
   final List<LocalReportNotification> _localReports = [];
   bool _isProfileVisibleInAlerts = true;
   EmergencyHealthInfo _emergencyHealthInfo = const EmergencyHealthInfo();
@@ -172,6 +176,7 @@ class AppState extends ChangeNotifier {
   bool get isAuthenticated => _currentUser != null;
   RiskLevel get riskLevel => _riskLevel;
   bool get emergencyActive => _emergencyActive;
+  bool get showRiskDecision => _showRiskDecision;
   List<LocalReportNotification> get localReports => List.unmodifiable(_localReports);
   bool get isProfileVisibleInAlerts => _isProfileVisibleInAlerts;
   EmergencyHealthInfo get emergencyHealthInfo => _emergencyHealthInfo;
@@ -212,6 +217,7 @@ class AppState extends ChangeNotifier {
       username: email.split('@').first,
       phone: '',
     );
+    _setRandomLandingScenario();
     notifyListeners();
   }
 
@@ -226,6 +232,7 @@ class AppState extends ChangeNotifier {
       username: username.trim(),
       phone: phone.trim(),
     );
+    _setRandomLandingScenario();
     notifyListeners();
   }
 
@@ -236,6 +243,7 @@ class AppState extends ChangeNotifier {
       username: 'demo_user',
       phone: '',
     );
+    _setRandomLandingScenario();
     notifyListeners();
   }
 
@@ -253,6 +261,7 @@ class AppState extends ChangeNotifier {
 
   void activateEmergency() {
     _emergencyActive = true;
+    _showRiskDecision = false;
     _selectedIndex = 0;
     notifyListeners();
   }
@@ -262,6 +271,18 @@ class AppState extends ChangeNotifier {
       return;
     }
     _emergencyActive = false;
+    notifyListeners();
+  }
+
+  void acceptRiskDecision() {
+    _showRiskDecision = false;
+    _riskLevel = RiskLevel.high;
+    notifyListeners();
+  }
+
+  void declineRiskDecision() {
+    _showRiskDecision = false;
+    _riskLevel = RiskLevel.low;
     notifyListeners();
   }
 
@@ -361,6 +382,7 @@ class AppState extends ChangeNotifier {
     _selectedIndex = 0;
     _riskLevel = RiskLevel.low;
     _emergencyActive = false;
+    _showRiskDecision = false;
     _localReports.clear();
     _isProfileVisibleInAlerts = true;
     _emergencyHealthInfo = const EmergencyHealthInfo();
@@ -380,5 +402,21 @@ class AppState extends ChangeNotifier {
         ),
       ]);
     notifyListeners();
+  }
+
+  void _setRandomLandingScenario() {
+    // 0: Yesil ana sayfa, 1: Kirmizi riskli alan, 2: Turuncu karar ekrani
+    final roll = _random.nextInt(3);
+    _showRiskDecision = false;
+
+    switch (roll) {
+      case 0:
+        _riskLevel = RiskLevel.low;
+      case 1:
+        _riskLevel = RiskLevel.high;
+      case 2:
+        _riskLevel = RiskLevel.medium;
+        _showRiskDecision = true;
+    }
   }
 }

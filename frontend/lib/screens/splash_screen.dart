@@ -72,9 +72,9 @@ class SplashScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'Kesik Hatti',
+                            'Guvende',
                             style: GoogleFonts.allura(
-                              color: const Color(0xFF051A45),
+                              color: const Color(0xFF5FA6E7),
                               fontSize: 68,
                               fontWeight: FontWeight.w400,
                             ),

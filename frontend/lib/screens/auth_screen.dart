@@ -103,19 +103,12 @@ class _AuthScreenState extends State<AuthScreen> {
                               ),
                             ),
                             const SizedBox(height: AppSpacing.sm),
-                            OutlinedButton(
-                              onPressed: widget.onDemoLogin,
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Colors.white70),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: AppSpacing.md,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                                ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: widget.onDemoLogin,
+                                child: const Text('Demo Giris'),
                               ),
-                              child: const Text('Otomatik Giri\u015f (Demo)'),
                             ),
                           ],
                         ),
@@ -219,7 +212,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 backgroundColor: const Color(0xFF0A2D55),
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Kay\u0131t Ol'),
+              child: const Text('Kayit Ol & Giris Yap!'),
             ),
           ),
         ],
@@ -298,7 +291,7 @@ class _LogoHeader extends StatelessWidget {
             TextSpan(
               text: 'SAYE',
               style: GoogleFonts.spaceGrotesk(
-                color: const Color(0xFF7EF2CD),
+              color: Colors.white.withValues(alpha: 0.72),
                 fontSize: 60,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.6,

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../data/mock_data.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
+import 'report_sent_screen.dart';
 
 class MapReportScreen extends StatefulWidget {
   const MapReportScreen({
@@ -21,6 +22,15 @@ class MapReportScreen extends StatefulWidget {
 
 class _MapReportScreenState extends State<MapReportScreen> {
   String? _selectedCategory;
+
+  static const Map<String, IconData> _categoryIcons = {
+    'Trafik': Icons.traffic_rounded,
+    'Ariza': Icons.build_circle_rounded,
+    'Saglik': Icons.medical_information_rounded,
+    'Takip': Icons.remove_red_eye_rounded,
+    'Hayvan': Icons.pets_rounded,
+    'Suc': Icons.gpp_bad_rounded,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +67,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
                 _MapPlaceholder(onTap: () {}),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Anahtar Kelime Secerek Baskalarini Uyar!',
+                  'Anahtar Kelime Secerek Baska Kisileri Uyar!',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.body.copyWith(
                     color: Colors.white70,
@@ -71,6 +81,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
                   children: MockData.reportCategories
                       .map(
                         (category) => _CategoryChip(
+                          icon: _categoryIcons[category] ?? Icons.warning_amber_rounded,
                           label: category,
                           isSelected: _selectedCategory == category,
                           onTap: () {
@@ -102,6 +113,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
 
   Future<void> _openReportSheet() async {
     final noteController = TextEditingController();
+    final parentContext = context;
 
     await showModalBottomSheet<void>(
       context: context,
@@ -122,7 +134,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Bildirim Gonder', style: AppTextStyles.title.copyWith(fontSize: 22)),
+              Text('Ihbar Gonder', style: AppTextStyles.title.copyWith(fontSize: 22)),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Kategori: ${_selectedCategory ?? '-'}',
@@ -146,7 +158,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     widget.appState.addLocalReport(
                       category: _selectedCategory!,
                       locationLabel: MockData.selectedLocationLabel,
@@ -155,10 +167,20 @@ class _MapReportScreenState extends State<MapReportScreen> {
                     );
 
                     Navigator.of(context).pop();
-
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(content: Text('Bildirim g\u00f6nderildi')),
+                    if (!mounted) {
+                      return;
+                    }
+                    await Navigator.of(parentContext).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const ReportSentScreen(),
+                      ),
                     );
+                    if (!mounted) {
+                      return;
+                    }
+                    setState(() {
+                      _selectedCategory = null;
+                    });
                   },
                   child: const Text('Gonder'),
                 ),
@@ -281,11 +303,13 @@ class _MapPlaceholder extends StatelessWidget {
 
 class _CategoryChip extends StatelessWidget {
   const _CategoryChip({
+    required this.icon,
     required this.label,
     required this.isSelected,
     required this.onTap,
   });
 
+  final IconData icon;
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
@@ -295,20 +319,30 @@ class _CategoryChip extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadius.md),
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 92),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        constraints: const BoxConstraints(minWidth: 102),
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF4C9D69) : const Color(0xFF37614D),
+          gradient: isSelected
+              ? const LinearGradient(colors: [Color(0xFF5EAF6E), Color(0xFF3D7D49)])
+              : const LinearGradient(colors: [Color(0xFF477B52), Color(0xFF355E3C)]),
           borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
-            color: isSelected ? const Color(0xFFB7F1CF) : Colors.transparent,
+            color: isSelected ? const Color(0xFFD4FFE4) : Colors.transparent,
           ),
         ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: AppTextStyles.body.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 17, color: Colors.white),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.body.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+          ],
         ),
       ),
     );
