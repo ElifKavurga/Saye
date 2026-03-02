@@ -3,6 +3,7 @@ package com.elifkavurga.backend.report.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.locationtech.jts.geom.Point;
 
 import java.time.Instant;
 
@@ -26,11 +27,8 @@ public class Report {
     @Column(columnDefinition = "text")
     private String description;
 
-    // either store as separate lat/lng or PostGIS geometry
-    // latitude/longitude for the event location (alternatively could use PostGIS geometry)
-    private Double latitude;
-
-    private Double longitude;
+    @Column(columnDefinition = "geometry(Point,4326)")
+    private Point location;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -42,10 +40,39 @@ public class Report {
     // score assigned after verification
     private Double confidenceScore;
 
+    @Transient
+    public Double getLatitude() {
+        return this.location != null ? this.location.getY() : null;
+    }
+
+    @Transient
+    public Double getLongitude() {
+        return this.location != null ? this.location.getX() : null;
+    }
+
+    @Transient
+    public void setLatitude(Double lat) {
+        if (lat == null) return;
+        double lon = this.location != null ? this.location.getX() : 0.0;
+        org.locationtech.jts.geom.GeometryFactory gf = new org.locationtech.jts.geom.GeometryFactory(
+                new org.locationtech.jts.geom.PrecisionModel(), 4326);
+        this.location = gf.createPoint(new org.locationtech.jts.geom.Coordinate(lon, lat));
+    }
+
+    @Transient
+    public void setLongitude(Double lon) {
+        if (lon == null) return;
+        double lat = this.location != null ? this.location.getY() : 0.0;
+        org.locationtech.jts.geom.GeometryFactory gf = new org.locationtech.jts.geom.GeometryFactory(
+                new org.locationtech.jts.geom.PrecisionModel(), 4326);
+        this.location = gf.createPoint(new org.locationtech.jts.geom.Coordinate(lon, lat));
+    }
+
     @PrePersist
     public void prePersist() {
-        Instant now = Instant.now();
-        this.createdAt = now;
+        if (this.createdAt == null) {
+            this.createdAt = Instant.now();
+        }
         if (this.status == null) {
             this.status = ReportStatus.ACTIVE;
         }

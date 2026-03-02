@@ -6,7 +6,9 @@ import com.elifkavurga.backend.report.entity.Report;
 import com.elifkavurga.backend.report.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import jakarta.persistence.EntityManager;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -17,6 +19,8 @@ import java.util.stream.Collectors;
 public class MapServiceImpl implements MapService {
 
     private final ReportRepository reportRepository;
+    private final EntityManager entityManager;
+    private final Clock clock;
 
     private static double distanceMeters(double lat1, double lng1, double lat2, double lng2) {
         // haversine formula
@@ -30,29 +34,34 @@ public class MapServiceImpl implements MapService {
         return earthRadius * c;
     }
 
+    private List<Report> queryNearby(double lat, double lng, double radiusMeters) {
+        try {
+            return reportRepository.findNearby(lat, lng, radiusMeters);
+        } catch (Exception ex) {
+            // log and fallback to manual filtering (e.g. H2 lacks ST_DWithin)
+            System.out.println("spatial query failed, falling back: " + ex.getMessage());
+            return reportRepository.findAll().stream()
+                    .filter(r -> r.getLatitude() != null && r.getLongitude() != null)
+                    .filter(r -> distanceMeters(lat, lng, r.getLatitude(), r.getLongitude()) <= radiusMeters)
+                    .collect(Collectors.toList());
+        }
+    }
+
     @Override
     public List<ReportResponse> findReportsNearby(double lat, double lng, double radiusMeters) {
-        return reportRepository.findAll().stream()
-                .filter(r -> r.getLatitude() != null && r.getLongitude() != null)
-                .filter(r -> distanceMeters(lat, lng, r.getLatitude(), r.getLongitude()) <= radiusMeters)
+        Instant cutoff = Instant.now(clock).minus(7, ChronoUnit.DAYS);
+        return queryNearby(lat, lng, radiusMeters).stream()
+                .filter(r -> r.getCreatedAt() == null || !r.getCreatedAt().isBefore(cutoff))
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
     public RiskResponse computeRisk(double lat, double lng) {
-        // MVP risk calculation:
-        // - Only consider reports in the last 7 days
-        // - Apply category weights (e.g. SUC more important)
-        // - Apply distance weight: closer reports have larger effect
-        // - Aggregate weighted sum -> normalize to 0-100
-
-        Instant now = Instant.now();
+        Instant now = Instant.now(clock);
         Instant cutoff = now.minus(7, ChronoUnit.DAYS);
+        final double maxRadius = 1000.0; // meters
 
-        final double maxRadius = 1000.0; // meters considered for strong influence
-
-        // category weights (tuneable)
         java.util.Map<String, Double> categoryWeights = java.util.Map.of(
                 "SUC", 3.0,
                 "TAKIP", 2.5,
@@ -64,30 +73,24 @@ public class MapServiceImpl implements MapService {
 
         double rawScore = 0.0;
 
-        for (Report r : reportRepository.findAll()) {
-            if (r.getCreatedAt() == null || r.getLatitude() == null || r.getLongitude() == null) {
-                continue;
-            }
-            if (r.getCreatedAt().isBefore(cutoff)) {
-                continue; // older than 7 days
-            }
+        List<Report> nearby = queryNearby(lat, lng, maxRadius);
+        for (Report r : nearby) {
+            if (r.getCreatedAt() == null) continue;
+            if (r.getCreatedAt().isBefore(cutoff)) continue;
 
-            double dist = distanceMeters(lat, lng, r.getLatitude(), r.getLongitude());
-            if (dist > maxRadius) {
-                continue; // ignore reports outside influence radius
-            }
+            Double rlat = r.getLatitude();
+            Double rlng = r.getLongitude();
+            if (rlat == null || rlng == null) continue;
 
-            double distanceFactor = 1.0 - (dist / maxRadius); // 1.0 (same location) -> 0.0 (at maxRadius)
-
+            double dist = distanceMeters(lat, lng, rlat, rlng);
+            if (dist > maxRadius) continue;
+            double distanceFactor = 1.0 - (dist / maxRadius);
             String cat = r.getCategory() != null ? r.getCategory().name() : "";
             double catWeight = categoryWeights.getOrDefault(cat, 1.0);
-
             rawScore += catWeight * distanceFactor;
         }
 
-        // Normalize rawScore to 0-100. Multiplier chosen empirically for MVP.
         double score = Math.min(100.0, rawScore * 10.0);
-
         String level;
         if (score <= 30.0) {
             level = "low";
@@ -107,12 +110,12 @@ public class MapServiceImpl implements MapService {
         return ReportResponse.builder()
                 .id(r.getId())
                 .userId(r.getUserId())
-                .category(r.getCategory().name())
+                .category(r.getCategory() != null ? r.getCategory().name() : null)
                 .description(r.getDescription())
                 .latitude(r.getLatitude())
                 .longitude(r.getLongitude())
                 .createdAt(r.getCreatedAt())
-                .status(r.getStatus().name())
+                .status(r.getStatus() != null ? r.getStatus().name() : null)
                 .confidenceScore(r.getConfidenceScore())
                 .build();
     }

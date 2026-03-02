@@ -2,6 +2,7 @@ package com.elifkavurga.backend.map;
 
 import com.elifkavurga.backend.map.dto.RiskResponse;
 import com.elifkavurga.backend.map.service.MapService;
+import com.elifkavurga.backend.report.dto.ReportResponse;
 import com.elifkavurga.backend.report.entity.Report;
 import com.elifkavurga.backend.report.entity.ReportCategory;
 import com.elifkavurga.backend.report.repository.ReportRepository;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -67,6 +69,14 @@ public class MapServiceIntegrationTest {
         // r1 has high weight, r2 medium; r3 excluded by distance, r4 excluded by age
         assertThat(resp.getScore()).isGreaterThan(0);
         assertThat(resp.getLevel()).isIn("low", "medium", "high");
+    }
+
+    @Test
+    void findReportsNearbyReturnsExpectedList() {
+        // radius 1000 meters should include r1 and r2 but not r3
+        List<ReportResponse> reports = mapService.findReportsNearby(0.0, 0.0, 1000.0);
+        assertThat(reports).hasSize(2);
+        assertThat(reports).extracting("description").containsExactlyInAnyOrder("Crime close", "Followed a bit further");
     }
 
 }

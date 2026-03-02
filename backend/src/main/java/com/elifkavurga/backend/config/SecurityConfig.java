@@ -22,6 +22,9 @@ public class SecurityConfig {
                     }
                     auth.requestMatchers("/auth/**").permitAll()
                             .requestMatchers("/users/me").permitAll()
+                            .requestMatchers("/emergency/**").permitAll()
+                            .requestMatchers("/notifications/**").permitAll()
+                            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                             .requestMatchers("/map/**", "/risk").permitAll()
                             .anyRequest().authenticated();
                 });

@@ -4,8 +4,12 @@ import com.elifkavurga.backend.report.dto.ReportRequest;
 import com.elifkavurga.backend.report.dto.ReportResponse;
 import com.elifkavurga.backend.report.entity.Report;
 import com.elifkavurga.backend.report.entity.ReportCategory;
+import com.elifkavurga.backend.report.entity.ReportStatus;
 import com.elifkavurga.backend.report.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,8 +27,10 @@ public class ReportServiceImpl implements ReportService {
         report.setUserId(request.getUserId());
         report.setCategory(Enum.valueOf(ReportCategory.class, request.getCategory()));
         report.setDescription(request.getDescription());
-        report.setLatitude(request.getLatitude());
-        report.setLongitude(request.getLongitude());
+        if (request.getLatitude() != null && request.getLongitude() != null) {
+            GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 4326);
+            report.setLocation(gf.createPoint(new Coordinate(request.getLongitude(), request.getLatitude())));
+        }
         report = repository.save(report);
         return toResponse(report);
     }
@@ -34,16 +40,45 @@ public class ReportServiceImpl implements ReportService {
         return repository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
     }
 
+    @Override
+    public List<ReportResponse> listMine(Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("userId zorunlu");
+        }
+        return repository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public ReportResponse updateStatus(Long reportId, String status, Long requestedByUserId, boolean admin) {
+        if (status == null || status.isBlank()) {
+            throw new IllegalArgumentException("status zorunlu");
+        }
+
+        Report report = repository.findById(reportId)
+                .orElseThrow(() -> new IllegalArgumentException("Rapor bulunamadi"));
+
+        boolean owner = requestedByUserId != null && requestedByUserId.equals(report.getUserId());
+        if (!admin && !owner) {
+            throw new IllegalArgumentException("Bu raporun durumunu guncelleme yetkin yok");
+        }
+
+        report.setStatus(ReportStatus.valueOf(status.trim().toUpperCase()));
+        report = repository.save(report);
+        return toResponse(report);
+    }
+
     private ReportResponse toResponse(Report r) {
         return ReportResponse.builder()
                 .id(r.getId())
                 .userId(r.getUserId())
-                .category(r.getCategory().name())
+                .category(r.getCategory() != null ? r.getCategory().name() : null)
                 .description(r.getDescription())
                 .latitude(r.getLatitude())
                 .longitude(r.getLongitude())
                 .createdAt(r.getCreatedAt())
-                .status(r.getStatus().name())
+                .status(r.getStatus() != null ? r.getStatus().name() : null)
                 .confidenceScore(r.getConfidenceScore())
                 .build();
     }
