@@ -2,6 +2,9 @@ package com.elifkavurga.backend.notification;
 
 import com.elifkavurga.backend.emergency.repository.EmergencyEventRepository;
 import com.elifkavurga.backend.notification.repository.NotificationLogRepository;
+import com.elifkavurga.backend.user.entity.User;
+import com.elifkavurga.backend.user.entity.UserRole;
+import com.elifkavurga.backend.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,11 +33,28 @@ class NotificationLogIntegrationTest {
     @Autowired
     private NotificationLogRepository notificationLogRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private Long testUserId;
+
     @BeforeEach
     void setup() {
         mvc = MockMvcBuilders.webAppContextSetup(context).build();
         notificationLogRepository.deleteAll();
         emergencyEventRepository.deleteAll();
+        userRepository.deleteAll();
+
+        User user = new User();
+        user.setEmail("notification@test.local");
+        user.setPassword("test");
+        user.setPasswordHash("test");
+        user.setFirstName("Notification");
+        user.setLastName("Tester");
+        user.setUsername("notification-tester");
+        user.setRole(UserRole.USER);
+        user.setIsActive(true);
+        testUserId = userRepository.save(user).getId();
     }
 
     @Test
@@ -43,12 +63,12 @@ class NotificationLogIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "userId": 77,
+                                  "userId": %d,
                                   "latitude": 41.0082,
                                   "longitude": 28.9784,
                                   "sharedTo": ["905551112233", "905441112233"]
                                 }
-                                """))
+                                """.formatted(testUserId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").exists())
                 .andReturn()

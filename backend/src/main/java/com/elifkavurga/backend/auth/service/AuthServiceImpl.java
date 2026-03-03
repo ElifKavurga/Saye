@@ -7,6 +7,7 @@ import com.elifkavurga.backend.auth.dto.RegisterRequest;
 import com.elifkavurga.backend.common.exceptions.BadRequestException;
 import com.elifkavurga.backend.config.AppSecurityProperties;
 import com.elifkavurga.backend.user.entity.User;
+import com.elifkavurga.backend.user.entity.UserRole;
 import com.elifkavurga.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -34,7 +35,12 @@ public class AuthServiceImpl implements AuthService {
         User user = new User();
         user.setEmail(registerRequest.getEmail());
         user.setUsername(registerRequest.getUsername());
-        user.setPasswordHash(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setFirstName(registerRequest.getUsername());
+        user.setLastName("-");
+        user.setRole(UserRole.USER);
+        String encodedPassword = passwordEncoder.encode(registerRequest.getPassword());
+        user.setPasswordHash(encodedPassword);
+        user.setPassword(encodedPassword);
         user.setPhone(registerRequest.getPhone());
         user.setIsActive(true);
 
@@ -68,7 +74,12 @@ public class AuthServiceImpl implements AuthService {
         User user = new User();
         user.setEmail(DEMO_EMAIL);
         user.setUsername(DEMO_USERNAME);
-        user.setPasswordHash(passwordEncoder.encode(DEMO_PASSWORD));
+        user.setFirstName(DEMO_USERNAME);
+        user.setLastName("-");
+        user.setRole(UserRole.USER);
+        String encodedPassword = passwordEncoder.encode(DEMO_PASSWORD);
+        user.setPasswordHash(encodedPassword);
+        user.setPassword(encodedPassword);
         user.setPhone(null);
         user.setIsActive(true);
         return userRepository.save(user);

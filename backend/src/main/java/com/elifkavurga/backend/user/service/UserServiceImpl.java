@@ -7,6 +7,7 @@ import com.elifkavurga.backend.user.dto.CreateUserRequest;
 import com.elifkavurga.backend.user.dto.UpdateMeRequest;
 import com.elifkavurga.backend.user.dto.UserResponse;
 import com.elifkavurga.backend.user.entity.User;
+import com.elifkavurga.backend.user.entity.UserRole;
 import com.elifkavurga.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,9 +36,15 @@ public class UserServiceImpl implements UserService {
 
         User user = new User();
         user.setUsername(request.getUsername());
+        user.setFirstName(request.getUsername());
+        user.setLastName("-");
+        user.setRole(UserRole.USER);
         user.setEmail(request.getEmail());
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        user.setPasswordHash(encodedPassword);
+        user.setPassword(encodedPassword);
         user.setPhone(request.getPhone());
+        user.setIsActive(true);
 
         User savedUser = userRepository.save(user);
         return toResponse(savedUser);
@@ -57,6 +64,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse updateMe(String userIdHeader, UpdateMeRequest request) {
         User user = resolveCurrentUser(userIdHeader);
         user.setUsername(request.getUsername());
+        user.setFirstName(request.getUsername());
         user.setPhone(request.getPhone());
         return toResponse(userRepository.save(user));
     }
@@ -84,7 +92,12 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setEmail(DEMO_EMAIL);
         user.setUsername(DEMO_USERNAME);
-        user.setPasswordHash(passwordEncoder.encode(DEMO_PASSWORD));
+        user.setFirstName(DEMO_USERNAME);
+        user.setLastName("-");
+        user.setRole(UserRole.USER);
+        String encodedPassword = passwordEncoder.encode(DEMO_PASSWORD);
+        user.setPasswordHash(encodedPassword);
+        user.setPassword(encodedPassword);
         user.setPhone(null);
         user.setIsActive(true);
         return userRepository.save(user);
