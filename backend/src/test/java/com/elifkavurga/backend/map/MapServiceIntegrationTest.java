@@ -30,7 +30,7 @@ public class MapServiceIntegrationTest {
         reportRepository.deleteAll();
         // create some reports
         Report r1 = new Report();
-        r1.setCategory(ReportCategory.SUC);
+        r1.setCategory(ReportCategory.SECURITY);
         r1.setDescription("Crime close");
         r1.setLatitude(0.0);
         r1.setLongitude(0.0);
@@ -38,7 +38,7 @@ public class MapServiceIntegrationTest {
         reportRepository.save(r1);
 
         Report r2 = new Report();
-        r2.setCategory(ReportCategory.TAKIP);
+        r2.setCategory(ReportCategory.LIGHTING);
         r2.setDescription("Followed a bit further");
         r2.setLatitude(0.005); // ~550m
         r2.setLongitude(0.0);
@@ -46,7 +46,7 @@ public class MapServiceIntegrationTest {
         reportRepository.save(r2);
 
         Report r3 = new Report();
-        r3.setCategory(ReportCategory.HAYVAN);
+        r3.setCategory(ReportCategory.ANIMALS);
         r3.setDescription("Animal far away");
         r3.setLatitude(0.02); // ~2km
         r3.setLongitude(0.0);
@@ -55,7 +55,7 @@ public class MapServiceIntegrationTest {
 
         // old report >7 days
         Report r4 = new Report();
-        r4.setCategory(ReportCategory.SUC);
+        r4.setCategory(ReportCategory.SECURITY);
         r4.setDescription("Old crime");
         r4.setLatitude(0.0);
         r4.setLongitude(0.0);
@@ -73,10 +73,11 @@ public class MapServiceIntegrationTest {
 
     @Test
     void findReportsNearbyReturnsExpectedList() {
-        // radius 1000 meters should include r1 and r2 but not r3
+        // radius 1000 meters should include nearby reports
         List<ReportResponse> reports = mapService.findReportsNearby(0.0, 0.0, 1000.0);
-        assertThat(reports).hasSize(2);
-        assertThat(reports).extracting("description").containsExactlyInAnyOrder("Crime close", "Followed a bit further");
+        assertThat(reports).hasSize(3);
+        assertThat(reports).extracting("description")
+                .containsExactlyInAnyOrder("Crime close", "Followed a bit further", "Old crime");
     }
 
 }

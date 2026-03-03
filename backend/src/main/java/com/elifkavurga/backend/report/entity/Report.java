@@ -1,17 +1,16 @@
 package com.elifkavurga.backend.report.entity;
 
+import com.elifkavurga.backend.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.locationtech.jts.geom.Point;
 
-import java.time.Instant;
-
 @Getter
 @Setter
 @Entity
 @Table(name = "reports")
-public class Report {
+public class Report extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,12 +29,9 @@ public class Report {
     @Column(columnDefinition = "geometry(Point,4326)")
     private Point location;
 
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ReportStatus status = ReportStatus.ACTIVE;
+    private ReportStatus status = ReportStatus.PENDING;
 
     // score assigned after verification
     private Double confidenceScore;
@@ -70,11 +66,8 @@ public class Report {
 
     @PrePersist
     public void prePersist() {
-        if (this.createdAt == null) {
-            this.createdAt = Instant.now();
-        }
         if (this.status == null) {
-            this.status = ReportStatus.ACTIVE;
+            this.status = ReportStatus.PENDING;
         }
     }
 }

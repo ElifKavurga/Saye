@@ -39,7 +39,7 @@ class ReportControllerIntegrationTest {
 
         Report mine = new Report();
         mine.setUserId(10L);
-        mine.setCategory(ReportCategory.SUC);
+        mine.setCategory(ReportCategory.SECURITY);
         mine.setDescription("Benim kaydim");
         mine.setLatitude(41.0);
         mine.setLongitude(29.0);
@@ -48,7 +48,7 @@ class ReportControllerIntegrationTest {
 
         Report another = new Report();
         another.setUserId(20L);
-        another.setCategory(ReportCategory.TRAFIK);
+        another.setCategory(ReportCategory.TRAFFIC);
         another.setDescription("Baska kullanici");
         another.setLatitude(41.1);
         another.setLongitude(29.1);
@@ -63,7 +63,7 @@ class ReportControllerIntegrationTest {
                         .content("""
                                 {
                                   "userId": 30,
-                                  "category": "SUC",
+                                  "category": "SECURITY",
                                   "description": "Yeni bildirim",
                                   "latitude": 41.0082,
                                   "longitude": 28.9784
@@ -72,7 +72,7 @@ class ReportControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.userId").value(30))
-                .andExpect(jsonPath("$.data.category").value("SUC"))
+                .andExpect(jsonPath("$.data.category").value("SECURITY"))
                 .andExpect(jsonPath("$.data.description").value("Yeni bildirim"));
     }
 

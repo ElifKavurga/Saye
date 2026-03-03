@@ -4,9 +4,11 @@ import com.elifkavurga.backend.map.dto.RiskResponse;
 import com.elifkavurga.backend.report.dto.ReportResponse;
 import com.elifkavurga.backend.report.entity.Report;
 import com.elifkavurga.backend.report.repository.ReportRepository;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import jakarta.persistence.EntityManager;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -19,7 +21,6 @@ import java.util.stream.Collectors;
 public class MapServiceImpl implements MapService {
 
     private final ReportRepository reportRepository;
-    private final EntityManager entityManager;
     private final Clock clock;
 
     private static double distanceMeters(double lat1, double lng1, double lat2, double lng2) {
@@ -36,7 +37,16 @@ public class MapServiceImpl implements MapService {
 
     private List<Report> queryNearby(double lat, double lng, double radiusMeters) {
         try {
-            return reportRepository.findNearby(lat, lng, radiusMeters);
+            GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 4326);
+            List<Report> candidates = reportRepository.findByLocationWithinRadius(
+                    gf.createPoint(new Coordinate(lng, lat)),
+                    radiusMeters
+            );
+            // Keep deterministic behavior across different DB spatial implementations.
+            return candidates.stream()
+                    .filter(r -> r.getLatitude() != null && r.getLongitude() != null)
+                    .filter(r -> distanceMeters(lat, lng, r.getLatitude(), r.getLongitude()) <= radiusMeters)
+                    .collect(Collectors.toList());
         } catch (Exception ex) {
             // log and fallback to manual filtering (e.g. H2 lacks ST_DWithin)
             System.out.println("spatial query failed, falling back: " + ex.getMessage());
@@ -63,12 +73,12 @@ public class MapServiceImpl implements MapService {
         final double maxRadius = 1000.0; // meters
 
         java.util.Map<String, Double> categoryWeights = java.util.Map.of(
-                "SUC", 3.0,
-                "TAKIP", 2.5,
-                "HAYVAN", 1.0,
-                "SAGLIK", 2.0,
-                "ARIZA", 1.0,
-                "TRAFIK", 2.0
+                "SECURITY", 3.0,
+                "LIGHTING", 2.0,
+                "ANIMALS", 1.0,
+                "HEALTH", 2.0,
+                "INFRASTRUCTURE", 1.0,
+                "TRAFFIC", 2.0
         );
 
         double rawScore = 0.0;

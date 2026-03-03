@@ -1,13 +1,19 @@
 package com.elifkavurga.backend.emergency.entity;
 
+import com.elifkavurga.backend.common.entity.BaseEntity;
+import com.elifkavurga.backend.user.entity.User;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -22,13 +28,14 @@ import java.util.List;
 @Setter
 @Entity
 @Table(name = "emergency_events")
-public class EmergencyEvent {
+public class EmergencyEvent extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(nullable = false, updatable = false)
     private Instant startedAt;
@@ -37,10 +44,11 @@ public class EmergencyEvent {
     private Instant endedAt;
 
     @Column(columnDefinition = "geometry(Point,4326)")
-    private Point startLocation;
+    private Point location;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Boolean isActive = true;
+    private EmergencyStatus status = EmergencyStatus.ACTIVE;
 
     @ElementCollection
     @CollectionTable(name = "emergency_event_shared_to", joinColumns = @JoinColumn(name = "event_id"))
@@ -52,16 +60,16 @@ public class EmergencyEvent {
         if (this.startedAt == null) {
             this.startedAt = Instant.now();
         }
-        if (this.isActive == null) {
-            this.isActive = true;
+        if (this.status == null) {
+            this.status = EmergencyStatus.ACTIVE;
         }
     }
 
     public Double getLatitude() {
-        return this.startLocation != null ? this.startLocation.getY() : null;
+        return this.location != null ? this.location.getY() : null;
     }
 
     public Double getLongitude() {
-        return this.startLocation != null ? this.startLocation.getX() : null;
+        return this.location != null ? this.location.getX() : null;
     }
 }

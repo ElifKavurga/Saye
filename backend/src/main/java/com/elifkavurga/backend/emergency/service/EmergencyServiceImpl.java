@@ -4,9 +4,12 @@ import com.elifkavurga.backend.common.exceptions.BadRequestException;
 import com.elifkavurga.backend.emergency.dto.EmergencyStartRequest;
 import com.elifkavurga.backend.emergency.dto.EmergencyStatusResponse;
 import com.elifkavurga.backend.emergency.entity.EmergencyEvent;
+import com.elifkavurga.backend.emergency.entity.EmergencyStatus;
 import com.elifkavurga.backend.emergency.repository.EmergencyEventRepository;
 import com.elifkavurga.backend.notification.entity.NotificationType;
 import com.elifkavurga.backend.notification.service.NotificationLogService;
+import com.elifkavurga.backend.user.entity.User;
+import com.elifkavurga.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -23,23 +26,27 @@ public class EmergencyServiceImpl implements EmergencyService {
 
     private final EmergencyEventRepository repository;
     private final NotificationLogService notificationLogService;
+    private final UserRepository userRepository;
     private final Clock clock;
 
     @Override
     public EmergencyStatusResponse start(EmergencyStartRequest request) {
-        repository.findFirstByUserIdAndIsActiveTrueOrderByStartedAtDesc(request.getUserId())
+        repository.findFirstByUser_IdAndStatusOrderByStartedAtDesc(request.getUserId(), EmergencyStatus.ACTIVE)
                 .ifPresent(event -> {
                     throw new BadRequestException("Kullanicinin zaten aktif bir acil durumu var");
                 });
 
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new BadRequestException("Kullanici bulunamadi"));
+
         EmergencyEvent event = new EmergencyEvent();
-        event.setUserId(request.getUserId());
+        event.setUser(user);
         event.setStartedAt(Instant.now(clock));
-        event.setIsActive(true);
+        event.setStatus(EmergencyStatus.ACTIVE);
         event.setSharedTo(request.getSharedTo() != null ? List.copyOf(request.getSharedTo()) : List.of());
 
         GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 4326);
-        event.setStartLocation(gf.createPoint(new Coordinate(request.getLongitude(), request.getLatitude())));
+        event.setLocation(gf.createPoint(new Coordinate(request.getLongitude(), request.getLatitude())));
 
         EmergencyEvent savedEvent = repository.save(event);
         for (String recipient : savedEvent.getSharedTo()) {
@@ -51,17 +58,17 @@ public class EmergencyServiceImpl implements EmergencyService {
 
     @Override
     public EmergencyStatusResponse stop(Long userId) {
-        EmergencyEvent event = repository.findFirstByUserIdAndIsActiveTrueOrderByStartedAtDesc(userId)
+        EmergencyEvent event = repository.findFirstByUser_IdAndStatusOrderByStartedAtDesc(userId, EmergencyStatus.ACTIVE)
                 .orElseThrow(() -> new BadRequestException("Aktif acil durum bulunamadi"));
 
-        event.setIsActive(false);
+        event.setStatus(EmergencyStatus.RESOLVED);
         event.setEndedAt(Instant.now(clock));
         return toResponse(repository.save(event));
     }
 
     @Override
     public EmergencyStatusResponse status(Long userId) {
-        return repository.findFirstByUserIdAndIsActiveTrueOrderByStartedAtDesc(userId)
+        return repository.findFirstByUser_IdAndStatusOrderByStartedAtDesc(userId, EmergencyStatus.ACTIVE)
                 .map(this::toResponse)
                 .orElseGet(() -> EmergencyStatusResponse.builder()
                         .userId(userId)
@@ -73,12 +80,12 @@ public class EmergencyServiceImpl implements EmergencyService {
     private EmergencyStatusResponse toResponse(EmergencyEvent event) {
         return EmergencyStatusResponse.builder()
                 .id(event.getId())
-                .userId(event.getUserId())
+                .userId(event.getUser() != null ? event.getUser().getId() : null)
                 .startedAt(event.getStartedAt())
                 .endedAt(event.getEndedAt())
                 .latitude(event.getLatitude())
                 .longitude(event.getLongitude())
-                .active(Boolean.TRUE.equals(event.getIsActive()))
+                .active(event.getStatus() == EmergencyStatus.ACTIVE)
                 .sharedTo(event.getSharedTo() != null ? List.copyOf(event.getSharedTo()) : List.of())
                 .build();
     }

@@ -2,14 +2,16 @@ spring:
   application:
     name: backend
   datasource:
-    # default to in-memory H2 for ease of local development
-    url: jdbc:h2:mem:backenddb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: ''
+    url: jdbc:postgresql://localhost:5432/saye_db
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
   jpa:
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.spatial.dialect.postgis.PostgisPG95Dialect
 
 app:
   security:

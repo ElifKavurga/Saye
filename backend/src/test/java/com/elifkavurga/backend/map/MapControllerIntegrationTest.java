@@ -1,6 +1,5 @@
 package com.elifkavurga.backend.map;
 
-import com.elifkavurga.backend.map.dto.RiskResponse;
 import com.elifkavurga.backend.report.entity.Report;
 import com.elifkavurga.backend.report.entity.ReportCategory;
 import com.elifkavurga.backend.report.repository.ReportRepository;
@@ -14,8 +13,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.time.Instant;
-
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -35,7 +32,7 @@ public class MapControllerIntegrationTest {
         repo.deleteAll();
         // same data as MapServiceIntegrationTest
         Report r1 = new Report();
-        r1.setCategory(ReportCategory.SUC);
+        r1.setCategory(ReportCategory.SECURITY);
         r1.setDescription("Crime close");
         r1.setLatitude(0.0);
         r1.setLongitude(0.0);
@@ -43,7 +40,7 @@ public class MapControllerIntegrationTest {
         repo.save(r1);
 
         Report r2 = new Report();
-        r2.setCategory(ReportCategory.TAKIP);
+        r2.setCategory(ReportCategory.LIGHTING);
         r2.setDescription("Followed a bit further");
         r2.setLatitude(0.005);
         r2.setLongitude(0.0);
@@ -51,7 +48,7 @@ public class MapControllerIntegrationTest {
         repo.save(r2);
 
         Report r3 = new Report();
-        r3.setCategory(ReportCategory.HAYVAN);
+        r3.setCategory(ReportCategory.ANIMALS);
         r3.setDescription("Animal far away");
         r3.setLatitude(0.02);
         r3.setLongitude(0.0);
