@@ -24,6 +24,7 @@ class _SayeAppState extends State<SayeApp> {
   @override
   void initState() {
     super.initState();
+    unawaited(_appState.checkAuthStatus());
     _splashTimer = Timer(const Duration(milliseconds: 2600), () {
       if (!mounted) {
         return;
@@ -43,45 +44,41 @@ class _SayeAppState extends State<SayeApp> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _appState,
-      builder: (context, child) {
-        return MaterialApp(
-          title: "SAYE'nde",
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.themeData,
-          home: AnimatedSwitcher(
+    return MaterialApp(
+      title: "SAYE'nde",
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.themeData,
+      home: AnimatedBuilder(
+        animation: _appState,
+        builder: (context, child) {
+          return AnimatedSwitcher(
             duration: const Duration(milliseconds: 350),
             child: _showSplash
                 ? const SplashScreen(key: ValueKey('splash'))
                 : _appState.isAuthenticated
-                    ? MainShell(
-                        key: const ValueKey('main'),
-                        appState: _appState,
-                      )
-                    : AuthScreen(
-                        key: const ValueKey('auth'),
-                        onLogin: (email, password) => _appState.login(
-                          email: email,
-                          password: password,
-                        ),
-                        onRegister: ({
+                ? MainShell(key: const ValueKey('main'), appState: _appState)
+                : AuthScreen(
+                    key: const ValueKey('auth'),
+                    onLogin: (email, password) =>
+                        _appState.login(email: email, password: password),
+                    onRegister:
+                        ({
                           required String email,
                           required String username,
                           required String password,
                           required String phone,
-                        }) =>
-                            _appState.register(
+                        }) => _appState.register(
                           email: email,
                           username: username,
                           password: password,
                           phone: phone,
                         ),
-                        onDemoLogin: _appState.demoLogin,
-                      ),
-          ),
-        );
-      },
+                    isLoading: _appState.isLoading,
+                    onDemoLogin: _appState.demoLogin,
+                  ),
+          );
+        },
+      ),
     );
   }
 }

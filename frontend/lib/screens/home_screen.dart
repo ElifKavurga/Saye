@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../data/mock_data.dart';
+import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'alerts_feed_screen.dart';
@@ -44,7 +44,7 @@ class HomeScreen extends StatelessWidget {
                     const _LogoStrip(),
                     const SizedBox(height: AppSpacing.md),
                     _TopBar(
-                      location: MockData.campusLocation,
+                      location: AppDefaults.campusLocation,
                       onProfileTap: onOpenProfile,
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -75,7 +75,21 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: AppSpacing.md),
                     Center(
                       child: GestureDetector(
-                        onLongPress: appState.activateEmergency,
+                        onLongPress: () async {
+                          try {
+                            await appState.activateEmergency();
+                          } catch (e) {
+                            if (!context.mounted) {
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('SOS baslatilamadi: $e'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
                         child: Container(
                           width: 122,
                           height: 122,
@@ -86,7 +100,9 @@ class HomeScreen extends StatelessWidget {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFF304D).withValues(alpha: 0.35),
+                                color: const Color(
+                                  0xFFFF304D,
+                                ).withValues(alpha: 0.35),
                                 blurRadius: 26,
                                 spreadRadius: 2,
                               ),
@@ -110,7 +126,21 @@ class HomeScreen extends StatelessWidget {
                       child: SizedBox(
                         width: 220,
                         child: OutlinedButton.icon(
-                          onPressed: appState.activateEmergency,
+                          onPressed: () async {
+                            try {
+                              await appState.activateEmergency();
+                            } catch (e) {
+                              if (!context.mounted) {
+                                return;
+                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('SOS baslatilamadi: $e'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFFFFB6BC),
                             side: const BorderSide(color: Color(0xFFFF6B75)),
@@ -128,9 +158,7 @@ class HomeScreen extends StatelessWidget {
           Positioned(
             left: -8,
             top: 186,
-            child: _LeftQuickTrigger(
-              onTap: () => _openQuickPanel(context),
-            ),
+            child: _LeftQuickTrigger(onTap: () => _openQuickPanel(context)),
           ),
         ],
       ),
@@ -152,18 +180,26 @@ class HomeScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Hizli Panel', style: AppTextStyles.title.copyWith(fontSize: 22)),
+                Text(
+                  'Hizli Panel',
+                  style: AppTextStyles.title.copyWith(fontSize: 22),
+                ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '${MockData.campusLocation} konumundaki en guncel bildirimleri goruntule.',
+                  '${AppDefaults.campusLocation} konumundaki en guncel bildirimleri goruntule.',
                   style: AppTextStyles.body.copyWith(color: Colors.white70),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
                   tileColor: const Color(0xFF244A73),
-                  leading: const Icon(Icons.notifications_active_rounded, color: Color(0xFF84F5BB)),
+                  leading: const Icon(
+                    Icons.notifications_active_rounded,
+                    color: Color(0xFF84F5BB),
+                  ),
                   title: const Text('Guncel bildirim ve ihbarlar'),
                   subtitle: const Text('Konum tabanli canli akis'),
                   onTap: () {
@@ -250,7 +286,11 @@ class _LeftQuickTrigger extends StatelessWidget {
           alignment: Alignment.centerRight,
           child: Padding(
             padding: EdgeInsets.only(right: 12),
-            child: Icon(Icons.chevron_right_rounded, color: Colors.white, size: 34),
+            child: Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.white,
+              size: 34,
+            ),
           ),
         ),
       ),
@@ -264,7 +304,10 @@ class _LogoStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF284872).withValues(alpha: 0.86),
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -299,10 +342,7 @@ class _LogoStrip extends StatelessWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({
-    required this.location,
-    required this.onProfileTap,
-  });
+  const _TopBar({required this.location, required this.onProfileTap});
 
   final String location;
   final VoidCallback onProfileTap;
@@ -310,14 +350,21 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF112E54).withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Row(
         children: [
-          const Icon(Icons.location_on_rounded, color: Color(0xFF52F3A6), size: 20),
+          const Icon(
+            Icons.location_on_rounded,
+            color: Color(0xFF52F3A6),
+            size: 20,
+          ),
           const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: Text(
@@ -336,7 +383,11 @@ class _TopBar extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: Colors.white.withValues(alpha: 0.28),
               ),
-              child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
+              child: const Icon(
+                Icons.person_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
             ),
           ),
         ],
@@ -381,7 +432,10 @@ class _RiskSection extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.0),
               ),
               const Spacer(),
-              Icon(Icons.notifications_rounded, color: Colors.white.withValues(alpha: 0.9)),
+              Icon(
+                Icons.notifications_rounded,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -461,13 +515,15 @@ class _MapPreviewCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            Positioned.fill(
-              child: CustomPaint(painter: _MapGridPainter()),
-            ),
+            Positioned.fill(child: CustomPaint(painter: _MapGridPainter())),
             const Positioned(
               left: 38,
               top: 54,
-              child: Icon(Icons.place_rounded, color: Color(0xFFD81B60), size: 34),
+              child: Icon(
+                Icons.place_rounded,
+                color: Color(0xFFD81B60),
+                size: 34,
+              ),
             ),
             const Positioned(
               left: 100,
@@ -478,7 +534,10 @@ class _MapPreviewCard extends StatelessWidget {
               right: 14,
               bottom: 14,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -509,10 +568,7 @@ class _BluetoothCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.md),
         gradient: LinearGradient(
-          colors: [
-            const Color(0xFF1A4F8A),
-            color.withValues(alpha: 0.52),
-          ],
+          colors: [const Color(0xFF1A4F8A), color.withValues(alpha: 0.52)],
         ),
       ),
       child: Row(
@@ -532,9 +588,17 @@ class _BluetoothCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Bluetooth Takip Analizi', style: AppTextStyles.title.copyWith(fontSize: 18)),
+                Text(
+                  'Bluetooth Takip Analizi',
+                  style: AppTextStyles.title.copyWith(fontSize: 18),
+                ),
                 const SizedBox(height: 4),
-                Text(message, style: AppTextStyles.body.copyWith(color: Colors.white.withValues(alpha: 0.95))),
+                Text(
+                  message,
+                  style: AppTextStyles.body.copyWith(
+                    color: Colors.white.withValues(alpha: 0.95),
+                  ),
+                ),
               ],
             ),
           ),

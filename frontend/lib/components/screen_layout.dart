@@ -19,10 +19,17 @@ class ScreenLayout extends StatelessWidget {
     return SafeArea(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final horizontal = constraints.maxWidth < 380 ? AppSpacing.sm : AppSpacing.md;
+          final horizontal = constraints.maxWidth < 380
+              ? AppSpacing.sm
+              : AppSpacing.md;
 
           return SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(horizontal, AppSpacing.md, horizontal, 120),
+            padding: EdgeInsets.fromLTRB(
+              horizontal,
+              AppSpacing.md,
+              horizontal,
+              120,
+            ),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 680),

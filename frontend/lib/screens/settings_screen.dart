@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_data.dart';
+import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'emergency_info_screen.dart';
@@ -50,7 +50,7 @@ class SettingsScreen extends StatelessWidget {
                 _InfoCard(
                   title: 'Hesap Bilgileri',
                   body:
-                      'Ad: ${user?.username.isNotEmpty == true ? user!.username : MockData.profile.name}\nE-mail: ${user?.email.isNotEmpty == true ? user!.email : MockData.profile.email}\nTelefon: ${user?.phone.isNotEmpty == true ? user!.phone : '-'}',
+                      'Ad: ${user?.username.isNotEmpty == true ? user!.username : AppDefaults.fallbackProfileName}\nE-mail: ${user?.email.isNotEmpty == true ? user!.email : AppDefaults.fallbackProfileEmail}\nTelefon: ${user?.phone.isNotEmpty == true ? user!.phone : '-'}',
                   footerLabel: 'Profil ekranina git',
                   onTap: () => appState.setIndex(3),
                 ),
@@ -63,7 +63,9 @@ class SettingsScreen extends StatelessWidget {
                     value: appState.isProfileVisibleInAlerts,
                     onChanged: appState.setProfileVisibilityInAlerts,
                   ),
-                  footerLabel: appState.isProfileVisibleInAlerts ? 'Aktif' : 'Kapali',
+                  footerLabel: appState.isProfileVisibleInAlerts
+                      ? 'Aktif'
+                      : 'Kapali',
                   onTap: () {},
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -76,7 +78,8 @@ class SettingsScreen extends StatelessWidget {
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute<void>(
-                              builder: (_) => EmergencyInfoScreen(appState: appState),
+                              builder: (_) =>
+                                  EmergencyInfoScreen(appState: appState),
                             ),
                           );
                         },
@@ -90,7 +93,8 @@ class SettingsScreen extends StatelessWidget {
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute<void>(
-                              builder: (_) => PermissionsScreen(appState: appState),
+                              builder: (_) =>
+                                  PermissionsScreen(appState: appState),
                             ),
                           );
                         },
@@ -129,7 +133,10 @@ class _SettingsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF284872).withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -138,7 +145,11 @@ class _SettingsHeader extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onBack,
-            icon: const Icon(Icons.chevron_left_rounded, color: Color(0xFF4D8EEB), size: 34),
+            icon: const Icon(
+              Icons.chevron_left_rounded,
+              color: Color(0xFF4D8EEB),
+              size: 34,
+            ),
           ),
           Expanded(
             child: Text(
@@ -221,7 +232,10 @@ class _InfoCard extends StatelessWidget {
             if (footerLabel case final footerText?) ...[
               const SizedBox(height: AppSpacing.sm),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(8),

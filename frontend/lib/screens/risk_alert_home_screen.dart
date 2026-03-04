@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../data/mock_data.dart';
+import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'alerts_feed_screen.dart';
@@ -24,7 +24,12 @@ class RiskAlertHomeScreen extends StatelessWidget {
       child: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 120),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              120,
+            ),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 520),
@@ -51,8 +56,36 @@ class RiskAlertHomeScreen extends StatelessWidget {
                     const SizedBox(height: AppSpacing.sm),
                     Center(
                       child: GestureDetector(
-                        onTap: appState.activateEmergency,
-                        onLongPress: appState.activateEmergency,
+                        onTap: () async {
+                          try {
+                            await appState.activateEmergency();
+                          } catch (e) {
+                            if (!context.mounted) {
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('SOS baslatilamadi: $e'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
+                        onLongPress: () async {
+                          try {
+                            await appState.activateEmergency();
+                          } catch (e) {
+                            if (!context.mounted) {
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('SOS baslatilamadi: $e'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
                         child: Container(
                           width: 118,
                           height: 118,
@@ -63,7 +96,9 @@ class RiskAlertHomeScreen extends StatelessWidget {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFF304D).withValues(alpha: 0.35),
+                                color: const Color(
+                                  0xFFFF304D,
+                                ).withValues(alpha: 0.35),
                                 blurRadius: 24,
                                 spreadRadius: 2,
                               ),
@@ -90,9 +125,7 @@ class RiskAlertHomeScreen extends StatelessWidget {
           Positioned(
             left: -8,
             top: 186,
-            child: _LeftQuickTrigger(
-              onTap: () => _openQuickPanel(context),
-            ),
+            child: _LeftQuickTrigger(onTap: () => _openQuickPanel(context)),
           ),
         ],
       ),
@@ -111,9 +144,14 @@ class RiskAlertHomeScreen extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: ListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
               tileColor: const Color(0xFF244A73),
-              leading: const Icon(Icons.notifications_active_rounded, color: Color(0xFF84F5BB)),
+              leading: const Icon(
+                Icons.notifications_active_rounded,
+                color: Color(0xFF84F5BB),
+              ),
               title: const Text('Guncel bildirim ve ihbarlar'),
               subtitle: const Text('Konum tabanli canli akis'),
               onTap: () {
@@ -155,7 +193,11 @@ class _LeftQuickTrigger extends StatelessWidget {
           alignment: Alignment.centerRight,
           child: Padding(
             padding: EdgeInsets.only(right: 12),
-            child: Icon(Icons.chevron_right_rounded, color: Colors.white, size: 34),
+            child: Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.white,
+              size: 34,
+            ),
           ),
         ),
       ),
@@ -169,7 +211,10 @@ class _LogoStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF284872).withValues(alpha: 0.86),
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -212,11 +257,15 @@ class _LocationRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.location_on_rounded, color: Color(0xFF52F3A6), size: 22),
+        const Icon(
+          Icons.location_on_rounded,
+          color: Color(0xFF52F3A6),
+          size: 22,
+        ),
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Text(
-            MockData.campusLocation,
+            AppDefaults.campusLocation,
             style: AppTextStyles.title.copyWith(fontSize: 22),
           ),
         ),
@@ -231,7 +280,11 @@ class _LocationRow extends StatelessWidget {
               shape: BoxShape.circle,
               color: Colors.white.withValues(alpha: 0.28),
             ),
-            child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
+            child: const Icon(
+              Icons.person_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
           ),
         ),
       ],
@@ -342,11 +395,16 @@ class _BluetoothAlertCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Bluetooth Takip Analizi', style: AppTextStyles.title.copyWith(fontSize: 18)),
+                Text(
+                  'Bluetooth Takip Analizi',
+                  style: AppTextStyles.title.copyWith(fontSize: 18),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   'Aktif Tarama: Supheli cihaz yakinligi var. Uzun suredir takip gorunuyor.',
-                  style: AppTextStyles.body.copyWith(color: Colors.white.withValues(alpha: 0.95)),
+                  style: AppTextStyles.body.copyWith(
+                    color: Colors.white.withValues(alpha: 0.95),
+                  ),
                 ),
               ],
             ),

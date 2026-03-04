@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../data/mock_data.dart';
+import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'report_sent_screen.dart';
@@ -32,8 +34,20 @@ class _MapReportScreenState extends State<MapReportScreen> {
     'Suc': Icons.gpp_bad_rounded,
   };
 
+  static const double _defaultLatitude = 38.3552;
+  static const double _defaultLongitude = 38.3095;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_syncLocationAndRisk());
+  }
+
   @override
   Widget build(BuildContext context) {
+    final latitude = widget.appState.currentLatitude ?? _defaultLatitude;
+    final longitude = widget.appState.currentLongitude ?? _defaultLongitude;
+
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
@@ -52,19 +66,32 @@ class _MapReportScreenState extends State<MapReportScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_rounded, color: Color(0xFF52F3A6), size: 24),
+                    const Icon(
+                      Icons.location_on_rounded,
+                      color: Color(0xFF52F3A6),
+                      size: 24,
+                    ),
                     const SizedBox(width: AppSpacing.xs),
                     Expanded(
                       child: Text(
-                        MockData.campusLocation,
+                        AppDefaults.campusLocation,
                         style: AppTextStyles.title.copyWith(fontSize: 22),
                       ),
                     ),
-                    const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70),
+                    const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Colors.white70,
+                    ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
-                _MapPlaceholder(onTap: () {}),
+                _MapPlaceholder(
+                  reports: widget.appState.nearbyReports,
+                  centerLatitude: latitude,
+                  centerLongitude: longitude,
+                  isLoading: widget.appState.isMapDataLoading,
+                  onTap: _syncLocationAndRisk,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   'Anahtar Kelime Secerek Baska Kisileri Uyar!',
@@ -78,10 +105,12 @@ class _MapReportScreenState extends State<MapReportScreen> {
                 Wrap(
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
-                  children: MockData.reportCategories
+                  children: AppDefaults.reportCategories
                       .map(
                         (category) => _CategoryChip(
-                          icon: _categoryIcons[category] ?? Icons.warning_amber_rounded,
+                          icon:
+                              _categoryIcons[category] ??
+                              Icons.warning_amber_rounded,
                           label: category,
                           isSelected: _selectedCategory == category,
                           onTap: () {
@@ -95,10 +124,14 @@ class _MapReportScreenState extends State<MapReportScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(
-                  onPressed: _selectedCategory == null ? null : _openReportSheet,
+                  onPressed: _selectedCategory == null
+                      ? null
+                      : _openReportSheet,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E4D65),
-                    disabledBackgroundColor: const Color(0xFF42506A).withValues(alpha: 0.6),
+                    disabledBackgroundColor: const Color(
+                      0xFF42506A,
+                    ).withValues(alpha: 0.6),
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('Bize Durumu Bildir!'),
@@ -134,7 +167,10 @@ class _MapReportScreenState extends State<MapReportScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Ihbar Gonder', style: AppTextStyles.title.copyWith(fontSize: 22)),
+              Text(
+                'Ihbar Gonder',
+                style: AppTextStyles.title.copyWith(fontSize: 22),
+              ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Kategori: ${_selectedCategory ?? '-'}',
@@ -142,7 +178,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Konum: ${MockData.selectedLocationLabel} (${MockData.selectedLatLng})',
+                'Konum: ${AppDefaults.selectedLocationLabel} (${AppDefaults.selectedLatLng})',
                 style: AppTextStyles.body.copyWith(color: Colors.white70),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -159,15 +195,34 @@ class _MapReportScreenState extends State<MapReportScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    widget.appState.addLocalReport(
-                      category: _selectedCategory!,
-                      locationLabel: MockData.selectedLocationLabel,
-                      latLng: MockData.selectedLatLng,
-                      description: noteController.text.trim(),
-                    );
+                    try {
+                      await widget.appState.addLocalReport(
+                        category: _selectedCategory!,
+                        locationLabel: AppDefaults.selectedLocationLabel,
+                        latLng: AppDefaults.selectedLatLng,
+                        description: noteController.text.trim(),
+                      );
+                    } catch (e) {
+                      if (!parentContext.mounted) {
+                        return;
+                      }
+                      ScaffoldMessenger.of(parentContext).showSnackBar(
+                        SnackBar(
+                          content: Text('Ihbar gonderilemedi: $e'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
 
-                    Navigator.of(context).pop();
+                    if (!parentContext.mounted) {
+                      return;
+                    }
+                    Navigator.of(parentContext).pop();
                     if (!mounted) {
+                      return;
+                    }
+                    if (!parentContext.mounted) {
                       return;
                     }
                     await Navigator.of(parentContext).push(
@@ -193,6 +248,25 @@ class _MapReportScreenState extends State<MapReportScreen> {
 
     noteController.dispose();
   }
+
+  Future<void> _syncLocationAndRisk() async {
+    try {
+      await widget.appState.updateUserLocation(
+        lat: widget.appState.currentLatitude ?? _defaultLatitude,
+        lng: widget.appState.currentLongitude ?? _defaultLongitude,
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 }
 
 class _HeaderBar extends StatelessWidget {
@@ -203,7 +277,10 @@ class _HeaderBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF284872).withValues(alpha: 0.86),
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -212,7 +289,11 @@ class _HeaderBar extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onBack,
-            icon: const Icon(Icons.chevron_left_rounded, color: Color(0xFF4D8EEB), size: 34),
+            icon: const Icon(
+              Icons.chevron_left_rounded,
+              color: Color(0xFF4D8EEB),
+              size: 34,
+            ),
           ),
           Expanded(
             child: Center(
@@ -257,8 +338,18 @@ class _HeaderBar extends StatelessWidget {
 }
 
 class _MapPlaceholder extends StatelessWidget {
-  const _MapPlaceholder({required this.onTap});
+  const _MapPlaceholder({
+    required this.reports,
+    required this.centerLatitude,
+    required this.centerLongitude,
+    required this.isLoading,
+    required this.onTap,
+  });
 
+  final List<NearbyReport> reports;
+  final double centerLatitude;
+  final double centerLongitude;
+  final bool isLoading;
   final VoidCallback onTap;
 
   @override
@@ -276,25 +367,82 @@ class _MapPlaceholder extends StatelessWidget {
             colors: [Color(0xFFF0F0F0), Color(0xFFDDDDDD)],
           ),
         ),
-        child: Stack(
-          children: [
-            Positioned.fill(child: CustomPaint(painter: _MapGridPainter())),
-            const Positioned(
-              left: 86,
-              top: 78,
-              child: Icon(Icons.location_on_rounded, color: Color(0xFFE43174), size: 40),
-            ),
-            const Positioned(
-              right: 30,
-              top: 84,
-              child: Icon(Icons.do_not_disturb_on_rounded, color: Color(0xFFD43E3E), size: 24),
-            ),
-            const Positioned(
-              left: 140,
-              top: 146,
-              child: Icon(Icons.circle, color: Color(0xFF1C7DFF), size: 12),
-            ),
-          ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final mapWidth = constraints.maxWidth;
+            final mapHeight = constraints.maxHeight;
+            return Stack(
+              children: [
+                Positioned.fill(child: CustomPaint(painter: _MapGridPainter())),
+                for (final marker in reports)
+                  _ReportMarker(
+                    report: marker,
+                    centerLatitude: centerLatitude,
+                    centerLongitude: centerLongitude,
+                    mapWidth: mapWidth,
+                    mapHeight: mapHeight,
+                  ),
+                Positioned(
+                  left: (mapWidth / 2) - 10,
+                  top: (mapHeight / 2) - 10,
+                  child: const Icon(
+                    Icons.my_location_rounded,
+                    color: Color(0xFF1C7DFF),
+                    size: 20,
+                  ),
+                ),
+                if (isLoading)
+                  const Positioned.fill(
+                    child: ColoredBox(
+                      color: Color(0x66000000),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportMarker extends StatelessWidget {
+  const _ReportMarker({
+    required this.report,
+    required this.centerLatitude,
+    required this.centerLongitude,
+    required this.mapWidth,
+    required this.mapHeight,
+  });
+
+  final NearbyReport report;
+  final double centerLatitude;
+  final double centerLongitude;
+  final double mapWidth;
+  final double mapHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    // 0.01 degree ~ 1.1km: quick normalization for 1km placeholder map view.
+    const degreeRange = 0.01;
+    final normalizedX =
+        ((report.longitude - centerLongitude) / degreeRange + 1) / 2;
+    final normalizedY =
+        1 - ((report.latitude - centerLatitude) / degreeRange + 1) / 2;
+
+    final clampedX = normalizedX.clamp(0.05, 0.95);
+    final clampedY = normalizedY.clamp(0.08, 0.92);
+
+    return Positioned(
+      left: (clampedX * mapWidth) - 14,
+      top: (clampedY * mapHeight) - 20,
+      child: Tooltip(
+        message: '${report.category} - ${report.status}',
+        child: const Icon(
+          Icons.location_on_rounded,
+          color: Color(0xFFE43174),
+          size: 28,
         ),
       ),
     );
@@ -322,11 +470,18 @@ class _CategoryChip extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         constraints: const BoxConstraints(minWidth: 102),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           gradient: isSelected
-              ? const LinearGradient(colors: [Color(0xFF5EAF6E), Color(0xFF3D7D49)])
-              : const LinearGradient(colors: [Color(0xFF477B52), Color(0xFF355E3C)]),
+              ? const LinearGradient(
+                  colors: [Color(0xFF5EAF6E), Color(0xFF3D7D49)],
+                )
+              : const LinearGradient(
+                  colors: [Color(0xFF477B52), Color(0xFF355E3C)],
+                ),
           borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
             color: isSelected ? const Color(0xFFD4FFE4) : Colors.transparent,
@@ -340,7 +495,10 @@ class _CategoryChip extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: AppTextStyles.body.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+              style: AppTextStyles.body.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
