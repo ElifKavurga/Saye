@@ -1,4 +1,4 @@
-# Saye - Proaktif Güvenlik ve Risk Uyarı Sistemi 🛡️
+# Saye - Proaktif Güvenlik ve Risk Uyarı Sistemi 
 
 Saye, bireylerin günlük yaşamda karşılaşabileceği güvenlik risklerini (fiziksel ve psikolojik) olay yaşanmadan önce tespit eden ve kullanıcıyı uyaran yenilikçi bir mobil uygulamadır. Klasik panik butonlarının aksine proaktif bir yaklaşım sunarak, harita üzerindeki riskli bölgeleri analiz eder.
 
