@@ -5,7 +5,7 @@ spring:
     url: jdbc:postgresql://localhost:5432/saye_db
     driver-class-name: org.postgresql.Driver
     username: postgres
-    password: 1234
+    password: 1461
   jpa:
     hibernate:
       ddl-auto: update

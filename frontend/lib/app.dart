@@ -25,6 +25,7 @@ class _SayeAppState extends State<SayeApp> {
   void initState() {
     super.initState();
     unawaited(_appState.checkAuthStatus());
+    unawaited(_appState.loadEmergencyContacts());
     _splashTimer = Timer(const Duration(milliseconds: 2600), () {
       if (!mounted) {
         return;

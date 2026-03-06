@@ -72,7 +72,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
                             minHeight:
-                                constraints.maxHeight - (AppSpacing.lg * 2),
+                                (constraints.maxHeight - (AppSpacing.lg * 2))
+                                    .clamp(0, double.infinity),
                             maxWidth: 520,
                           ),
                           child: _AuthCard(

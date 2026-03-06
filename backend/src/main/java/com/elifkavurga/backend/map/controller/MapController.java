@@ -17,7 +17,7 @@ public class MapController {
 
     private final MapService mapService;
 
-    @GetMapping("/map/reports")
+    @GetMapping({"/map/reports", "/map/nearby"})
     public ResponseEntity<List<ReportResponse>> getReports(
             @RequestParam double lat,
             @RequestParam double lng,
@@ -26,7 +26,7 @@ public class MapController {
         return ResponseEntity.ok(reports);
     }
 
-    @GetMapping("/risk")
+    @GetMapping({"/risk", "/map/risk"})
     public ResponseEntity<RiskResponse> getRisk(
             @RequestParam double lat,
             @RequestParam double lng) {

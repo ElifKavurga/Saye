@@ -248,8 +248,5 @@ class SafeContactsScreen extends StatelessWidget {
         );
       },
     );
-
-    nameController.dispose();
-    phoneController.dispose();
   }
 }

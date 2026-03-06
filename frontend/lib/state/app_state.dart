@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../config/app_defaults.dart';
 import '../services/api_service.dart';
+import '../services/emergency_contacts_storage.dart';
 
 class SessionUser {
   const SessionUser({
@@ -115,6 +116,19 @@ class EmergencyContact {
   final String phone;
   final bool isPrimary;
 
+  Map<String, dynamic> toJson() {
+    return {'id': id, 'name': name, 'phone': phone, 'isPrimary': isPrimary};
+  }
+
+  factory EmergencyContact.fromJson(Map<String, dynamic> json) {
+    return EmergencyContact(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      isPrimary: json['isPrimary'] as bool? ?? false,
+    );
+  }
+
   EmergencyContact copyWith({String? name, String? phone, bool? isPrimary}) {
     return EmergencyContact(
       id: id,
@@ -126,8 +140,9 @@ class EmergencyContact {
 }
 
 class AppState extends ChangeNotifier {
-  AppState({ApiService? apiService})
+  AppState({ApiService? apiService, EmergencyContactsStorage? contactsStorage})
     : _apiService = apiService ?? ApiService(),
+      _contactsStorage = contactsStorage ?? EmergencyContactsStorage(),
       _settings = List<SettingOption>.from(AppDefaults.settings),
       _permissions = const [
         AppPermission(
@@ -179,6 +194,7 @@ class AppState extends ChangeNotifier {
         ),
       ];
   final ApiService _apiService;
+  final EmergencyContactsStorage _contactsStorage;
 
   int _selectedIndex = 0;
   final List<SettingOption> _settings;
@@ -250,6 +266,7 @@ class AppState extends ChangeNotifier {
           '/auth/login',
           body: {'email': email.trim(), 'password': password},
         );
+        print("LOGIN RESPONSE: $response");
         final authData = _extractAuthData(response);
         final token = authData['token']?.toString();
         final userMap = _extractUserMap(authData['user']);
@@ -335,15 +352,20 @@ class AppState extends ChangeNotifier {
   }
 
   void demoLogin() {
-    // TODO: Backend auth tamamlandiginda demo gecisini kaldir ve gercek login/register kullan.
-    _currentUser = const SessionUser(
-      id: null,
-      email: 'demo@sayende.app',
-      username: 'demo_user',
-      phone: '',
-    );
-    _setDefaultLandingScenario();
-    notifyListeners();
+    Future.microtask(() {
+      _loadingCounter = 0;
+      _isLoading = false;
+
+      _currentUser = const SessionUser(
+        id: 0,
+        email: 'demo@sayende.app',
+        username: 'demo_user',
+        phone: '',
+      );
+
+      _setDefaultLandingScenario();
+      notifyListeners();
+    });
   }
 
   void cycleRiskLevel() {
@@ -522,6 +544,16 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadEmergencyContacts() async {
+    final rawContacts = await _contactsStorage.readContacts();
+    if (rawContacts.isNotEmpty) {
+      _emergencyContacts
+        ..clear()
+        ..addAll(rawContacts.map((e) => EmergencyContact.fromJson(e)));
+    }
+    notifyListeners();
+  }
+
   void addEmergencyContact({required String name, required String phone}) {
     final newId = DateTime.now().microsecondsSinceEpoch.toString();
     final shouldBePrimary = _emergencyContacts.isEmpty;
@@ -534,6 +566,7 @@ class AppState extends ChangeNotifier {
       ),
     );
     notifyListeners();
+    _persistEmergencyContacts();
   }
 
   void removeEmergencyContact(String id) {
@@ -547,6 +580,7 @@ class AppState extends ChangeNotifier {
       _emergencyContacts[0] = _emergencyContacts[0].copyWith(isPrimary: true);
     }
     notifyListeners();
+    _persistEmergencyContacts();
   }
 
   void setPrimaryEmergencyContact(String id) {
@@ -559,6 +593,7 @@ class AppState extends ChangeNotifier {
       _emergencyContacts[i] = item.copyWith(isPrimary: item.id == id);
     }
     notifyListeners();
+    _persistEmergencyContacts();
   }
 
   Future<void> logout() async {
@@ -575,21 +610,6 @@ class AppState extends ChangeNotifier {
     _currentLatitude = null;
     _currentLongitude = null;
     _isMapDataLoading = false;
-    _emergencyContacts
-      ..clear()
-      ..addAll(const [
-        EmergencyContact(
-          id: 'c1',
-          name: 'Ayse Demir',
-          phone: '0555 111 22 33',
-          isPrimary: true,
-        ),
-        EmergencyContact(
-          id: 'c2',
-          name: 'Mehmet Kaya',
-          phone: '0555 444 55 66',
-        ),
-      ]);
     notifyListeners();
   }
 
@@ -829,6 +849,11 @@ class AppState extends ChangeNotifier {
       _isLoading = _loadingCounter > 0;
       notifyListeners();
     }
+  }
+
+  Future<void> _persistEmergencyContacts() async {
+    final jsonList = _emergencyContacts.map((c) => c.toJson()).toList();
+    await _contactsStorage.saveContacts(jsonList);
   }
 }
 

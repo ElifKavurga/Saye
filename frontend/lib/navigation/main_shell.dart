@@ -43,7 +43,9 @@ class MainShell extends StatelessWidget {
               onOpenMap: () => appState.setIndex(1),
               onOpenProfile: () => appState.setIndex(3),
             ),
-      MapReportScreen(appState: appState, onBack: () => appState.setIndex(0)),
+      appState.selectedIndex == 1
+          ? MapReportScreen(appState: appState, onBack: () => appState.setIndex(0))
+          : const SizedBox.shrink(),
       SettingsScreen(appState: appState),
       ProfileScreen(appState: appState),
     ];

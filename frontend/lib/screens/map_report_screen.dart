@@ -40,7 +40,10 @@ class _MapReportScreenState extends State<MapReportScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(_syncLocationAndRisk());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncLocationAndRisk();
+    });
   }
 
   @override
