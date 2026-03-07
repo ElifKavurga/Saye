@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../config/app_defaults.dart';
 import '../services/api_service.dart';
@@ -410,6 +411,39 @@ class AppState extends ChangeNotifier {
         notifyListeners();
       }
     });
+  }
+
+  Future<void> fetchRealLocation({double radiusMeters = 1000}) async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw AppStateException(
+        'Cihazdaki konum servisi kapali. Lutfen acik hale getirin.',
+      );
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied) {
+      throw AppStateException('Konum izni reddedildi.');
+    }
+    if (permission == LocationPermission.deniedForever) {
+      throw AppStateException(
+        'Konum izni kalici olarak reddedildi. Ayarlardan izin verin.',
+      );
+    }
+
+    final position = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+    );
+
+    await updateUserLocation(
+      lat: position.latitude,
+      lng: position.longitude,
+      radiusMeters: radiusMeters,
+    );
   }
 
   Future<void> activateEmergency() async {
