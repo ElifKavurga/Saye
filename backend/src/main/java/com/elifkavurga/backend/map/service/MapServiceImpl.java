@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,6 +35,7 @@ public class MapServiceImpl implements MapService {
     }
 
     private List<Report> queryNearby(double lat, double lng, double radiusMeters) {
+        Instant cutoff = Instant.now(clock).minus(12, java.time.temporal.ChronoUnit.HOURS);
         try {
             GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 4326);
             List<Report> candidates = reportRepository.findByLocationWithinRadius(
@@ -44,13 +44,14 @@ public class MapServiceImpl implements MapService {
             );
             // Keep deterministic behavior across different DB spatial implementations.
             return candidates.stream()
+                    .filter(r -> isActive(r, cutoff))
                     .filter(r -> r.getLatitude() != null && r.getLongitude() != null)
                     .filter(r -> distanceMeters(lat, lng, r.getLatitude(), r.getLongitude()) <= radiusMeters)
                     .collect(Collectors.toList());
         } catch (Exception ex) {
             // log and fallback to manual filtering (e.g. H2 lacks ST_DWithin)
             System.out.println("spatial query failed, falling back: " + ex.getMessage());
-            return reportRepository.findAll().stream()
+            return reportRepository.findActiveReportsWithin12Hours().stream()
                     .filter(r -> r.getLatitude() != null && r.getLongitude() != null)
                     .filter(r -> distanceMeters(lat, lng, r.getLatitude(), r.getLongitude()) <= radiusMeters)
                     .collect(Collectors.toList());
@@ -59,9 +60,7 @@ public class MapServiceImpl implements MapService {
 
     @Override
     public List<ReportResponse> findReportsNearby(double lat, double lng, double radiusMeters) {
-        Instant cutoff = Instant.now(clock).minus(7, ChronoUnit.DAYS);
         return queryNearby(lat, lng, radiusMeters).stream()
-                .filter(r -> r.getCreatedAt() == null || !r.getCreatedAt().isBefore(cutoff))
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -69,7 +68,7 @@ public class MapServiceImpl implements MapService {
     @Override
     public RiskResponse computeRisk(double lat, double lng) {
         Instant now = Instant.now(clock);
-        Instant cutoff = now.minus(7, ChronoUnit.DAYS);
+        Instant cutoff = now.minus(12, java.time.temporal.ChronoUnit.HOURS);
         final double maxRadius = 1000.0; // meters
 
         java.util.Map<String, Double> categoryWeights = java.util.Map.of(
@@ -85,8 +84,7 @@ public class MapServiceImpl implements MapService {
 
         List<Report> nearby = queryNearby(lat, lng, maxRadius);
         for (Report r : nearby) {
-            if (r.getCreatedAt() == null) continue;
-            if (r.getCreatedAt().isBefore(cutoff)) continue;
+            if (!isActive(r, cutoff)) continue;
 
             Double rlat = r.getLatitude();
             Double rlng = r.getLongitude();
@@ -114,6 +112,13 @@ public class MapServiceImpl implements MapService {
                 .level(level)
                 .score(score)
                 .build();
+    }
+
+    private boolean isActive(Report r, Instant cutoff) {
+        Instant createdAt = r.getCreatedAt();
+        Instant updatedAt = r.getUpdatedAt();
+        return (createdAt != null && !createdAt.isBefore(cutoff))
+                || (updatedAt != null && !updatedAt.isBefore(cutoff));
     }
 
     private ReportResponse toResponse(Report r) {

@@ -53,7 +53,7 @@ public class MapServiceIntegrationTest {
         r3.setCreatedAt(Instant.now().minusSeconds(3600));
         reportRepository.save(r3);
 
-        // old report >7 days
+        // old report >12 hours
         Report r4 = new Report();
         r4.setCategory(ReportCategory.SECURITY);
         r4.setDescription("Old crime");
@@ -75,9 +75,9 @@ public class MapServiceIntegrationTest {
     void findReportsNearbyReturnsExpectedList() {
         // radius 1000 meters should include nearby reports
         List<ReportResponse> reports = mapService.findReportsNearby(0.0, 0.0, 1000.0);
-        assertThat(reports).hasSize(3);
+        assertThat(reports).hasSize(2);
         assertThat(reports).extracting("description")
-                .containsExactlyInAnyOrder("Crime close", "Followed a bit further", "Old crime");
+                .containsExactlyInAnyOrder("Crime close", "Followed a bit further");
     }
 
 }

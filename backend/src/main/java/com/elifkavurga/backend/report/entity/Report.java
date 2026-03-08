@@ -1,6 +1,7 @@
 package com.elifkavurga.backend.report.entity;
 
 import com.elifkavurga.backend.common.entity.BaseEntity;
+import com.elifkavurga.backend.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,6 +19,10 @@ public class Report extends BaseEntity {
     // user may be anonymous
     @Column(name = "user_id")
     private Long userId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    private User user;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

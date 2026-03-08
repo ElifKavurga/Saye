@@ -1,6 +1,7 @@
 package com.elifkavurga.backend.notification.entity;
 
 import com.elifkavurga.backend.common.entity.BaseEntity;
+import com.elifkavurga.backend.emergency.entity.EmergencyEvent;
 import com.elifkavurga.backend.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -30,6 +31,10 @@ public class NotificationLog extends BaseEntity {
 
     @Column(nullable = false)
     private Long eventId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "event_id", insertable = false, updatable = false)
+    private EmergencyEvent event;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

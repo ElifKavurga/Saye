@@ -9,10 +9,13 @@ import com.elifkavurga.backend.report.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,13 +26,27 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public ReportResponse create(ReportRequest request) {
-        Report report = new Report();
-        report.setUserId(request.getUserId());
-        report.setCategory(Enum.valueOf(ReportCategory.class, request.getCategory()));
-        report.setDescription(request.getDescription());
+        ReportCategory category = Enum.valueOf(ReportCategory.class, request.getCategory());
+
+        Point point = null;
         if (request.getLatitude() != null && request.getLongitude() != null) {
             GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 4326);
-            report.setLocation(gf.createPoint(new Coordinate(request.getLongitude(), request.getLatitude())));
+            point = gf.createPoint(new Coordinate(request.getLongitude(), request.getLatitude()));
+            Optional<Report> existing = repository.findActiveReportByCategoryNear(point, 50.0, category.name());
+            if (existing.isPresent()) {
+                Report report = existing.get();
+                report.setUpdatedAt(Instant.now());
+                report = repository.save(report);
+                return toResponse(report);
+            }
+        }
+
+        Report report = new Report();
+        report.setUserId(request.getUserId());
+        report.setCategory(category);
+        report.setDescription(request.getDescription());
+        if (point != null) {
+            report.setLocation(point);
         }
         report = repository.save(report);
         return toResponse(report);
