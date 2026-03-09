@@ -15,6 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,12 +30,14 @@ public class NotificationLog extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long eventId;
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "event_id", insertable = false, updatable = false)
+    @JoinColumn(name = "event_id", nullable = false)
     private EmergencyEvent event;
+
+    @Transient
+    public Long getEventId() {
+        return event != null ? event.getId() : null;
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

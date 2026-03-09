@@ -26,7 +26,7 @@ public class NotificationLogServiceImpl implements NotificationLogService {
                 .orElseThrow(() -> new BadRequestException("Acil durum olayi bulunamadi"));
 
         NotificationLog log = new NotificationLog();
-        log.setEventId(eventId);
+        log.setEvent(event);
         log.setType(type);
         log.setTo(recipient);
         log.setUser(event.getUser());

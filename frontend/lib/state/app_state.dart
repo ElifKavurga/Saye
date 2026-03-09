@@ -509,12 +509,22 @@ class AppState extends ChangeNotifier {
     required String locationLabel,
     required String latLng,
     required String description,
+    double? reportLatitude,
+    double? reportLongitude,
   }) async {
     await _withLoading(() async {
       try {
-        final latitude = _currentLatitude ?? _parseLatitude(latLng) ?? 38.3552;
-        final longitude =
-            _currentLongitude ?? _parseLongitude(latLng) ?? 38.3095;
+        final latitude = reportLatitude ??
+            _currentLatitude ??
+            _parseLatitude(latLng);
+        final longitude = reportLongitude ??
+            _currentLongitude ??
+            _parseLongitude(latLng);
+
+        if (latitude == null || longitude == null) {
+          throw ApiException('Rapor icin gecerli bir konum bulunamadi.');
+        }
+
         final backendCategory = _toBackendCategory(category);
 
         await _postReport(
@@ -818,11 +828,24 @@ class AppState extends ChangeNotifier {
   String _toBackendCategory(String category) {
     const mapping = <String, String>{
       'Trafik': 'TRAFIK',
-      'Saglik': 'SAGLIK',
-      'Suc': 'SUC',
-      'Takip': 'TAKIP',
-      'Hayvan': 'HAYVAN',
-      'Ariza': 'ARIZA',
+      'Saglik': 'HEALTH',
+      'Suc': 'SECURITY',
+      'Takip': 'SECURITY',
+      'Hayvan': 'ANIMALS',
+      'Ariza': 'INFRASTRUCTURE',
+      'TRAFIK': 'TRAFFIC',
+      'SUÇ': 'SECURITY',
+      'SAĞLIK': 'HEALTH',
+      'SUC': 'SECURITY',
+      'TAKIP': 'SECURITY',
+      'HAYVAN': 'ANIMALS',
+      'ARIZA': 'INFRASTRUCTURE',
+      'LIGHTING': 'LIGHTING',
+      'HEALTH': 'HEALTH',
+      'SECURITY': 'SECURITY',
+      'TRAFFIC': 'TRAFFIC',
+      'ANIMALS': 'ANIMALS',
+      'INFRASTRUCTURE': 'INFRASTRUCTURE',
     };
     return mapping[category] ?? category.toUpperCase();
   }

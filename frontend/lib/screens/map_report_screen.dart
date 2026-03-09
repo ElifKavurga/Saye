@@ -26,6 +26,7 @@ class MapReportScreen extends StatefulWidget {
 
 class _MapReportScreenState extends State<MapReportScreen> {
   String? _selectedCategory;
+  LatLng? _selectedPoint;
 
   static const Map<String, IconData> _categoryIcons = {
     'Trafik': Icons.traffic_rounded,
@@ -43,6 +44,12 @@ class _MapReportScreenState extends State<MapReportScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncLocationAndRisk();
     });
+
+    final latitude = widget.appState.currentLatitude;
+    final longitude = widget.appState.currentLongitude;
+    if (latitude != null && longitude != null) {
+      _selectedPoint = LatLng(latitude, longitude);
+    }
   }
 
   @override
@@ -50,6 +57,8 @@ class _MapReportScreenState extends State<MapReportScreen> {
     final latitude = widget.appState.currentLatitude;
     final longitude = widget.appState.currentLongitude;
     final hasLocation = latitude != null && longitude != null;
+    final selectedPoint =
+        _selectedPoint ?? (hasLocation ? LatLng(latitude!, longitude!) : null);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -88,12 +97,14 @@ class _MapReportScreenState extends State<MapReportScreen> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
-                hasLocation
+                hasLocation && selectedPoint != null
                     ? _LiveMap(
                         reports: widget.appState.nearbyReports,
                         centerLatitude: latitude!,
                         centerLongitude: longitude!,
+                        selectedLocation: selectedPoint,
                         isLoading: widget.appState.isMapDataLoading,
+                        onTap: _handleMapTap,
                       )
                     : _MapLoadingView(),
                 const SizedBox(height: AppSpacing.md),
@@ -128,7 +139,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(
-                  onPressed: _selectedCategory == null
+                  onPressed: _selectedCategory == null || selectedPoint == null
                       ? null
                       : _openReportSheet,
                   style: ElevatedButton.styleFrom(
@@ -149,8 +160,13 @@ class _MapReportScreenState extends State<MapReportScreen> {
   }
 
   Future<void> _openReportSheet() async {
+    final selectedPoint = _selectedPoint;
+    if (selectedPoint == null) {
+      throw StateError('Konum secimi bulunamadi.');
+    }
     final noteController = TextEditingController();
     final parentContext = context;
+    final formattedLocation = _formatLatLng(selectedPoint);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -182,7 +198,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Konum: ${AppDefaults.selectedLocationLabel} (${AppDefaults.selectedLatLng})',
+                'Konum: $formattedLocation',
                 style: AppTextStyles.body.copyWith(color: Colors.white70),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -203,8 +219,10 @@ class _MapReportScreenState extends State<MapReportScreen> {
                       await widget.appState.addLocalReport(
                         category: _selectedCategory!,
                         locationLabel: AppDefaults.selectedLocationLabel,
-                        latLng: AppDefaults.selectedLatLng,
+                        latLng: formattedLocation,
                         description: noteController.text.trim(),
+                        reportLatitude: selectedPoint.latitude,
+                        reportLongitude: selectedPoint.longitude,
                       );
                     } catch (e) {
                       if (!parentContext.mounted) {
@@ -256,6 +274,16 @@ class _MapReportScreenState extends State<MapReportScreen> {
   Future<void> _syncLocationAndRisk() async {
     try {
       await widget.appState.fetchRealLocation();
+      if (!mounted) {
+        return;
+      }
+      final latitude = widget.appState.currentLatitude;
+      final longitude = widget.appState.currentLongitude;
+      if (latitude != null && longitude != null) {
+        setState(() {
+          _selectedPoint = LatLng(latitude, longitude);
+        });
+      }
     } catch (e) {
       if (!mounted) {
         return;
@@ -267,6 +295,16 @@ class _MapReportScreenState extends State<MapReportScreen> {
         ),
       );
     }
+  }
+
+  void _handleMapTap(TapPosition _, LatLng point) {
+    setState(() {
+      _selectedPoint = point;
+    });
+  }
+
+  String _formatLatLng(LatLng point) {
+    return '${point.latitude.toStringAsFixed(6)}, ${point.longitude.toStringAsFixed(6)}';
   }
 }
 
@@ -361,16 +399,22 @@ class _LiveMap extends StatelessWidget {
     required this.reports,
     required this.centerLatitude,
     required this.centerLongitude,
+    required this.selectedLocation,
     required this.isLoading,
+    required this.onTap,
   });
 
   final List<NearbyReport> reports;
   final double centerLatitude;
   final double centerLongitude;
+  final LatLng selectedLocation;
   final bool isLoading;
+  final void Function(TapPosition, LatLng) onTap;
 
   @override
   Widget build(BuildContext context) {
+    final centerPoint = LatLng(centerLatitude, centerLongitude);
+
     return Container(
       height: 255,
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.md)),
@@ -379,8 +423,9 @@ class _LiveMap extends StatelessWidget {
         children: [
           FlutterMap(
             options: MapOptions(
-              initialCenter: LatLng(centerLatitude, centerLongitude),
-                    initialZoom: 15,
+              initialCenter: centerPoint,
+              initialZoom: 15,
+              onTap: onTap,
             ),
             children: [
               TileLayer(
@@ -401,7 +446,7 @@ class _LiveMap extends StatelessWidget {
                       point: LatLng(report.latitude, report.longitude),
                       child: Tooltip(
                         message:
-                            '${report.category} - ${report.status.isEmpty ? 'Bildirildi' : report.status}',
+                            '${_displayCategory(report.category)} - ${report.status.isEmpty ? 'Bildirildi' : report.status}',
                         child: Container(
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
@@ -416,10 +461,31 @@ class _LiveMap extends StatelessWidget {
                         ),
                       ),
                     ),
+                  if (_isDifferentPoint(selectedLocation, centerPoint))
+                    Marker(
+                      width: 38,
+                      height: 38,
+                      point: selectedLocation,
+                      child: Tooltip(
+                        message: 'Seçilen Konum',
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFF1C7DFF),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.push_pin_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
                   Marker(
                     width: 36,
                     height: 36,
-                    point: LatLng(centerLatitude, centerLongitude),
+                    point: centerPoint,
                     child: Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFF1C7DFF).withValues(alpha: 0.2),
@@ -448,46 +514,96 @@ class _LiveMap extends StatelessWidget {
     );
   }
 
+  static bool _isDifferentPoint(LatLng a, LatLng b) {
+    return (a.latitude - b.latitude).abs() > 0.00001 ||
+        (a.longitude - b.longitude).abs() > 0.00001;
+  }
+
+  static String _normalizedCategory(String category) {
+    var normalized = category.trim().toLowerCase();
+    normalized = normalized
+        .replaceAll('ç', 'c')
+        .replaceAll('ğ', 'g')
+        .replaceAll('ı', 'i')
+        .replaceAll('ö', 'o')
+        .replaceAll('ş', 's')
+        .replaceAll('ü', 'u');
+    return normalized;
+  }
+
   static IconData _iconForReportCategory(String category) {
-    switch (category.toUpperCase()) {
-      case 'TRAFIK':
-      case 'TRAFİK':
+    switch (_normalizedCategory(category)) {
+      case 'trafik':
+      case 'traffic':
         return Icons.traffic_rounded;
-      case 'SAGLIK':
-      case 'SAĞLIK':
+      case 'saglik':
+      case 'health':
         return Icons.medical_services_rounded;
-      case 'SUC':
-      case 'SUÇ':
+      case 'suc':
+      case 'security':
         return Icons.gpp_bad_rounded;
-      case 'TAKIP':
+      case 'takip':
         return Icons.remove_red_eye_rounded;
-      case 'HAYVAN':
+      case 'hayvan':
+      case 'animals':
         return Icons.pets_rounded;
-      case 'ARIZA':
+      case 'ariza':
+      case 'infrastructure':
         return Icons.build_rounded;
+      case 'lighting':
+        return Icons.lightbulb_outline_rounded;
       default:
         return Icons.warning_amber_rounded;
     }
   }
 
   static Color _colorForReportCategory(String category) {
-    switch (category.toUpperCase()) {
-      case 'TRAFIK':
-      case 'TRAFİK':
-      case 'ARIZA':
+    switch (_normalizedCategory(category)) {
+      case 'trafik':
+      case 'traffic':
+      case 'ariza':
+      case 'infrastructure':
         return const Color(0xFFFF9800);
-      case 'SAGLIK':
-      case 'SAĞLIK':
+      case 'saglik':
+      case 'health':
+      case 'lighting':
         return const Color(0xFFF44336);
-      case 'SUC':
-      case 'SUÇ':
+      case 'suc':
+      case 'security':
         return const Color(0xFFE91E63);
-      case 'TAKIP':
+      case 'takip':
         return const Color(0xFF9C27B0);
-      case 'HAYVAN':
+      case 'hayvan':
+      case 'animals':
         return const Color(0xFF8BC34A);
       default:
         return const Color(0xFFFF5722);
+    }
+  }
+
+  static String _displayCategory(String category) {
+    switch (_normalizedCategory(category)) {
+      case 'trafik':
+      case 'traffic':
+        return 'Trafik';
+      case 'saglik':
+      case 'health':
+        return 'Saglik';
+      case 'lighting':
+        return 'Lighting';
+      case 'suc':
+      case 'security':
+        return 'Suc';
+      case 'takip':
+        return 'Takip';
+      case 'hayvan':
+      case 'animals':
+        return 'Hayvan';
+      case 'ariza':
+      case 'infrastructure':
+        return 'Ariza';
+      default:
+        return category;
     }
   }
 }
@@ -549,4 +665,3 @@ class _CategoryChip extends StatelessWidget {
     );
   }
 }
-
