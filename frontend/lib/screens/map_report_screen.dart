@@ -52,15 +52,22 @@ class _MapReportScreenState extends State<MapReportScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_rounded, color: Color(0xFF52F3A6), size: 24),
+                    const Icon(
+                      Icons.location_on_rounded,
+                      color: Color(0xFF52F3A6),
+                      size: 24,
+                    ),
                     const SizedBox(width: AppSpacing.xs),
                     Expanded(
                       child: Text(
-                        MockData.campusLocation,
+                        widget.appState.currentLocationLabel,
                         style: AppTextStyles.title.copyWith(fontSize: 22),
                       ),
                     ),
-                    const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70),
+                    const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Colors.white70,
+                    ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -81,7 +88,9 @@ class _MapReportScreenState extends State<MapReportScreen> {
                   children: MockData.reportCategories
                       .map(
                         (category) => _CategoryChip(
-                          icon: _categoryIcons[category] ?? Icons.warning_amber_rounded,
+                          icon:
+                              _categoryIcons[category] ??
+                              Icons.warning_amber_rounded,
                           label: category,
                           isSelected: _selectedCategory == category,
                           onTap: () {
@@ -95,10 +104,14 @@ class _MapReportScreenState extends State<MapReportScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(
-                  onPressed: _selectedCategory == null ? null : _openReportSheet,
+                  onPressed: _selectedCategory == null
+                      ? null
+                      : _openReportSheet,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E4D65),
-                    disabledBackgroundColor: const Color(0xFF42506A).withValues(alpha: 0.6),
+                    disabledBackgroundColor: const Color(
+                      0xFF42506A,
+                    ).withValues(alpha: 0.6),
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('Bize Durumu Bildir!'),
@@ -134,7 +147,10 @@ class _MapReportScreenState extends State<MapReportScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Ihbar Gonder', style: AppTextStyles.title.copyWith(fontSize: 22)),
+              Text(
+                'Ihbar Gonder',
+                style: AppTextStyles.title.copyWith(fontSize: 22),
+              ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Kategori: ${_selectedCategory ?? '-'}',
@@ -142,7 +158,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Konum: ${MockData.selectedLocationLabel} (${MockData.selectedLatLng})',
+                'Konum: ${widget.appState.currentLocationLabel} (${widget.appState.currentLatLng})',
                 style: AppTextStyles.body.copyWith(color: Colors.white70),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -161,8 +177,8 @@ class _MapReportScreenState extends State<MapReportScreen> {
                   onPressed: () async {
                     widget.appState.addLocalReport(
                       category: _selectedCategory!,
-                      locationLabel: MockData.selectedLocationLabel,
-                      latLng: MockData.selectedLatLng,
+                      locationLabel: widget.appState.currentLocationLabel,
+                      latLng: widget.appState.currentLatLng,
                       description: noteController.text.trim(),
                     );
 
@@ -203,7 +219,10 @@ class _HeaderBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF284872).withValues(alpha: 0.86),
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -212,7 +231,11 @@ class _HeaderBar extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onBack,
-            icon: const Icon(Icons.chevron_left_rounded, color: Color(0xFF4D8EEB), size: 34),
+            icon: const Icon(
+              Icons.chevron_left_rounded,
+              color: Color(0xFF4D8EEB),
+              size: 34,
+            ),
           ),
           Expanded(
             child: Center(
@@ -282,12 +305,20 @@ class _MapPlaceholder extends StatelessWidget {
             const Positioned(
               left: 86,
               top: 78,
-              child: Icon(Icons.location_on_rounded, color: Color(0xFFE43174), size: 40),
+              child: Icon(
+                Icons.location_on_rounded,
+                color: Color(0xFFE43174),
+                size: 40,
+              ),
             ),
             const Positioned(
               right: 30,
               top: 84,
-              child: Icon(Icons.do_not_disturb_on_rounded, color: Color(0xFFD43E3E), size: 24),
+              child: Icon(
+                Icons.do_not_disturb_on_rounded,
+                color: Color(0xFFD43E3E),
+                size: 24,
+              ),
             ),
             const Positioned(
               left: 140,
@@ -322,11 +353,18 @@ class _CategoryChip extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         constraints: const BoxConstraints(minWidth: 102),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           gradient: isSelected
-              ? const LinearGradient(colors: [Color(0xFF5EAF6E), Color(0xFF3D7D49)])
-              : const LinearGradient(colors: [Color(0xFF477B52), Color(0xFF355E3C)]),
+              ? const LinearGradient(
+                  colors: [Color(0xFF5EAF6E), Color(0xFF3D7D49)],
+                )
+              : const LinearGradient(
+                  colors: [Color(0xFF477B52), Color(0xFF355E3C)],
+                ),
           borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
             color: isSelected ? const Color(0xFFD4FFE4) : Colors.transparent,
@@ -340,7 +378,10 @@ class _CategoryChip extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: AppTextStyles.body.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+              style: AppTextStyles.body.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),

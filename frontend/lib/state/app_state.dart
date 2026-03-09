@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../data/mock_data.dart';
 
@@ -94,11 +97,7 @@ class EmergencyContact {
   final String phone;
   final bool isPrimary;
 
-  EmergencyContact copyWith({
-    String? name,
-    String? phone,
-    bool? isPrimary,
-  }) {
+  EmergencyContact copyWith({String? name, String? phone, bool? isPrimary}) {
     return EmergencyContact(
       id: id,
       name: name ?? this.name,
@@ -110,52 +109,56 @@ class EmergencyContact {
 
 class AppState extends ChangeNotifier {
   AppState()
-      : _settings = List<SettingOption>.from(MockData.settings),
-        _permissions = const [
-          AppPermission(
-            id: 'location_info',
-            title: 'Konum Bilgileri',
-            description: 'Acil durumda yakin guvenli bolgeyi hesaplamak icin kullanilir.',
-            enabled: true,
-          ),
-          AppPermission(
-            id: 'background_refresh',
-            title: 'Arkaplanda Yenileme',
-            description: 'Uygulama kapaliyken risk ve bildirim verilerini gunceller.',
-            enabled: true,
-          ),
-          AppPermission(
-            id: 'quick_unlock_access',
-            title: 'Ekran Kilitsiz Kolay Erisim',
-            description: 'Acil butona daha hizli ulasman icin kilit ekrani kisayolu sunar.',
-            enabled: false,
-          ),
-          AppPermission(
-            id: 'gsm_sms',
-            title: 'GSM/SMS izinleri',
-            description: 'Acil durumda onceden tanimli kisilere SMS gondermek icin gereklidir.',
-            enabled: false,
-          ),
-          AppPermission(
-            id: 'bluetooth',
-            title: 'Bluetooth',
-            description: 'Yakin cihaz taramasi ve takip analizi icin kullanilir.',
-            enabled: true,
-          ),
-        ],
-        _emergencyContacts = [
-          const EmergencyContact(
-            id: 'c1',
-            name: 'Ayse Demir',
-            phone: '0555 111 22 33',
-            isPrimary: true,
-          ),
-          const EmergencyContact(
-            id: 'c2',
-            name: 'Mehmet Kaya',
-            phone: '0555 444 55 66',
-          ),
-        ];
+    : _settings = List<SettingOption>.from(MockData.settings),
+      _permissions = const [
+        AppPermission(
+          id: 'location_info',
+          title: 'Konum Bilgileri',
+          description:
+              'Acil durumda yakin guvenli bolgeyi hesaplamak icin kullanilir.',
+          enabled: true,
+        ),
+        AppPermission(
+          id: 'background_refresh',
+          title: 'Arkaplanda Yenileme',
+          description:
+              'Uygulama kapaliyken risk ve bildirim verilerini gunceller.',
+          enabled: true,
+        ),
+        AppPermission(
+          id: 'quick_unlock_access',
+          title: 'Ekran Kilitsiz Kolay Erisim',
+          description:
+              'Acil butona daha hizli ulasman icin kilit ekrani kisayolu sunar.',
+          enabled: false,
+        ),
+        AppPermission(
+          id: 'gsm_sms',
+          title: 'GSM/SMS izinleri',
+          description:
+              'Acil durumda onceden tanimli kisilere SMS gondermek icin gereklidir.',
+          enabled: false,
+        ),
+        AppPermission(
+          id: 'bluetooth',
+          title: 'Bluetooth',
+          description: 'Yakin cihaz taramasi ve takip analizi icin kullanilir.',
+          enabled: true,
+        ),
+      ],
+      _emergencyContacts = [
+        const EmergencyContact(
+          id: 'c1',
+          name: 'Ayse Demir',
+          phone: '0555 111 22 33',
+          isPrimary: true,
+        ),
+        const EmergencyContact(
+          id: 'c2',
+          name: 'Mehmet Kaya',
+          phone: '0555 444 55 66',
+        ),
+      ];
   final Random _random = Random();
 
   int _selectedIndex = 0;
@@ -169,6 +172,13 @@ class AppState extends ChangeNotifier {
   final List<LocalReportNotification> _localReports = [];
   bool _isProfileVisibleInAlerts = true;
   EmergencyHealthInfo _emergencyHealthInfo = const EmergencyHealthInfo();
+  String _currentLocationLabel = MockData.campusLocation;
+  String _currentLatLng = MockData.selectedLatLng;
+  bool _isResolvingLocation = false;
+  bool _locationInitialized = false;
+  StreamSubscription<Position>? _positionSubscription;
+  Position? _lastGeocodedPosition;
+  DateTime? _lastGeocodeAt;
 
   int get selectedIndex => _selectedIndex;
   List<SettingOption> get settings => List.unmodifiable(_settings);
@@ -177,11 +187,16 @@ class AppState extends ChangeNotifier {
   RiskLevel get riskLevel => _riskLevel;
   bool get emergencyActive => _emergencyActive;
   bool get showRiskDecision => _showRiskDecision;
-  List<LocalReportNotification> get localReports => List.unmodifiable(_localReports);
+  List<LocalReportNotification> get localReports =>
+      List.unmodifiable(_localReports);
   bool get isProfileVisibleInAlerts => _isProfileVisibleInAlerts;
   EmergencyHealthInfo get emergencyHealthInfo => _emergencyHealthInfo;
   List<AppPermission> get permissions => List.unmodifiable(_permissions);
-  List<EmergencyContact> get emergencyContacts => List.unmodifiable(_emergencyContacts);
+  List<EmergencyContact> get emergencyContacts =>
+      List.unmodifiable(_emergencyContacts);
+  String get currentLocationLabel => _currentLocationLabel;
+  String get currentLatLng => _currentLatLng;
+  bool get isResolvingLocation => _isResolvingLocation;
   EmergencyContact? get primaryEmergencyContact {
     for (final contact in _emergencyContacts) {
       if (contact.isPrimary) {
@@ -208,10 +223,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void login({
-    required String email,
-    required String password,
-  }) {
+  void login({required String email, required String password}) {
     _currentUser = SessionUser(
       email: email.trim(),
       username: email.split('@').first,
@@ -335,10 +347,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addEmergencyContact({
-    required String name,
-    required String phone,
-  }) {
+  void addEmergencyContact({required String name, required String phone}) {
     final newId = DateTime.now().microsecondsSinceEpoch.toString();
     final shouldBePrimary = _emergencyContacts.isEmpty;
     _emergencyContacts.add(
@@ -404,6 +413,138 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> initializeLocationTracking() async {
+    if (_locationInitialized) {
+      return;
+    }
+    _locationInitialized = true;
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      final initialPosition = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      await _applyPosition(initialPosition, forceGeocode: true);
+
+      _positionSubscription =
+          Geolocator.getPositionStream(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.best,
+              distanceFilter: 25,
+            ),
+          ).listen((position) async {
+            await _applyPosition(position);
+          });
+    } catch (_) {
+      // Keep mock defaults when location is unavailable on this device/session.
+    }
+  }
+
+  Future<void> _applyPosition(
+    Position position, {
+    bool forceGeocode = false,
+  }) async {
+    final nextLatLng =
+        '${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}';
+
+    if (_currentLatLng != nextLatLng) {
+      _currentLatLng = nextLatLng;
+      notifyListeners();
+    }
+
+    final shouldReverseGeocode =
+        forceGeocode || _shouldReverseGeocode(position);
+    if (!shouldReverseGeocode) {
+      return;
+    }
+
+    _isResolvingLocation = true;
+    notifyListeners();
+
+    try {
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+      if (placemarks.isNotEmpty) {
+        final resolvedLabel = _buildLocationLabel(placemarks.first);
+        if (resolvedLabel.isNotEmpty) {
+          _currentLocationLabel = resolvedLabel;
+        }
+      }
+      _lastGeocodedPosition = position;
+      _lastGeocodeAt = DateTime.now();
+    } catch (_) {
+      // Ignore and keep the most recent successful location label.
+    } finally {
+      _isResolvingLocation = false;
+      notifyListeners();
+    }
+  }
+
+  bool _shouldReverseGeocode(Position position) {
+    if (_lastGeocodedPosition == null || _lastGeocodeAt == null) {
+      return true;
+    }
+
+    final movedMeters = Geolocator.distanceBetween(
+      _lastGeocodedPosition!.latitude,
+      _lastGeocodedPosition!.longitude,
+      position.latitude,
+      position.longitude,
+    );
+    final elapsed = DateTime.now().difference(_lastGeocodeAt!);
+    return movedMeters >= 35 || elapsed >= const Duration(minutes: 2);
+  }
+
+  String _buildLocationLabel(Placemark placemark) {
+    final street = _firstNonEmpty([
+      placemark.street,
+      placemark.thoroughfare,
+      placemark.subThoroughfare,
+    ]);
+    final area = _firstNonEmpty([
+      placemark.subLocality,
+      placemark.locality,
+      placemark.administrativeArea,
+    ]);
+
+    if (street != null && area != null) {
+      return '$street, $area';
+    }
+    if (street != null) {
+      return street;
+    }
+    if (area != null) {
+      return area;
+    }
+    return _currentLatLng;
+  }
+
+  String? _firstNonEmpty(List<String?> values) {
+    for (final value in values) {
+      final trimmed = value?.trim();
+      if (trimmed != null && trimmed.isNotEmpty) {
+        return trimmed;
+      }
+    }
+    return null;
+  }
+
   void _setRandomLandingScenario() {
     // 0: Yesil ana sayfa, 1: Kirmizi riskli alan, 2: Turuncu karar ekrani
     final roll = _random.nextInt(3);
@@ -418,5 +559,11 @@ class AppState extends ChangeNotifier {
         _riskLevel = RiskLevel.medium;
         _showRiskDecision = true;
     }
+  }
+
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    super.dispose();
   }
 }

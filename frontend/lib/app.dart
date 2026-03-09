@@ -24,6 +24,7 @@ class _SayeAppState extends State<SayeApp> {
   @override
   void initState() {
     super.initState();
+    unawaited(_appState.initializeLocationTracking());
     _splashTimer = Timer(const Duration(milliseconds: 2600), () {
       if (!mounted) {
         return;
@@ -55,30 +56,25 @@ class _SayeAppState extends State<SayeApp> {
             child: _showSplash
                 ? const SplashScreen(key: ValueKey('splash'))
                 : _appState.isAuthenticated
-                    ? MainShell(
-                        key: const ValueKey('main'),
-                        appState: _appState,
-                      )
-                    : AuthScreen(
-                        key: const ValueKey('auth'),
-                        onLogin: (email, password) => _appState.login(
-                          email: email,
-                          password: password,
-                        ),
-                        onRegister: ({
+                ? MainShell(key: const ValueKey('main'), appState: _appState)
+                : AuthScreen(
+                    key: const ValueKey('auth'),
+                    onLogin: (email, password) =>
+                        _appState.login(email: email, password: password),
+                    onRegister:
+                        ({
                           required String email,
                           required String username,
                           required String password,
                           required String phone,
-                        }) =>
-                            _appState.register(
+                        }) => _appState.register(
                           email: email,
                           username: username,
                           password: password,
                           phone: phone,
                         ),
-                        onDemoLogin: _appState.demoLogin,
-                      ),
+                    onDemoLogin: _appState.demoLogin,
+                  ),
           ),
         );
       },

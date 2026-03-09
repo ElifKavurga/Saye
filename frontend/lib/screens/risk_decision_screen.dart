@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../data/mock_data.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
@@ -19,7 +18,12 @@ class RiskDecisionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 120),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          120,
+        ),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
@@ -28,7 +32,7 @@ class RiskDecisionScreen extends StatelessWidget {
               children: [
                 _TopHeader(onProfileTap: onOpenProfile),
                 const SizedBox(height: AppSpacing.md),
-                _LocationRow(),
+                _LocationRow(location: appState.currentLocationLabel),
                 const SizedBox(height: AppSpacing.md),
                 const _RiskCircle(),
                 const SizedBox(height: AppSpacing.md),
@@ -39,7 +43,10 @@ class RiskDecisionScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 _InfoCard(
                   text: 'Acil durum kisileri ile bilgilerin paylasildi!',
-                  trailing: const Icon(Icons.check_box_rounded, color: Color(0xFF8CF0A6)),
+                  trailing: const Icon(
+                    Icons.check_box_rounded,
+                    color: Color(0xFF8CF0A6),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Container(
@@ -62,7 +69,11 @@ class RiskDecisionScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.chevron_left_rounded, color: Color(0xFF4D8EEB), size: 36),
+                    const Icon(
+                      Icons.chevron_left_rounded,
+                      color: Color(0xFF4D8EEB),
+                      size: 36,
+                    ),
                     const SizedBox(width: AppSpacing.sm),
                     GestureDetector(
                       onTap: appState.acceptRiskDecision,
@@ -76,7 +87,9 @@ class RiskDecisionScreen extends StatelessWidget {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFFF304D).withValues(alpha: 0.35),
+                              color: const Color(
+                                0xFFFF304D,
+                              ).withValues(alpha: 0.35),
                               blurRadius: 24,
                               spreadRadius: 2,
                             ),
@@ -95,7 +108,11 @@ class RiskDecisionScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    const Icon(Icons.chevron_right_rounded, color: Color(0xFF4D8EEB), size: 36),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF4D8EEB),
+                      size: 36,
+                    ),
                   ],
                 ),
               ],
@@ -115,14 +132,21 @@ class _TopHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF284872).withValues(alpha: 0.86),
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Row(
         children: [
-          const Icon(Icons.chevron_left_rounded, color: Color(0xFF4D8EEB), size: 34),
+          const Icon(
+            Icons.chevron_left_rounded,
+            color: Color(0xFF4D8EEB),
+            size: 34,
+          ),
           Expanded(
             child: Center(
               child: RichText(
@@ -169,15 +193,23 @@ class _TopHeader extends StatelessWidget {
 }
 
 class _LocationRow extends StatelessWidget {
+  const _LocationRow({required this.location});
+
+  final String location;
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.location_on_rounded, color: Color(0xFF52F3A6), size: 22),
+        const Icon(
+          Icons.location_on_rounded,
+          color: Color(0xFF52F3A6),
+          size: 22,
+        ),
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Text(
-            MockData.campusLocation,
+            location,
             style: AppTextStyles.title.copyWith(fontSize: 22),
           ),
         ),
@@ -234,11 +266,7 @@ class _RiskCircle extends StatelessWidget {
 }
 
 class _InfoCard extends StatelessWidget {
-  const _InfoCard({
-    required this.text,
-    this.title,
-    this.trailing,
-  });
+  const _InfoCard({required this.text, this.title, this.trailing});
 
   final String text;
   final String? title;
@@ -247,7 +275,10 @@ class _InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF2B4E7A).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(AppRadius.md),

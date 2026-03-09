@@ -5,10 +5,7 @@ import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
 class AlertsFeedScreen extends StatelessWidget {
-  const AlertsFeedScreen({
-    super.key,
-    required this.appState,
-  });
+  const AlertsFeedScreen({super.key, required this.appState});
 
   final AppState appState;
 
@@ -35,7 +32,7 @@ class AlertsFeedScreen extends StatelessWidget {
                   children: [
                     _Header(onBack: () => Navigator.of(context).pop()),
                     const SizedBox(height: AppSpacing.md),
-                    _LocationCard(location: MockData.campusLocation),
+                    _LocationCard(location: appState.currentLocationLabel),
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       'Guncel Ihbarlar',
@@ -86,7 +83,10 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF284872).withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -95,7 +95,11 @@ class _Header extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onBack,
-            icon: const Icon(Icons.chevron_left_rounded, color: Color(0xFF4D8EEB), size: 34),
+            icon: const Icon(
+              Icons.chevron_left_rounded,
+              color: Color(0xFF4D8EEB),
+              size: 34,
+            ),
           ),
           Expanded(
             child: Text(
@@ -185,7 +189,10 @@ class _AlertTile extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Text(location, style: AppTextStyles.body.copyWith(color: Colors.white70)),
+          Text(
+            location,
+            style: AppTextStyles.body.copyWith(color: Colors.white70),
+          ),
           const SizedBox(height: 6),
           Text(noteText, style: AppTextStyles.body),
         ],
@@ -224,7 +231,10 @@ class _StaticAlertTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(report.title, style: AppTextStyles.title.copyWith(fontSize: 16)),
+                Text(
+                  report.title,
+                  style: AppTextStyles.title.copyWith(fontSize: 16),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   '${report.location}  •  ${report.status}',

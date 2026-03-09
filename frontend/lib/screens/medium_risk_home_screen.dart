@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../data/mock_data.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
@@ -21,7 +20,12 @@ class MediumRiskHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 120),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          120,
+        ),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
@@ -30,7 +34,10 @@ class MediumRiskHomeScreen extends StatelessWidget {
               children: [
                 const _LogoStrip(),
                 const SizedBox(height: AppSpacing.sm),
-                _LocationRow(onProfileTap: onOpenProfile),
+                _LocationRow(
+                  onProfileTap: onOpenProfile,
+                  location: appState.currentLocationLabel,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 const _RiskCircle(),
                 const SizedBox(height: AppSpacing.md),
@@ -60,7 +67,9 @@ class MediumRiskHomeScreen extends StatelessWidget {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFF304D).withValues(alpha: 0.35),
+                            color: const Color(
+                              0xFFFF304D,
+                            ).withValues(alpha: 0.35),
                             blurRadius: 24,
                             spreadRadius: 2,
                           ),
@@ -94,7 +103,10 @@ class _LogoStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF284872).withValues(alpha: 0.86),
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -129,19 +141,24 @@ class _LogoStrip extends StatelessWidget {
 }
 
 class _LocationRow extends StatelessWidget {
-  const _LocationRow({required this.onProfileTap});
+  const _LocationRow({required this.onProfileTap, required this.location});
 
   final VoidCallback onProfileTap;
+  final String location;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.location_on_rounded, color: Color(0xFF52F3A6), size: 22),
+        const Icon(
+          Icons.location_on_rounded,
+          color: Color(0xFF52F3A6),
+          size: 22,
+        ),
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Text(
-            MockData.campusLocation,
+            location,
             style: AppTextStyles.title.copyWith(fontSize: 22),
           ),
         ),
@@ -156,7 +173,11 @@ class _LocationRow extends StatelessWidget {
               shape: BoxShape.circle,
               color: Colors.white.withValues(alpha: 0.28),
             ),
-            child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
+            child: const Icon(
+              Icons.person_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
           ),
         ),
       ],
@@ -267,11 +288,16 @@ class _BluetoothWarningCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Bluetooth Takip Analizi', style: AppTextStyles.title.copyWith(fontSize: 18)),
+                Text(
+                  'Bluetooth Takip Analizi',
+                  style: AppTextStyles.title.copyWith(fontSize: 18),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   'Aktif Tarama: Supheli cihaz yakinligi orta riskte. Dikkatli ol.',
-                  style: AppTextStyles.body.copyWith(color: Colors.white.withValues(alpha: 0.95)),
+                  style: AppTextStyles.body.copyWith(
+                    color: Colors.white.withValues(alpha: 0.95),
+                  ),
                 ),
               ],
             ),
