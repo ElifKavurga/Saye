@@ -34,11 +34,7 @@ class ReportSentScreen extends StatelessWidget {
                           shape: BoxShape.circle,
                           color: Color(0xFF59C98B),
                         ),
-                        child: const Icon(
-                          Icons.check_rounded,
-                          color: Colors.white,
-                          size: 52,
-                        ),
+                        child: const Icon(Icons.check_rounded, color: Colors.white, size: 52),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       RichText(
@@ -84,9 +80,7 @@ class ReportSentScreen extends StatelessWidget {
                       Text(
                         'Bildirim ekiplere basariyla iletildi.',
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.body.copyWith(
-                          color: Colors.white70,
-                        ),
+                        style: AppTextStyles.body.copyWith(color: Colors.white70),
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       SizedBox(

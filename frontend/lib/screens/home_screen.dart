@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'alerts_feed_screen.dart';
@@ -44,7 +43,7 @@ class HomeScreen extends StatelessWidget {
                     const _LogoStrip(),
                     const SizedBox(height: AppSpacing.md),
                     _TopBar(
-                      location: AppDefaults.campusLocation,
+                      location: appState.currentLocationLabel,
                       onProfileTap: onOpenProfile,
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -75,21 +74,7 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: AppSpacing.md),
                     Center(
                       child: GestureDetector(
-                        onLongPress: () async {
-                          try {
-                            await appState.activateEmergency();
-                          } catch (e) {
-                            if (!context.mounted) {
-                              return;
-                            }
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('SOS baslatilamadi: $e'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        },
+                        onLongPress: appState.activateEmergency,
                         child: Container(
                           width: 122,
                           height: 122,
@@ -126,21 +111,7 @@ class HomeScreen extends StatelessWidget {
                       child: SizedBox(
                         width: 220,
                         child: OutlinedButton.icon(
-                          onPressed: () async {
-                            try {
-                              await appState.activateEmergency();
-                            } catch (e) {
-                              if (!context.mounted) {
-                                return;
-                              }
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('SOS baslatilamadi: $e'),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            }
-                          },
+                          onPressed: appState.activateEmergency,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFFFFB6BC),
                             side: const BorderSide(color: Color(0xFFFF6B75)),
@@ -186,7 +157,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '${AppDefaults.campusLocation} konumundaki en guncel bildirimleri goruntule.',
+                  '${appState.currentLocationLabel} konumundaki en guncel bildirimleri goruntule.',
                   style: AppTextStyles.body.copyWith(color: Colors.white70),
                 ),
                 const SizedBox(height: AppSpacing.md),
