@@ -1,0 +1,10 @@
+.m2-repo/
+target/
+build/
+*.log
+backend/backend_run_stdout.log
+backend/backend_run_stderr.log
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
