@@ -12,7 +12,6 @@ class RulesScreen extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(gradient: AppGradients.mainBackground),
         child: SafeArea(
-<<<<<<< HEAD
           child: LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
@@ -85,70 +84,6 @@ class RulesScreen extends StatelessWidget {
                 ),
               );
             },
-=======
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.lg,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _TopHeader(onBack: () => Navigator.of(context).pop()),
-                    const SizedBox(height: AppSpacing.lg),
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF8EA599), Color(0xFF467447)],
-                        ),
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        boxShadow: AppShadows.soft,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Center(
-                            child: Text(
-                              'KURALLAR',
-                              style: GoogleFonts.spaceGrotesk(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const Divider(color: Colors.white70, height: 22),
-                          _ruleItem(
-                            'Gereksiz mesgul veya asilsiz ihbar tekrarinda hesap gecici olarak kisitlanir.',
-                          ),
-                          _ruleItem(
-                            'Ayni gun icinde 3 kez sahte ihbar tespit edilirse sistem tarafindan ban uygulanabilir.',
-                          ),
-                          _ruleItem(
-                            'Tehdit, hakaret ve kotu niyetli icerikler otomatik filtrelenir ve moderasyona dusurulur.',
-                          ),
-                          _ruleItem(
-                            'Konum ve izin bilgileri sadece guvenlik amacli kullanilir, ucuncu tarafla paylasilmaz.',
-                          ),
-                          _ruleItem(
-                            'Acil durum disi spam bildirimler, topluluk guvenligi icin puan dususune neden olur.',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
->>>>>>> frontend-sinem
           ),
         ),
       ),
@@ -163,15 +98,11 @@ class RulesScreen extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.only(top: 4),
-<<<<<<< HEAD
             child: Icon(
               Icons.fiber_manual_record_rounded,
               size: 10,
               color: Colors.white70,
             ),
-=======
-            child: Icon(Icons.fiber_manual_record_rounded, size: 10, color: Colors.white70),
->>>>>>> frontend-sinem
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -198,14 +129,10 @@ class _TopHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-<<<<<<< HEAD
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.sm,
       ),
-=======
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
->>>>>>> frontend-sinem
       decoration: BoxDecoration(
         color: const Color(0xFF284872).withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -214,15 +141,11 @@ class _TopHeader extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onBack,
-<<<<<<< HEAD
             icon: const Icon(
               Icons.chevron_left_rounded,
               color: Color(0xFF4D8EEB),
               size: 34,
             ),
-=======
-            icon: const Icon(Icons.chevron_left_rounded, color: Color(0xFF4D8EEB), size: 34),
->>>>>>> frontend-sinem
           ),
           Expanded(
             child: Text(

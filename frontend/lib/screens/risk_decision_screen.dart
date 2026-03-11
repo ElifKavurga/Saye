@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
@@ -32,7 +33,7 @@ class RiskDecisionScreen extends StatelessWidget {
               children: [
                 _TopHeader(onProfileTap: onOpenProfile),
                 const SizedBox(height: AppSpacing.md),
-                _LocationRow(location: appState.currentLocationLabel),
+                _LocationRow(),
                 const SizedBox(height: AppSpacing.md),
                 const _RiskCircle(),
                 const SizedBox(height: AppSpacing.md),
@@ -193,10 +194,6 @@ class _TopHeader extends StatelessWidget {
 }
 
 class _LocationRow extends StatelessWidget {
-  const _LocationRow({required this.location});
-
-  final String location;
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -209,7 +206,7 @@ class _LocationRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Text(
-            location,
+            AppDefaults.campusLocation,
             style: AppTextStyles.title.copyWith(fontSize: 22),
           ),
         ),

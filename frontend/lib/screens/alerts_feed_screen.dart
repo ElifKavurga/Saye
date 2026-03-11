@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_data.dart';
+import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
@@ -12,6 +12,7 @@ class AlertsFeedScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasLocal = appState.localReports.isNotEmpty;
+    final hasNearby = appState.nearbyReports.isNotEmpty;
 
     return Scaffold(
       body: Container(
@@ -32,7 +33,7 @@ class AlertsFeedScreen extends StatelessWidget {
                   children: [
                     _Header(onBack: () => Navigator.of(context).pop()),
                     const SizedBox(height: AppSpacing.md),
-                    _LocationCard(location: appState.currentLocationLabel),
+                    const _LocationCard(location: AppDefaults.campusLocation),
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       'Guncel Ihbarlar',
@@ -58,12 +59,14 @@ class AlertsFeedScreen extends StatelessWidget {
                       style: AppTextStyles.title.copyWith(fontSize: 20),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    ...MockData.reports.map(
-                      (report) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                        child: _StaticAlertTile(report: report),
+                    if (!hasNearby) const _EmptyNearbyCard(),
+                    if (hasNearby)
+                      ...appState.nearbyReports.map(
+                        (report) => Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: _NearbyAlertTile(report: report),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -201,10 +204,10 @@ class _AlertTile extends StatelessWidget {
   }
 }
 
-class _StaticAlertTile extends StatelessWidget {
-  const _StaticAlertTile({required this.report});
+class _NearbyAlertTile extends StatelessWidget {
+  const _NearbyAlertTile({required this.report});
 
-  final ReportItem report;
+  final NearbyReport report;
 
   @override
   Widget build(BuildContext context) {
@@ -232,21 +235,30 @@ class _StaticAlertTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  report.title,
+                  report.category,
                   style: AppTextStyles.title.copyWith(fontSize: 16),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${report.location}  •  ${report.status}',
+                  '${report.latitude.toStringAsFixed(4)}, ${report.longitude.toStringAsFixed(4)}  - ${report.status}',
                   style: AppTextStyles.caption.copyWith(color: Colors.white70),
                 ),
               ],
             ),
           ),
-          Text(report.time, style: AppTextStyles.caption),
+          Text(_formatTime(report.createdAt), style: AppTextStyles.caption),
         ],
       ),
     );
+  }
+
+  String _formatTime(DateTime? value) {
+    if (value == null) {
+      return '--:--';
+    }
+    final hh = value.hour.toString().padLeft(2, '0');
+    final mm = value.minute.toString().padLeft(2, '0');
+    return '$hh:$mm';
   }
 }
 
@@ -263,6 +275,25 @@ class _EmptyStateCard extends StatelessWidget {
       ),
       child: Text(
         'Bulundugun konum icin henuz yeni ihbar yok. Harita ekranindan ilk bildirimi sen olusturabilirsin.',
+        style: AppTextStyles.body.copyWith(color: Colors.white70),
+      ),
+    );
+  }
+}
+
+class _EmptyNearbyCard extends StatelessWidget {
+  const _EmptyNearbyCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: const Color(0xFF152F53).withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Text(
+        'Cevrede listelenecek ihbar bulunamadi.',
         style: AppTextStyles.body.copyWith(color: Colors.white70),
       ),
     );

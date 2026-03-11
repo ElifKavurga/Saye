@@ -17,11 +17,7 @@ class AppGradients {
   static const LinearGradient mainBackground = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [
-      Color(0xFF071A35),
-      Color(0xFF0A2E4E),
-      Color(0xFF0E4B57),
-    ],
+    colors: [Color(0xFF071A35), Color(0xFF0A2E4E), Color(0xFF0E4B57)],
   );
 }
 
@@ -42,39 +38,35 @@ class AppSpacing {
 
 class AppShadows {
   static List<BoxShadow> soft = const [
-    BoxShadow(
-      color: Color(0x5502121F),
-      blurRadius: 22,
-      offset: Offset(0, 10),
-    ),
+    BoxShadow(color: Color(0x5502121F), blurRadius: 22, offset: Offset(0, 10)),
   ];
 }
 
 class AppTextStyles {
   static TextStyle get headline => GoogleFonts.spaceGrotesk(
-        color: AppColors.textPrimary,
-        fontWeight: FontWeight.w700,
-        fontSize: 24,
-        letterSpacing: -0.2,
-      );
+    color: AppColors.textPrimary,
+    fontWeight: FontWeight.w700,
+    fontSize: 24,
+    letterSpacing: -0.2,
+  );
 
   static TextStyle get title => GoogleFonts.spaceGrotesk(
-        color: AppColors.textPrimary,
-        fontWeight: FontWeight.w600,
-        fontSize: 17,
-      );
+    color: AppColors.textPrimary,
+    fontWeight: FontWeight.w600,
+    fontSize: 17,
+  );
 
   static TextStyle get body => GoogleFonts.dmSans(
-        color: AppColors.textPrimary,
-        fontWeight: FontWeight.w500,
-        fontSize: 13,
-      );
+    color: AppColors.textPrimary,
+    fontWeight: FontWeight.w500,
+    fontSize: 13,
+  );
 
   static TextStyle get caption => GoogleFonts.dmSans(
-        color: AppColors.textSecondary,
-        fontWeight: FontWeight.w500,
-        fontSize: 12,
-      );
+    color: AppColors.textSecondary,
+    fontWeight: FontWeight.w500,
+    fontSize: 12,
+  );
 }
 
 class AppTheme {

@@ -24,7 +24,8 @@ class _SayeAppState extends State<SayeApp> {
   @override
   void initState() {
     super.initState();
-    unawaited(_appState.initializeLocationTracking());
+    unawaited(_appState.checkAuthStatus());
+    unawaited(_appState.loadEmergencyContacts());
     _splashTimer = Timer(const Duration(milliseconds: 2600), () {
       if (!mounted) {
         return;
@@ -44,14 +45,14 @@ class _SayeAppState extends State<SayeApp> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _appState,
-      builder: (context, child) {
-        return MaterialApp(
-          title: "SAYE'nde",
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.themeData,
-          home: AnimatedSwitcher(
+    return MaterialApp(
+      title: "SAYE'nde",
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.themeData,
+      home: AnimatedBuilder(
+        animation: _appState,
+        builder: (context, child) {
+          return AnimatedSwitcher(
             duration: const Duration(milliseconds: 350),
             child: _showSplash
                 ? const SplashScreen(key: ValueKey('splash'))
@@ -73,11 +74,12 @@ class _SayeAppState extends State<SayeApp> {
                           password: password,
                           phone: phone,
                         ),
+                    isLoading: _appState.isLoading,
                     onDemoLogin: _appState.demoLogin,
                   ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

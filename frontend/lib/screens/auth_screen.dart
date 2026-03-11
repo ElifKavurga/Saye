@@ -9,16 +9,19 @@ class AuthScreen extends StatefulWidget {
     required this.onLogin,
     required this.onRegister,
     required this.onDemoLogin,
+    required this.isLoading,
   });
 
-  final void Function(String email, String password) onLogin;
-  final void Function({
+  final Future<void> Function(String email, String password) onLogin;
+  final Future<void> Function({
     required String email,
     required String username,
     required String password,
     required String phone,
-  }) onRegister;
+  })
+  onRegister;
   final VoidCallback onDemoLogin;
+  final bool isLoading;
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -54,71 +57,91 @@ class _AuthScreenState extends State<AuthScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(gradient: AppGradients.mainBackground),
-          child: SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight - (AppSpacing.lg * 2),
-                        maxWidth: 520,
-                      ),
-                      child: _AuthCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const SizedBox(height: AppSpacing.md),
-                            const _LogoHeader(),
-                            const SizedBox(height: AppSpacing.lg),
-                            TabBar(
-                              indicatorColor: Colors.white,
-                              indicatorWeight: 2,
-                              labelColor: Colors.white,
-                              unselectedLabelColor: const Color(0xFFB6D4CD),
-                              labelStyle: GoogleFonts.spaceGrotesk(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              unselectedLabelStyle: GoogleFonts.spaceGrotesk(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              tabs: const [
-                                Tab(text: 'Giri\u015f Yap'),
-                                Tab(text: 'Kay\u0131t Ol'),
+        body: Stack(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                gradient: AppGradients.mainBackground,
+              ),
+              child: SafeArea(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight:
+                                (constraints.maxHeight - (AppSpacing.lg * 2))
+                                    .clamp(0, double.infinity),
+                            maxWidth: 520,
+                          ),
+                          child: _AuthCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const SizedBox(height: AppSpacing.md),
+                                const _LogoHeader(),
+                                const SizedBox(height: AppSpacing.lg),
+                                TabBar(
+                                  indicatorColor: Colors.white,
+                                  indicatorWeight: 2,
+                                  labelColor: Colors.white,
+                                  unselectedLabelColor: const Color(0xFFB6D4CD),
+                                  labelStyle: GoogleFonts.spaceGrotesk(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  unselectedLabelStyle:
+                                      GoogleFonts.spaceGrotesk(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                  tabs: const [
+                                    Tab(text: 'Giri\u015f Yap'),
+                                    Tab(text: 'Kay\u0131t Ol'),
+                                  ],
+                                ),
+                                const SizedBox(height: AppSpacing.lg),
+                                SizedBox(
+                                  height: constraints.maxWidth < 380
+                                      ? 540
+                                      : 470,
+                                  child: TabBarView(
+                                    children: [
+                                      _buildLoginTab(),
+                                      _buildRegisterTab(),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton(
+                                    onPressed: widget.isLoading
+                                        ? null
+                                        : widget.onDemoLogin,
+                                    child: const Text('Demo Giris'),
+                                  ),
+                                ),
                               ],
                             ),
-                            const SizedBox(height: AppSpacing.lg),
-                            SizedBox(
-                              height: constraints.maxWidth < 380 ? 540 : 470,
-                              child: TabBarView(
-                                children: [
-                                  _buildLoginTab(),
-                                  _buildRegisterTab(),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: widget.onDemoLogin,
-                                child: const Text('Demo Giris'),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                );
-              },
+                    );
+                  },
+                ),
+              ),
             ),
-          ),
+            if (widget.isLoading)
+              const Positioned.fill(
+                child: ColoredBox(
+                  color: Color(0x55000000),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -146,16 +169,29 @@ class _AuthScreenState extends State<AuthScreen> {
           SizedBox(
             width: 220,
             child: ElevatedButton(
-              onPressed: () {
-                if (_loginFormKey.currentState?.validate() ?? false) {
-                  widget.onLogin(_loginEmail.text.trim(), _loginPassword.text);
-                }
-              },
+              onPressed: widget.isLoading
+                  ? null
+                  : () async {
+                      if (_loginFormKey.currentState?.validate() ?? false) {
+                        await _submitAuthAction(() {
+                          return widget.onLogin(
+                            _loginEmail.text.trim(),
+                            _loginPassword.text,
+                          );
+                        });
+                      }
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0A2D55),
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Giri\u015f Yap'),
+              child: widget.isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Giri\u015f Yap'),
             ),
           ),
         ],
@@ -198,21 +234,31 @@ class _AuthScreenState extends State<AuthScreen> {
           SizedBox(
             width: 240,
             child: ElevatedButton(
-              onPressed: () {
-                if (_registerFormKey.currentState?.validate() ?? false) {
-                  widget.onRegister(
-                    email: _registerEmail.text.trim(),
-                    username: _registerUsername.text.trim(),
-                    password: _registerPassword.text,
-                    phone: _registerPhone.text.trim(),
-                  );
-                }
-              },
+              onPressed: widget.isLoading
+                  ? null
+                  : () async {
+                      if (_registerFormKey.currentState?.validate() ?? false) {
+                        await _submitAuthAction(() {
+                          return widget.onRegister(
+                            email: _registerEmail.text.trim(),
+                            username: _registerUsername.text.trim(),
+                            password: _registerPassword.text,
+                            phone: _registerPhone.text.trim(),
+                          );
+                        });
+                      }
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0A2D55),
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Kayit Ol & Giris Yap!'),
+              child: widget.isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Kayit Ol & Giris Yap!'),
             ),
           ),
         ],
@@ -247,6 +293,22 @@ class _AuthScreenState extends State<AuthScreen> {
       return '\u015eifre en az 6 karakter olmal\u0131';
     }
     return null;
+  }
+
+  Future<void> _submitAuthAction(Future<void> Function() action) async {
+    try {
+      await action();
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Islem basarisiz: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }
 
@@ -291,7 +353,7 @@ class _LogoHeader extends StatelessWidget {
             TextSpan(
               text: 'SAYE',
               style: GoogleFonts.spaceGrotesk(
-              color: Colors.white.withValues(alpha: 0.72),
+                color: Colors.white.withValues(alpha: 0.72),
                 fontSize: 60,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.6,

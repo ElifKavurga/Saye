@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'alerts_feed_screen.dart';
@@ -37,10 +38,7 @@ class RiskAlertHomeScreen extends StatelessWidget {
                   children: [
                     const _LogoStrip(),
                     const SizedBox(height: AppSpacing.sm),
-                    _LocationRow(
-                      onProfileTap: onOpenProfile,
-                      location: appState.currentLocationLabel,
-                    ),
+                    _LocationRow(onProfileTap: onOpenProfile),
                     const SizedBox(height: AppSpacing.md),
                     const _RiskCircle(),
                     const SizedBox(height: AppSpacing.md),
@@ -58,8 +56,36 @@ class RiskAlertHomeScreen extends StatelessWidget {
                     const SizedBox(height: AppSpacing.sm),
                     Center(
                       child: GestureDetector(
-                        onTap: appState.activateEmergency,
-                        onLongPress: appState.activateEmergency,
+                        onTap: () async {
+                          try {
+                            await appState.activateEmergency();
+                          } catch (e) {
+                            if (!context.mounted) {
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('SOS baslatilamadi: $e'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
+                        onLongPress: () async {
+                          try {
+                            await appState.activateEmergency();
+                          } catch (e) {
+                            if (!context.mounted) {
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('SOS baslatilamadi: $e'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
                         child: Container(
                           width: 118,
                           height: 118,
@@ -223,10 +249,9 @@ class _LogoStrip extends StatelessWidget {
 }
 
 class _LocationRow extends StatelessWidget {
-  const _LocationRow({required this.onProfileTap, required this.location});
+  const _LocationRow({required this.onProfileTap});
 
   final VoidCallback onProfileTap;
-  final String location;
 
   @override
   Widget build(BuildContext context) {
@@ -240,7 +265,7 @@ class _LocationRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Text(
-            location,
+            AppDefaults.campusLocation,
             style: AppTextStyles.title.copyWith(fontSize: 22),
           ),
         ),

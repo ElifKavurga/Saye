@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_data.dart';
+import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
@@ -12,10 +12,12 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = appState.currentUser;
-    final displayName =
-        (user?.username.isNotEmpty ?? false) ? user!.username : MockData.profile.name;
-    final displayEmail =
-        (user?.email.isNotEmpty ?? false) ? user!.email : MockData.profile.email;
+    final displayName = (user?.username.isNotEmpty ?? false)
+        ? user!.username
+        : AppDefaults.fallbackProfileName;
+    final displayEmail = (user?.email.isNotEmpty ?? false)
+        ? user!.email
+        : AppDefaults.fallbackProfileEmail;
     final displayPhone = (user?.phone.isNotEmpty ?? false) ? user!.phone : '-';
 
     return SafeArea(
@@ -55,7 +57,9 @@ class ProfileScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: appState.logout,
+                    onPressed: () {
+                      appState.logout();
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF8B1F33),
                       foregroundColor: Colors.white,
@@ -104,7 +108,11 @@ class _HeaderCard extends StatelessWidget {
               color: AppColors.aquaGlow.withValues(alpha: 0.2),
               border: Border.all(color: Colors.white24),
             ),
-            child: const Icon(Icons.person_rounded, color: AppColors.aquaGlow, size: 36),
+            child: const Icon(
+              Icons.person_rounded,
+              color: AppColors.aquaGlow,
+              size: 36,
+            ),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -113,12 +121,21 @@ class _HeaderCard extends StatelessWidget {
               children: [
                 Text(
                   displayName,
-                  style: AppTextStyles.title.copyWith(fontSize: 22, fontWeight: FontWeight.w700),
+                  style: AppTextStyles.title.copyWith(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 4),
-                Text(displayEmail, style: AppTextStyles.caption.copyWith(color: Colors.white70)),
+                Text(
+                  displayEmail,
+                  style: AppTextStyles.caption.copyWith(color: Colors.white70),
+                ),
                 const SizedBox(height: 3),
-                Text('Telefon: $displayPhone', style: AppTextStyles.body.copyWith(fontSize: 13)),
+                Text(
+                  'Telefon: $displayPhone',
+                  style: AppTextStyles.body.copyWith(fontSize: 13),
+                ),
               ],
             ),
           ),
@@ -209,7 +226,10 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: AppTextStyles.title.copyWith(fontSize: 22, fontWeight: FontWeight.w700),
+      style: AppTextStyles.title.copyWith(
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+      ),
     );
   }
 }

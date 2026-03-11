@@ -69,7 +69,21 @@ class EmergencyActiveScreen extends StatelessWidget {
                 SizedBox(
                   width: 210,
                   child: OutlinedButton(
-                    onPressed: appState.deactivateEmergency,
+                    onPressed: () async {
+                      try {
+                        await appState.deactivateEmergency();
+                      } catch (e) {
+                        if (!context.mounted) {
+                          return;
+                        }
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Acil durum kapatilamadi: $e'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
                       side: const BorderSide(color: Colors.white54),

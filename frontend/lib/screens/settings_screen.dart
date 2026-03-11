@@ -50,11 +50,7 @@ class SettingsScreen extends StatelessWidget {
                 _InfoCard(
                   title: 'Hesap Bilgileri',
                   body:
-<<<<<<< HEAD
                       'Ad: ${user?.username.isNotEmpty == true ? user!.username : AppDefaults.fallbackProfileName}\nE-mail: ${user?.email.isNotEmpty == true ? user!.email : AppDefaults.fallbackProfileEmail}\nTelefon: ${user?.phone.isNotEmpty == true ? user!.phone : '-'}',
-=======
-                      'Ad: ${user?.username.isNotEmpty == true ? user!.username : MockData.profile.name}\nE-mail: ${user?.email.isNotEmpty == true ? user!.email : MockData.profile.email}\nTelefon: ${user?.phone.isNotEmpty == true ? user!.phone : '-'}',
->>>>>>> frontend-sinem
                   footerLabel: 'Profil ekranina git',
                   onTap: () => appState.setIndex(3),
                 ),
@@ -67,13 +63,9 @@ class SettingsScreen extends StatelessWidget {
                     value: appState.isProfileVisibleInAlerts,
                     onChanged: appState.setProfileVisibilityInAlerts,
                   ),
-<<<<<<< HEAD
                   footerLabel: appState.isProfileVisibleInAlerts
                       ? 'Aktif'
                       : 'Kapali',
-=======
-                  footerLabel: appState.isProfileVisibleInAlerts ? 'Aktif' : 'Kapali',
->>>>>>> frontend-sinem
                   onTap: () {},
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -86,12 +78,8 @@ class SettingsScreen extends StatelessWidget {
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute<void>(
-<<<<<<< HEAD
                               builder: (_) =>
                                   EmergencyInfoScreen(appState: appState),
-=======
-                              builder: (_) => EmergencyInfoScreen(appState: appState),
->>>>>>> frontend-sinem
                             ),
                           );
                         },
@@ -105,12 +93,8 @@ class SettingsScreen extends StatelessWidget {
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute<void>(
-<<<<<<< HEAD
                               builder: (_) =>
                                   PermissionsScreen(appState: appState),
-=======
-                              builder: (_) => PermissionsScreen(appState: appState),
->>>>>>> frontend-sinem
                             ),
                           );
                         },
@@ -248,14 +232,10 @@ class _InfoCard extends StatelessWidget {
             if (footerLabel case final footerText?) ...[
               const SizedBox(height: AppSpacing.sm),
               Container(
-<<<<<<< HEAD
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
                   vertical: 6,
                 ),
-=======
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
->>>>>>> frontend-sinem
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(8),
