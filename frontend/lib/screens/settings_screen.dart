@@ -4,7 +4,6 @@ import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'emergency_info_screen.dart';
-import 'permissions_screen.dart';
 import 'rules_screen.dart';
 import 'safe_contacts_screen.dart';
 
@@ -94,7 +93,7 @@ class SettingsScreen extends StatelessWidget {
                           Navigator.of(context).push(
                             MaterialPageRoute<void>(
                               builder: (_) =>
-                                  PermissionsScreen(appState: appState),
+                                  EmergencyInfoScreen(appState: appState),
                             ),
                           );
                         },

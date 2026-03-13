@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
@@ -8,6 +9,50 @@ class PermissionsScreen extends StatelessWidget {
   const PermissionsScreen({super.key, required this.appState});
 
   final AppState appState;
+
+  Future<void> _handlePermissionChange(
+    BuildContext context,
+    AppPermission permission,
+    bool value,
+  ) async {
+    if (!value) {
+      appState.setPermission(permission.id, false);
+      return;
+    }
+
+    final osPermission = _mapPermission(permission.id);
+    if (osPermission == null) {
+      appState.setPermission(permission.id, true);
+      return;
+    }
+
+    final status = await osPermission.request();
+    if (!context.mounted) {
+      return;
+    }
+
+    final granted =
+        status == PermissionStatus.granted ||
+        status == PermissionStatus.limited ||
+        status == PermissionStatus.provisional;
+
+    appState.setPermission(permission.id, granted);
+  }
+
+  Permission? _mapPermission(String permissionId) {
+    switch (permissionId) {
+      case 'location_info':
+        return Permission.location;
+      case 'background_refresh':
+        return Permission.locationAlways;
+      case 'bluetooth':
+        return Permission.bluetoothConnect;
+      case 'gsm_sms':
+        return Permission.sms;
+      default:
+        return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +104,7 @@ class PermissionsScreen extends StatelessWidget {
                               ),
                               const Divider(color: Colors.white70, height: 18),
                               Text(
-                                'Acil durumlarda sana yardimci olmamiz icin lutfen uygulama izinlerine oncelik ver.',
+                                'Uygulama için gerekli cihaz izinlerini buradan yönetebilirsiniz.',
                                 style: AppTextStyles.body.copyWith(
                                   color: Colors.white.withValues(alpha: 0.9),
                                   fontSize: 21,
@@ -90,8 +135,9 @@ class PermissionsScreen extends StatelessWidget {
                               ...appState.permissions.map(
                                 (permission) => _PermissionTile(
                                   permission: permission,
-                                  onChanged: (value) => appState.setPermission(
-                                    permission.id,
+                                  onChanged: (value) => _handlePermissionChange(
+                                    context,
+                                    permission,
                                     value,
                                   ),
                                 ),

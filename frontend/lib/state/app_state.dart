@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_defaults.dart';
 import '../services/api_service.dart';
@@ -147,7 +150,7 @@ class AppState extends ChangeNotifier {
     : _apiService = apiService ?? ApiService(),
       _contactsStorage = contactsStorage ?? EmergencyContactsStorage(),
       _settings = List<SettingOption>.from(AppDefaults.settings),
-      _permissions = const [
+      _permissions = [
         AppPermission(
           id: 'location_info',
           title: 'Konum Bilgileri',
@@ -195,13 +198,17 @@ class AppState extends ChangeNotifier {
           name: 'Mehmet Kaya',
           phone: '0555 444 55 66',
         ),
-      ];
+      ] {
+    _loadEmergencyHealthInfo();
+  }
+
+  static const String _emergencyHealthInfoKey = 'emergency_health_info';
   final ApiService _apiService;
   final EmergencyContactsStorage _contactsStorage;
 
   int _selectedIndex = 0;
   final List<SettingOption> _settings;
-  final List<AppPermission> _permissions;
+  List<AppPermission> _permissions;
   final List<EmergencyContact> _emergencyContacts;
   SessionUser? _currentUser;
   RiskLevel _riskLevel = RiskLevel.low;
@@ -217,6 +224,7 @@ class AppState extends ChangeNotifier {
   bool _isMapDataLoading = false;
   bool _isLoading = false;
   int _loadingCounter = 0;
+  StreamSubscription<Position>? _locationStreamSubscription;
 
   int get selectedIndex => _selectedIndex;
   List<SettingOption> get settings => List.unmodifiable(_settings);
@@ -446,6 +454,8 @@ class AppState extends ChangeNotifier {
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     );
 
+    _startLocationStream(radiusMeters: radiusMeters);
+
     await updateUserLocation(
       lat: position.latitude,
       lng: position.longitude,
@@ -584,6 +594,7 @@ class AppState extends ChangeNotifier {
       emergencyNote: emergencyNote?.trim(),
     );
     notifyListeners();
+    unawaited(_persistEmergencyHealthInfo());
   }
 
   void setPermission(String id, bool enabled) {
@@ -591,7 +602,8 @@ class AppState extends ChangeNotifier {
     if (index == -1) {
       return;
     }
-    _permissions[index] = _permissions[index].copyWith(enabled: enabled);
+    _permissions = List<AppPermission>.from(_permissions)
+      ..[index] = _permissions[index].copyWith(enabled: enabled);
     notifyListeners();
   }
 
@@ -778,13 +790,11 @@ class AppState extends ChangeNotifier {
     required double latitude,
     required double longitude,
   }) async {
-    final userId = _currentUser?.id;
     final payload = <String, dynamic>{
       'category': category,
       'description': description,
       'latitude': latitude,
       'longitude': longitude,
-      'userId': userId,
     };
 
     try {
@@ -834,13 +844,14 @@ class AppState extends ChangeNotifier {
 
   String _toBackendCategory(String category) {
     const mapping = <String, String>{
-      'Trafik': 'TRAFIK',
+        'Trafik': 'TRAFFIC',
       'Saglik': 'HEALTH',
       'Suc': 'SECURITY',
       'Takip': 'SECURITY',
       'Hayvan': 'ANIMALS',
       'Ariza': 'INFRASTRUCTURE',
-      'TRAFIK': 'TRAFFIC',
+        'TRAFIK': 'TRAFFIC',
+        'SAGLIK': 'HEALTH',
       'SUÇ': 'SECURITY',
       'SAĞLIK': 'HEALTH',
       'SUC': 'SECURITY',
@@ -902,30 +913,12 @@ class AppState extends ChangeNotifier {
   Future<void> _updateLocationName(double lat, double lng) async {
     final fallbackLabel = _formatCoordinateLabel(lat, lng);
     try {
-      final uri = Uri.https('nominatim.openstreetmap.org', '/reverse', {
-        'format': 'jsonv2',
-        'lat': lat.toString(),
-        'lon': lng.toString(),
-        'zoom': '18',
-        'addressdetails': '1',
-      });
-      final response = await _apiService.httpClient.get(
-        uri,
-        headers: const {
-          'User-Agent': 'SayeSafetyApp/1.0',
-          'Accept-Language': 'tr,en;q=0.8',
-        },
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data is Map<String, dynamic>) {
-          _currentLocationName = _resolveLocationName(
-            data,
-            fallbackLabel: fallbackLabel,
-          );
-        } else {
-          _currentLocationName = fallbackLabel;
-        }
+      final placemarks = await placemarkFromCoordinates(lat, lng);
+      if (placemarks.isNotEmpty) {
+        _currentLocationName = _resolveLocationName(
+          placemarks.first,
+          fallbackLabel: fallbackLabel,
+        );
       } else {
         _currentLocationName = fallbackLabel;
       }
@@ -938,88 +931,55 @@ class AppState extends ChangeNotifier {
   }
 
   String _resolveLocationName(
-    Map<String, dynamic> data, {
+    Placemark placemark, {
     required String fallbackLabel,
   }) {
-    final rawAddress = data['address'];
-    if (rawAddress is Map) {
-      final address = Map<String, dynamic>.from(rawAddress);
-      final primary = _firstNonEmptyValue(address, const [
-        'road',
-        'pedestrian',
-        'footway',
-        'cycleway',
-        'path',
-        'residential',
-        'neighbourhood',
-        'suburb',
-        'quarter',
-        'hamlet',
-        'village',
-        'town',
-        'city_district',
-        'city',
-        'municipality',
-        'county',
-      ]);
-      final secondary = _firstNonEmptyValue(address, const [
-        'neighbourhood',
-        'suburb',
-        'quarter',
-        'city_district',
-        'town',
-        'city',
-        'municipality',
-        'county',
-      ]);
-      final landmark = _firstNonEmptyValue(address, const [
-        'amenity',
-        'building',
-        'tourism',
-        'leisure',
-        'shop',
-      ]);
+    final primaryCandidates = <String?>[
+      placemark.subAdministrativeArea,
+      placemark.locality,
+      placemark.subLocality,
+      placemark.administrativeArea,
+    ];
+    final secondaryCandidates = <String?>[
+      placemark.locality,
+      placemark.administrativeArea,
+      placemark.country,
+    ];
 
-      final parts = <String>[
-        if (primary != null) primary,
-        if (secondary != null && secondary != primary) secondary,
-      ];
-
-      if (parts.isNotEmpty) {
-        return parts.join(', ');
+    String? pick(List<String?> values) {
+      for (final value in values) {
+        final trimmed = value?.trim();
+        if (trimmed != null && trimmed.isNotEmpty) {
+          return trimmed;
+        }
       }
-      if (landmark != null) {
-        return landmark;
-      }
+      return null;
     }
 
-    final displayName = data['display_name']?.toString().trim();
-    if (displayName != null && displayName.isNotEmpty) {
-      final segments = displayName
-          .split(',')
-          .map((part) => part.trim())
-          .where((part) => part.isNotEmpty)
-          .take(3)
-          .toList();
-      if (segments.isNotEmpty) {
-        return segments.join(', ');
+    final primary = pick(primaryCandidates);
+    final secondary = pick(secondaryCandidates);
+    final parts = <String>[
+      if (primary != null) primary,
+      if (secondary != null && secondary != primary) secondary,
+    ];
+
+    if (parts.isNotEmpty) {
+      return parts.join(', ');
+    }
+
+    final fallbackCandidates = <String?>[
+      placemark.name,
+      placemark.street,
+      placemark.country,
+    ];
+    for (final value in fallbackCandidates) {
+      final trimmed = value?.trim();
+      if (value != null && value.isNotEmpty) {
+        return trimmed!;
       }
     }
 
     return fallbackLabel;
-  }
-
-  String? _firstNonEmptyValue(
-    Map<String, dynamic> source,
-    List<String> keys,
-  ) {
-    for (final key in keys) {
-      final value = source[key]?.toString().trim();
-      if (value != null && value.isNotEmpty) {
-        return value;
-      }
-    }
-    return null;
   }
 
   String _formatCoordinateLabel(double lat, double lng) {
@@ -1045,6 +1005,63 @@ class AppState extends ChangeNotifier {
   Future<void> _persistEmergencyContacts() async {
     final jsonList = _emergencyContacts.map((c) => c.toJson()).toList();
     await _contactsStorage.saveContacts(jsonList);
+  }
+
+  Future<void> _loadEmergencyHealthInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_emergencyHealthInfoKey);
+    if (raw == null || raw.isEmpty) {
+      return;
+    }
+
+    try {
+      final data = jsonDecode(raw);
+      if (data is! Map<String, dynamic>) {
+        return;
+      }
+
+      _emergencyHealthInfo = EmergencyHealthInfo(
+        bloodType: data['bloodType']?.toString() ?? '',
+        allergyNotes: data['allergyNotes']?.toString() ?? '',
+        emergencyNote: data['emergencyNote']?.toString() ?? '',
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Failed to load emergency health info: $e');
+    }
+  }
+
+  Future<void> _persistEmergencyHealthInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = <String, String>{
+      'bloodType': _emergencyHealthInfo.bloodType,
+      'allergyNotes': _emergencyHealthInfo.allergyNotes,
+      'emergencyNote': _emergencyHealthInfo.emergencyNote,
+    };
+    await prefs.setString(_emergencyHealthInfoKey, jsonEncode(data));
+  }
+
+  void _startLocationStream({double radiusMeters = 1000}) {
+    _locationStreamSubscription ??= Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    ).listen((Position position) {
+      unawaited(
+        updateUserLocation(
+          lat: position.latitude,
+          lng: position.longitude,
+          radiusMeters: radiusMeters,
+        ),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _locationStreamSubscription?.cancel();
+    super.dispose();
   }
 }
 

@@ -218,7 +218,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
                     try {
                       await widget.appState.addLocalReport(
                         category: _selectedCategory!,
-                        locationLabel: AppDefaults.selectedLocationLabel,
+                        locationLabel: widget.appState.currentLocationName,
                         latLng: formattedLocation,
                         description: noteController.text.trim(),
                         reportLatitude: selectedPoint.latitude,

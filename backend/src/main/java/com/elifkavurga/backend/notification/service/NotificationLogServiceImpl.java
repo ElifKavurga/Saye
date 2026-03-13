@@ -38,7 +38,7 @@ public class NotificationLogServiceImpl implements NotificationLogService {
 
     @Override
     public List<NotificationLogResponse> listByEventId(Long eventId) {
-        return repository.findAllByEventIdOrderByCreatedAtAsc(eventId).stream()
+        return repository.findAllByEvent_IdOrderByCreatedAtAsc(eventId).stream()
                 .map(log -> NotificationLogResponse.builder()
                         .id(log.getId())
                         .eventId(log.getEventId())

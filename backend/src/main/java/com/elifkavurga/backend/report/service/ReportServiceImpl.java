@@ -54,7 +54,9 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public List<ReportResponse> listAll() {
-        return repository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
+        return repository.findActiveReportsWithin12Hours().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     @Override

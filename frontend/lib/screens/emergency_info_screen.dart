@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
@@ -13,26 +14,10 @@ class EmergencyInfoScreen extends StatefulWidget {
 }
 
 class _EmergencyInfoScreenState extends State<EmergencyInfoScreen> {
-  late final TextEditingController _bloodTypeController;
-  late final TextEditingController _allergyController;
-  late final TextEditingController _emergencyNoteController;
-
-  @override
-  void initState() {
-    super.initState();
-    final info = widget.appState.emergencyHealthInfo;
-    _bloodTypeController = TextEditingController(text: info.bloodType);
-    _allergyController = TextEditingController(text: info.allergyNotes);
-    _emergencyNoteController = TextEditingController(text: info.emergencyNote);
-  }
-
-  @override
-  void dispose() {
-    _bloodTypeController.dispose();
-    _allergyController.dispose();
-    _emergencyNoteController.dispose();
-    super.dispose();
-  }
+  bool _locationPermissionEnabled = false;
+  bool _backgroundLocationEnabled = false;
+  bool _bluetoothPermissionEnabled = false;
+  bool _smsPermissionEnabled = false;
 
   @override
   Widget build(BuildContext context) {
@@ -59,80 +44,84 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen> {
                         children: [
                           _TopHeader(onBack: () => Navigator.of(context).pop()),
                           const SizedBox(height: AppSpacing.lg),
-                          Container(
-                            padding: const EdgeInsets.all(AppSpacing.md),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [Color(0xFF8EA599), Color(0xFF467447)],
-                              ),
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                              boxShadow: AppShadows.soft,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'ACIL DURUM Bilgileri',
-                                  style: AppTextStyles.title.copyWith(
-                                    fontSize: 32,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.xs),
-                                Text(
-                                  'Acil durumlarda sana yardimci olmamiz icin lutfen bilgilerini doldur.',
-                                  style: AppTextStyles.body.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    fontSize: 21,
-                                    height: 1.35,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                                _LabeledField(
-                                  label: 'Kan grubu (opsiyonel)',
-                                  controller: _bloodTypeController,
-                                ),
-                                const SizedBox(height: AppSpacing.sm),
-                                _LabeledField(
-                                  label: 'Alerji / Notlar (opsiyonel)',
-                                  controller: _allergyController,
-                                  maxLines: 2,
-                                ),
-                                const SizedBox(height: AppSpacing.sm),
-                                _LabeledField(
-                                  label: 'Acil not',
-                                  controller: _emergencyNoteController,
-                                  maxLines: 3,
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      widget.appState.saveEmergencyHealthInfo(
-                                        bloodType: _bloodTypeController.text,
-                                        allergyNotes: _allergyController.text,
-                                        emergencyNote:
-                                            _emergencyNoteController.text,
-                                      );
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Bilgiler kaydedildi'),
-                                        ),
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF214E86),
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    child: const Text('Kaydet'),
-                                  ),
-                                ),
-                              ],
-                            ),
+                          _PermissionSection(
+                            locationPermissionEnabled:
+                                _locationPermissionEnabled,
+                            backgroundLocationEnabled:
+                                _backgroundLocationEnabled,
+                            bluetoothPermissionEnabled:
+                                _bluetoothPermissionEnabled,
+                            smsPermissionEnabled: _smsPermissionEnabled,
+                            onLocationChanged: (value) async {
+                              if (!value) {
+                                setState(() => _locationPermissionEnabled = false);
+                                return;
+                              }
+                              final status = await Permission.location.request();
+                              if (!mounted) {
+                                return;
+                              }
+                              setState(() {
+                                _locationPermissionEnabled =
+                                    status == PermissionStatus.granted ||
+                                    status == PermissionStatus.limited ||
+                                    status == PermissionStatus.provisional;
+                              });
+                            },
+                            onBackgroundLocationChanged: (value) async {
+                              if (!value) {
+                                setState(
+                                  () => _backgroundLocationEnabled = false,
+                                );
+                                return;
+                              }
+                              final status =
+                                  await Permission.locationAlways.request();
+                              if (!mounted) {
+                                return;
+                              }
+                              setState(() {
+                                _backgroundLocationEnabled =
+                                    status == PermissionStatus.granted ||
+                                    status == PermissionStatus.limited ||
+                                    status == PermissionStatus.provisional;
+                              });
+                            },
+                            onBluetoothChanged: (value) async {
+                              if (!value) {
+                                setState(
+                                  () => _bluetoothPermissionEnabled = false,
+                                );
+                                return;
+                              }
+                              final status =
+                                  await Permission.bluetoothConnect.request();
+                              if (!mounted) {
+                                return;
+                              }
+                              setState(() {
+                                _bluetoothPermissionEnabled =
+                                    status == PermissionStatus.granted ||
+                                    status == PermissionStatus.limited ||
+                                    status == PermissionStatus.provisional;
+                              });
+                            },
+                            onSmsChanged: (value) async {
+                              if (!value) {
+                                setState(() => _smsPermissionEnabled = false);
+                                return;
+                              }
+                              final status = await Permission.sms.request();
+                              if (!mounted) {
+                                return;
+                              }
+                              setState(() {
+                                _smsPermissionEnabled =
+                                    status == PermissionStatus.granted ||
+                                    status == PermissionStatus.limited ||
+                                    status == PermissionStatus.provisional;
+                              });
+                            },
                           ),
                         ],
                       ),
@@ -188,49 +177,149 @@ class _TopHeader extends StatelessWidget {
   }
 }
 
-class _LabeledField extends StatelessWidget {
-  const _LabeledField({
-    required this.label,
-    required this.controller,
-    this.maxLines = 1,
+class _PermissionSection extends StatelessWidget {
+  const _PermissionSection({
+    required this.locationPermissionEnabled,
+    required this.backgroundLocationEnabled,
+    required this.bluetoothPermissionEnabled,
+    required this.smsPermissionEnabled,
+    required this.onLocationChanged,
+    required this.onBackgroundLocationChanged,
+    required this.onBluetoothChanged,
+    required this.onSmsChanged,
   });
 
-  final String label;
-  final TextEditingController controller;
-  final int maxLines;
+  final bool locationPermissionEnabled;
+  final bool backgroundLocationEnabled;
+  final bool bluetoothPermissionEnabled;
+  final bool smsPermissionEnabled;
+  final ValueChanged<bool> onLocationChanged;
+  final ValueChanged<bool> onBackgroundLocationChanged;
+  final ValueChanged<bool> onBluetoothChanged;
+  final ValueChanged<bool> onSmsChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.body.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: const Color(0xFF163157).withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Izinler',
+            style: AppTextStyles.title.copyWith(fontSize: 28),
           ),
-        ),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          maxLines: maxLines,
-          style: AppTextStyles.body.copyWith(color: const Color(0xFF2A3640)),
-          decoration: InputDecoration(
-            fillColor: Colors.white,
-            filled: true,
-            hintText: 'Yaziniz...',
-            hintStyle: AppTextStyles.caption.copyWith(
-              color: const Color(0xFF5B6672),
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              borderSide: BorderSide.none,
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Uygulama için gerekli cihaz izinlerini buradan yönetebilirsiniz.',
+            style: AppTextStyles.body.copyWith(
+              color: Colors.white.withValues(alpha: 0.88),
+              fontSize: 18,
             ),
           ),
-        ),
-      ],
+          const SizedBox(height: AppSpacing.md),
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: _PermissionToggleTile(
+              title: 'Konum Bilgileri',
+              description:
+                  'Acil durumda yakin guvenli bolgeyi hesaplamak icin kullanilir.',
+              value: locationPermissionEnabled,
+              onChanged: onLocationChanged,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: _PermissionToggleTile(
+              title: 'Arkaplanda Yenileme',
+              description:
+                  'Uygulama kapaliyken risk ve bildirim verilerini gunceller.',
+              value: backgroundLocationEnabled,
+              onChanged: onBackgroundLocationChanged,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: _PermissionToggleTile(
+              title: 'Bluetooth',
+              description:
+                  'Yakin cihaz taramasi ve takip analizi icin kullanilir.',
+              value: bluetoothPermissionEnabled,
+              onChanged: onBluetoothChanged,
+            ),
+          ),
+          _PermissionToggleTile(
+            title: 'GSM/SMS izinleri',
+            description:
+                'Acil durumda onceden tanimli kisilere SMS gondermek icin gereklidir.',
+            value: smsPermissionEnabled,
+            onChanged: onSmsChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PermissionToggleTile extends StatelessWidget {
+  const _PermissionToggleTile({
+    required this.title,
+    required this.description,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String description;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFF22446B),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTextStyles.body.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: AppTextStyles.caption.copyWith(
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Switch.adaptive(value: value, onChanged: onChanged),
+        ],
+      ),
     );
   }
 }

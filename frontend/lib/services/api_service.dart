@@ -209,11 +209,21 @@ class ApiService {
       if (response.body.isEmpty) {
         return <String, dynamic>{};
       }
-      return jsonDecode(response.body);
+      try {
+        return jsonDecode(response.body);
+      } catch (_) {
+        return <String, dynamic>{};
+      }
     }
 
     final responseBody = response.body.isNotEmpty
-        ? jsonDecode(response.body)
+        ? () {
+            try {
+              return jsonDecode(response.body);
+            } catch (_) {
+              return null;
+            }
+          }()
         : null;
     final responseMap = responseBody is Map<String, dynamic>
         ? responseBody

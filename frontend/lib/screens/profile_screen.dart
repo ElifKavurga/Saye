@@ -4,13 +4,40 @@ import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, required this.appState});
 
   final AppState appState;
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  late final TextEditingController _bloodTypeController;
+  late final TextEditingController _allergiesController;
+  late final TextEditingController _emergencyNoteController;
+
+  @override
+  void initState() {
+    super.initState();
+    final info = widget.appState.emergencyHealthInfo;
+    _bloodTypeController = TextEditingController(text: info.bloodType);
+    _allergiesController = TextEditingController(text: info.allergyNotes);
+    _emergencyNoteController = TextEditingController(text: info.emergencyNote);
+  }
+
+  @override
+  void dispose() {
+    _bloodTypeController.dispose();
+    _allergiesController.dispose();
+    _emergencyNoteController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final appState = widget.appState;
     final user = appState.currentUser;
     final displayName = (user?.username.isNotEmpty ?? false)
         ? user!.username
@@ -42,6 +69,24 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
                 _QuickStatsCard(reportCount: appState.localReports.length),
                 const SizedBox(height: AppSpacing.md),
+                _HealthInfoCard(
+                  bloodTypeController: _bloodTypeController,
+                  allergiesController: _allergiesController,
+                  emergencyNoteController: _emergencyNoteController,
+                  onSave: () {
+                    appState.saveEmergencyHealthInfo(
+                      bloodType: _bloodTypeController.text,
+                      allergyNotes: _allergiesController.text,
+                      emergencyNote: _emergencyNoteController.text,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Acil saglik bilgileri kaydedildi.'),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
                 _SectionTitle('Bildirim Gecmisim'),
                 const SizedBox(height: AppSpacing.sm),
                 if (appState.localReports.isEmpty)
@@ -70,6 +115,114 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HealthInfoCard extends StatelessWidget {
+  const _HealthInfoCard({
+    required this.bloodTypeController,
+    required this.allergiesController,
+    required this.emergencyNoteController,
+    required this.onSave,
+  });
+
+  final TextEditingController bloodTypeController;
+  final TextEditingController allergiesController;
+  final TextEditingController emergencyNoteController;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: const Color(0xFF10294A).withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Acil Saglik Bilgileri',
+            style: AppTextStyles.title.copyWith(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _ProfileTextField(
+            controller: bloodTypeController,
+            label: 'Kan Grubu',
+            hintText: 'Orn. A Rh+',
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _ProfileTextField(
+            controller: allergiesController,
+            label: 'Alerjiler',
+            hintText: 'Varsa belirt',
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _ProfileTextField(
+            controller: emergencyNoteController,
+            label: 'Acil Saglik Notu',
+            hintText: 'Onemli bir saglik bilgisi ekle',
+            maxLines: 4,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onSave,
+              child: const Text('Kaydet'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileTextField extends StatelessWidget {
+  const _ProfileTextField({
+    required this.controller,
+    required this.label,
+    required this.hintText,
+    this.maxLines = 1,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String hintText;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: AppTextStyles.body,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hintText,
+        labelStyle: AppTextStyles.caption.copyWith(color: Colors.white70),
+        hintStyle: AppTextStyles.caption.copyWith(color: Colors.white38),
+        filled: true,
+        fillColor: const Color(0xFF183A61),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: Colors.white12),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: Colors.white12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.aquaGlow),
         ),
       ),
     );
