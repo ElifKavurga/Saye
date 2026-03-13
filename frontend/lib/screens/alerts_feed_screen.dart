@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
@@ -33,7 +32,7 @@ class AlertsFeedScreen extends StatelessWidget {
                   children: [
                     _Header(onBack: () => Navigator.of(context).pop()),
                     const SizedBox(height: AppSpacing.md),
-                    const _LocationCard(location: AppDefaults.campusLocation),
+                    _LocationCard(location: appState.currentLocationName),
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       'Guncel Ihbarlar',

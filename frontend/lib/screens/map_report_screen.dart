@@ -86,7 +86,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
                     const SizedBox(width: AppSpacing.xs),
                     Expanded(
                       child: Text(
-                        AppDefaults.campusLocation,
+                        widget.appState.currentLocationName,
                         style: AppTextStyles.title.copyWith(fontSize: 22),
                       ),
                     ),

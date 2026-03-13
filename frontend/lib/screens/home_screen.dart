@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'alerts_feed_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     required this.appState,
@@ -19,8 +18,31 @@ class HomeScreen extends StatelessWidget {
   final VoidCallback onOpenProfile;
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _fetchLocationIfNeeded();
+  }
+
+  Future<void> _fetchLocationIfNeeded() async {
+    // Only fetch if we don't have location yet
+    if (widget.appState.currentLatitude == null || widget.appState.currentLongitude == null) {
+      try {
+        await widget.appState.fetchRealLocation();
+      } catch (e) {
+        // Silently fail, location will show default
+        debugPrint('Failed to fetch location: $e');
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final risk = appState.riskLevel;
+    final risk = widget.appState.riskLevel;
     final riskLabel = _riskTitle(risk);
     final riskLevelLabel = _riskLevelLabel(risk);
     final riskColor = _riskColor(risk);
@@ -44,18 +66,18 @@ class HomeScreen extends StatelessWidget {
                     const _LogoStrip(),
                     const SizedBox(height: AppSpacing.md),
                     _TopBar(
-                      location: AppDefaults.campusLocation,
-                      onProfileTap: onOpenProfile,
+                      location: widget.appState.currentLocationName,
+                      onProfileTap: widget.onOpenProfile,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _RiskSection(
                       riskLabel: riskLabel,
                       riskLevelLabel: riskLevelLabel,
                       color: riskColor,
-                      onDebugCycle: appState.cycleRiskLevel,
+                      onDebugCycle: widget.appState.cycleRiskLevel,
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    _MapPreviewCard(onTap: onOpenMap),
+                    _MapPreviewCard(onTap: widget.onOpenMap),
                     const SizedBox(height: AppSpacing.md),
                     _BluetoothCard(
                       color: riskColor,
@@ -77,7 +99,7 @@ class HomeScreen extends StatelessWidget {
                       child: GestureDetector(
                         onLongPress: () async {
                           try {
-                            await appState.activateEmergency();
+                            await widget.appState.activateEmergency();
                           } catch (e) {
                             if (!context.mounted) {
                               return;
@@ -128,7 +150,7 @@ class HomeScreen extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: () async {
                             try {
-                              await appState.activateEmergency();
+                              await widget.appState.activateEmergency();
                             } catch (e) {
                               if (!context.mounted) {
                                 return;
@@ -186,7 +208,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '${AppDefaults.campusLocation} konumundaki en guncel bildirimleri goruntule.',
+                  '${widget.appState.currentLocationName} konumundaki en guncel bildirimleri goruntule.',
                   style: AppTextStyles.body.copyWith(color: Colors.white70),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -206,7 +228,7 @@ class HomeScreen extends StatelessWidget {
                     Navigator.of(context).pop();
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => AlertsFeedScreen(appState: appState),
+                        builder: (_) => AlertsFeedScreen(appState: widget.appState),
                       ),
                     );
                   },

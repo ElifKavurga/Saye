@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -211,6 +213,7 @@ class AppState extends ChangeNotifier {
   EmergencyHealthInfo _emergencyHealthInfo = const EmergencyHealthInfo();
   double? _currentLatitude;
   double? _currentLongitude;
+  String? _currentLocationName;
   bool _isMapDataLoading = false;
   bool _isLoading = false;
   int _loadingCounter = 0;
@@ -232,6 +235,7 @@ class AppState extends ChangeNotifier {
       List.unmodifiable(_emergencyContacts);
   double? get currentLatitude => _currentLatitude;
   double? get currentLongitude => _currentLongitude;
+  String get currentLocationName => _currentLocationName ?? AppDefaults.campusLocation;
   bool get isMapDataLoading => _isMapDataLoading;
   bool get isLoading => _isLoading;
   EmergencyContact? get primaryEmergencyContact {
@@ -393,12 +397,15 @@ class AppState extends ChangeNotifier {
       notifyListeners();
 
       try {
-        await _refreshRiskLevel(lat: lat, lng: lng);
-        await _refreshNearbyReports(
-          lat: lat,
-          lng: lng,
-          radiusMeters: radiusMeters,
-        );
+        await Future.wait<void>([
+          _updateLocationName(lat, lng),
+          _refreshRiskLevel(lat: lat, lng: lng),
+          _refreshNearbyReports(
+            lat: lat,
+            lng: lng,
+            radiusMeters: radiusMeters,
+          ),
+        ]);
       } catch (e) {
         throw AppStateException(
           _toUserMessage(
@@ -890,6 +897,133 @@ class AppState extends ChangeNotifier {
       }
     }
     return fallback;
+  }
+
+  Future<void> _updateLocationName(double lat, double lng) async {
+    final fallbackLabel = _formatCoordinateLabel(lat, lng);
+    try {
+      final uri = Uri.https('nominatim.openstreetmap.org', '/reverse', {
+        'format': 'jsonv2',
+        'lat': lat.toString(),
+        'lon': lng.toString(),
+        'zoom': '18',
+        'addressdetails': '1',
+      });
+      final response = await _apiService.httpClient.get(
+        uri,
+        headers: const {
+          'User-Agent': 'SayeSafetyApp/1.0',
+          'Accept-Language': 'tr,en;q=0.8',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is Map<String, dynamic>) {
+          _currentLocationName = _resolveLocationName(
+            data,
+            fallbackLabel: fallbackLabel,
+          );
+        } else {
+          _currentLocationName = fallbackLabel;
+        }
+      } else {
+        _currentLocationName = fallbackLabel;
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Failed to get location name: $e');
+      _currentLocationName = fallbackLabel;
+      notifyListeners();
+    }
+  }
+
+  String _resolveLocationName(
+    Map<String, dynamic> data, {
+    required String fallbackLabel,
+  }) {
+    final rawAddress = data['address'];
+    if (rawAddress is Map) {
+      final address = Map<String, dynamic>.from(rawAddress);
+      final primary = _firstNonEmptyValue(address, const [
+        'road',
+        'pedestrian',
+        'footway',
+        'cycleway',
+        'path',
+        'residential',
+        'neighbourhood',
+        'suburb',
+        'quarter',
+        'hamlet',
+        'village',
+        'town',
+        'city_district',
+        'city',
+        'municipality',
+        'county',
+      ]);
+      final secondary = _firstNonEmptyValue(address, const [
+        'neighbourhood',
+        'suburb',
+        'quarter',
+        'city_district',
+        'town',
+        'city',
+        'municipality',
+        'county',
+      ]);
+      final landmark = _firstNonEmptyValue(address, const [
+        'amenity',
+        'building',
+        'tourism',
+        'leisure',
+        'shop',
+      ]);
+
+      final parts = <String>[
+        if (primary != null) primary,
+        if (secondary != null && secondary != primary) secondary,
+      ];
+
+      if (parts.isNotEmpty) {
+        return parts.join(', ');
+      }
+      if (landmark != null) {
+        return landmark;
+      }
+    }
+
+    final displayName = data['display_name']?.toString().trim();
+    if (displayName != null && displayName.isNotEmpty) {
+      final segments = displayName
+          .split(',')
+          .map((part) => part.trim())
+          .where((part) => part.isNotEmpty)
+          .take(3)
+          .toList();
+      if (segments.isNotEmpty) {
+        return segments.join(', ');
+      }
+    }
+
+    return fallbackLabel;
+  }
+
+  String? _firstNonEmptyValue(
+    Map<String, dynamic> source,
+    List<String> keys,
+  ) {
+    for (final key in keys) {
+      final value = source[key]?.toString().trim();
+      if (value != null && value.isNotEmpty) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  String _formatCoordinateLabel(double lat, double lng) {
+    return '${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}';
   }
 
   Future<T> _withLoading<T>(Future<T> Function() action) async {

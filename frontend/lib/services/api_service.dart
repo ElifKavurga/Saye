@@ -226,6 +226,8 @@ class ApiService {
     throw ApiException(message, statusCode: response.statusCode);
   }
 
+  http.Client get httpClient => _client;
+
   static String _resolveBaseUrl() {
     if (_envBaseUrl.isNotEmpty) {
       return _envBaseUrl;
