@@ -47,14 +47,14 @@ class AppDefaults {
     ),
     SettingOption(
       id: 'location',
-      title: 'Konum Erisimi',
+      title: 'Konum Erişimi',
       subtitle: 'Yakin raporlari dogru listelemek icin kullanilir.',
       enabled: true,
     ),
     SettingOption(
       id: 'summary',
       title: 'Gunluk Ozet',
-      subtitle: 'Her aksam performans ozeti gonder.',
+      subtitle: 'Her akşam performans özeti gönder.',
       enabled: false,
     ),
   ];

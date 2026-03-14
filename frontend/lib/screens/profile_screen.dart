@@ -70,7 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: _openEmergencyHealthEditor,
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    _SectionTitle('Bildirim Gecmisim'),
+                    _SectionTitle('Bildirim Geçmişim'),
                     const SizedBox(height: AppSpacing.sm),
                     if (appState.localReports.isEmpty)
                       const _EmptyReportCard()
@@ -92,7 +92,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           backgroundColor: const Color(0xFF8B1F33),
                           foregroundColor: Colors.white,
                         ),
-                        child: const Text('Cikis Yap'),
+                        child: const Text('Çıkış Yap'),
                       ),
                     ),
                   ],
@@ -153,7 +153,7 @@ class _HealthInfoCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Acil Saglik Bilgileri',
+                      'Acil Sağlık Bilgileri',
                       style: AppTextStyles.title.copyWith(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -185,7 +185,7 @@ class _HealthInfoCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               TextButton(
                 onPressed: onTap,
-                child: Text(hasInfo ? 'Duzenle' : 'Ekle'),
+                child: Text(hasInfo ? 'Düzenle' : 'Ekle'),
               ),
             ],
           ),
@@ -269,7 +269,7 @@ class _EmergencyHealthEditScreenState extends State<EmergencyHealthEditScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Acil saglik bilgisi girmek icin en az bir alan doldurmalisiniz',
+            'Acil sağlık bilgisi girmek için en az bir alan doldurmalısınız',
           ),
         ),
       );
@@ -300,7 +300,7 @@ class _EmergencyHealthEditScreenState extends State<EmergencyHealthEditScreen> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Acil saglik bilgileri kaydedilemedi.'),
+          content: Text('Acil sağlık bilgileri kaydedilemedi.'),
         ),
       );
       setState(() {
@@ -312,66 +312,73 @@ class _EmergencyHealthEditScreenState extends State<EmergencyHealthEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.deepNavy,
       appBar: AppBar(
-        title: const Text('Acil Saglik Bilgileri'),
+        title: const Text('Acil Sağlık Bilgileri'),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.card,
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(color: Colors.white10),
-                  boxShadow: AppShadows.soft,
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Saglik ekiplerinin ihtiyac duyabilecegi temel bilgileri ekleyin.',
-                        style: AppTextStyles.body.copyWith(
-                          color: Colors.white70,
-                        ),
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: AppGradients.mainBackground),
+        child: SizedBox.expand(
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.card,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: Colors.white10),
+                      boxShadow: AppShadows.soft,
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Sağlık ekiplerinin ihtiyaç duyabileceği temel bilgileri ekleyin.',
+                            style: AppTextStyles.body.copyWith(
+                              color: Colors.white70,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          _EmergencyHealthFormField(
+                            controller: _bloodTypeController,
+                            label: 'Kan Grubu',
+                            hintText: 'Orn. A Rh+',
+                            textInputAction: TextInputAction.next,
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          _EmergencyHealthFormField(
+                            controller: _allergiesController,
+                            label: 'Alerjiler',
+                            hintText: 'Varsa belirtin',
+                            textInputAction: TextInputAction.next,
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          _EmergencyHealthFormField(
+                            controller: _emergencyNoteController,
+                            label: 'Acil Sağlık Notu',
+                            hintText: 'Önemli bir sağlık bilgisi ekleyin',
+                            maxLines: 4,
+                            textInputAction: TextInputAction.done,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isSaving ? null : _save,
+                              child: Text(
+                                _isSaving ? 'Kaydediliyor...' : 'Kaydet',
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: AppSpacing.md),
-                      _EmergencyHealthFormField(
-                        controller: _bloodTypeController,
-                        label: 'Kan Grubu',
-                        hintText: 'Orn. A Rh+',
-                        textInputAction: TextInputAction.next,
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      _EmergencyHealthFormField(
-                        controller: _allergiesController,
-                        label: 'Alerjiler',
-                        hintText: 'Varsa belirtin',
-                        textInputAction: TextInputAction.next,
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      _EmergencyHealthFormField(
-                        controller: _emergencyNoteController,
-                        label: 'Acil Saglik Notu',
-                        hintText: 'Onemli bir saglik bilgisi ekleyin',
-                        maxLines: 4,
-                        textInputAction: TextInputAction.done,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _isSaving ? null : _save,
-                          child: Text(_isSaving ? 'Kaydediliyor...' : 'Kaydet'),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -525,7 +532,7 @@ class _QuickStatsCard extends StatelessWidget {
           const _StatChip(
             icon: Icons.shield_rounded,
             value: 'Acil',
-            label: 'Hazir',
+            label: 'Hazır',
           ),
         ],
       ),
@@ -595,7 +602,7 @@ class _EmptyReportCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Text(
-        'Henuz gonderdigin bir bildirim yok. Harita ekranindan ilk ihbari olusturabilirsin.',
+        'Henüz gönderdiğin bir bildirim yok. Harita ekranından ilk ihbarı oluşturabilirsin.',
         style: AppTextStyles.body.copyWith(color: Colors.white70),
       ),
     );

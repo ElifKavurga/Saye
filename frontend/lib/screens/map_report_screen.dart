@@ -109,7 +109,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
                     : _MapLoadingView(),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Anahtar Kelime Secerek Baska Kisileri Uyar!',
+                  'Anahtar Kelime Seçerek Başka Kişileri Uyar!',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.body.copyWith(
                     color: Colors.white70,
@@ -206,7 +206,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
                 controller: noteController,
                 maxLines: 3,
                 decoration: const InputDecoration(
-                  hintText: 'Kisa aciklama (opsiyonel)',
+                  hintText: 'Kısa açıklama (opsiyonel)',
                   fillColor: Color(0xFF1A3D66),
                 ),
               ),
@@ -230,7 +230,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
                       }
                       ScaffoldMessenger.of(parentContext).showSnackBar(
                         SnackBar(
-                          content: Text('Ihbar gonderilemedi: $e'),
+                          content: Text('İhbar gönderilemedi: $e'),
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
@@ -588,12 +588,12 @@ class _LiveMap extends StatelessWidget {
         return 'Trafik';
       case 'saglik':
       case 'health':
-        return 'Saglik';
+        return 'Sağlık';
       case 'lighting':
         return 'Lighting';
       case 'suc':
       case 'security':
-        return 'Suc';
+        return 'Suç';
       case 'takip':
         return 'Takip';
       case 'hayvan':
@@ -601,7 +601,7 @@ class _LiveMap extends StatelessWidget {
         return 'Hayvan';
       case 'ariza':
       case 'infrastructure':
-        return 'Ariza';
+        return 'Arıza';
       default:
         return category;
     }

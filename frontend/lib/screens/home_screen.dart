@@ -168,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             side: const BorderSide(color: Color(0xFFFF6B75)),
                           ),
                           icon: const Icon(Icons.touch_app_rounded),
-                          label: const Text('Tek Tikla Acil Ac'),
+                          label: const Text('Tek Tıkla Acil Aç'),
                         ),
                       ),
                     ),
@@ -208,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '${widget.appState.currentLocationName} konumundaki en guncel bildirimleri goruntule.',
+                  '${widget.appState.currentLocationName} konumundaki en güncel bildirimleri görüntüle.',
                   style: AppTextStyles.body.copyWith(color: Colors.white70),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -276,11 +276,11 @@ class _HomeScreenState extends State<HomeScreen> {
   String _bluetoothMessage(RiskLevel level) {
     switch (level) {
       case RiskLevel.low:
-        return 'Aktif Tarama: Supheli cihaz yakinligi yok.';
+        return 'Aktif Tarama: Şüpheli cihaz yakınlığı yok.';
       case RiskLevel.medium:
-        return 'Aktif Tarama: Supheli cihaz yakinligi tespit edildi.';
+        return 'Aktif Tarama: Şüpheli cihaz yakınlığı tespit edildi.';
       case RiskLevel.high:
-        return 'Aktif Tarama: Supheli cihaz yakinligi var. Uzun sureli takip gorunuyor.';
+        return 'Aktif Tarama: Şüpheli cihaz yakınlığı var. Uzun süreli takip görünüyor.';
     }
   }
 }

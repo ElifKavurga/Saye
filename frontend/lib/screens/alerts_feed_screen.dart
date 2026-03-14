@@ -273,7 +273,7 @@ class _EmptyStateCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Text(
-        'Bulundugun konum icin henuz yeni ihbar yok. Harita ekranindan ilk bildirimi sen olusturabilirsin.',
+        'Bulunduğun konum için henüz yeni ihbar yok. Harita ekranından ilk bildirimi sen oluşturabilirsin.',
         style: AppTextStyles.body.copyWith(color: Colors.white70),
       ),
     );

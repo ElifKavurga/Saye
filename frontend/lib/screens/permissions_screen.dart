@@ -96,7 +96,7 @@ class PermissionsScreen extends StatelessWidget {
                             children: [
                               Center(
                                 child: Text(
-                                  'Izinler',
+                                  'İzinler',
                                   style: AppTextStyles.title.copyWith(
                                     fontSize: 36,
                                   ),
@@ -128,7 +128,7 @@ class PermissionsScreen extends StatelessWidget {
                                     Icons.group_rounded,
                                     color: Colors.white,
                                   ),
-                                  label: const Text('Acil Durum Kisileri'),
+                                  label: const Text('Acil Durum Kişileri'),
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.md),

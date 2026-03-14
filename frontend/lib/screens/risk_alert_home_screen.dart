@@ -407,7 +407,7 @@ class _BluetoothAlertCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Aktif Tarama: Supheli cihaz yakinligi var. Uzun suredir takip gorunuyor.',
+                  'Aktif Tarama: Şüpheli cihaz yakınlığı var. Uzun süredir takip görünüyor.',
                   style: AppTextStyles.body.copyWith(
                     color: Colors.white.withValues(alpha: 0.95),
                   ),

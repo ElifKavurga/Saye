@@ -211,7 +211,7 @@ class _PermissionSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Izinler',
+            'İzinler',
             style: AppTextStyles.title.copyWith(fontSize: 28),
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -228,7 +228,7 @@ class _PermissionSection extends StatelessWidget {
             child: _PermissionToggleTile(
               title: 'Konum Bilgileri',
               description:
-                  'Acil durumda yakin guvenli bolgeyi hesaplamak icin kullanilir.',
+                  'Acil durumda yakın güvenli bölgeyi hesaplamak için kullanılır.',
               value: locationPermissionEnabled,
               onChanged: onLocationChanged,
             ),
@@ -238,7 +238,7 @@ class _PermissionSection extends StatelessWidget {
             child: _PermissionToggleTile(
               title: 'Arkaplanda Yenileme',
               description:
-                  'Uygulama kapaliyken risk ve bildirim verilerini gunceller.',
+                  'Uygulama kapalıyken risk ve bildirim verilerini günceller.',
               value: backgroundLocationEnabled,
               onChanged: onBackgroundLocationChanged,
             ),
@@ -256,7 +256,7 @@ class _PermissionSection extends StatelessWidget {
           _PermissionToggleTile(
             title: 'GSM/SMS izinleri',
             description:
-                'Acil durumda onceden tanimli kisilere SMS gondermek icin gereklidir.',
+                'Acil durumda önceden tanımlı kişilere SMS göndermek için gereklidir.',
             value: smsPermissionEnabled,
             onChanged: onSmsChanged,
           ),

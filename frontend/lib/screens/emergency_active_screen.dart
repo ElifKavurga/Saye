@@ -78,7 +78,7 @@ class EmergencyActiveScreen extends StatelessWidget {
                         }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Acil durum kapatilamadi: $e'),
+                            content: Text('Acil durum kapatılamadı: $e'),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );

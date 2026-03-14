@@ -304,7 +304,7 @@ class _AuthScreenState extends State<AuthScreen> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Islem basarisiz: $e'),
+          content: Text('İşlem başarısız: $e'),
           behavior: SnackBarBehavior.floating,
         ),
       );

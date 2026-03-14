@@ -160,28 +160,28 @@ class AppState extends ChangeNotifier {
           id: 'location_info',
           title: 'Konum Bilgileri',
           description:
-              'Acil durumda yakin guvenli bolgeyi hesaplamak icin kullanilir.',
+              'Acil durumda yakın güvenli bölgeyi hesaplamak için kullanılır.',
           enabled: true,
         ),
         AppPermission(
           id: 'background_refresh',
           title: 'Arkaplanda Yenileme',
           description:
-              'Uygulama kapaliyken risk ve bildirim verilerini gunceller.',
+              'Uygulama kapalıyken risk ve bildirim verilerini günceller.',
           enabled: true,
         ),
         AppPermission(
           id: 'quick_unlock_access',
-          title: 'Ekran Kilitsiz Kolay Erisim',
+          title: 'Ekran Kilitsiz Kolay Erişim',
           description:
-              'Acil butona daha hizli ulasman icin kilit ekrani kisayolu sunar.',
+              'Acil butona daha hızlı ulaşman için kilit ekranı kısayolu sunar.',
           enabled: false,
         ),
         AppPermission(
           id: 'gsm_sms',
           title: 'GSM/SMS izinleri',
           description:
-              'Acil durumda onceden tanimli kisilere SMS gondermek icin gereklidir.',
+              'Acil durumda önceden tanımlı kişilere SMS göndermek için gereklidir.',
           enabled: false,
         ),
         AppPermission(
@@ -300,7 +300,7 @@ class AppState extends ChangeNotifier {
         throw AppStateException(
           _toUserMessage(
             e,
-            fallback: 'Giris yapilamadi. Lutfen tekrar deneyin.',
+            fallback: 'Giriş yapılamadı. Lütfen tekrar deneyin.',
           ),
         );
       }
@@ -423,7 +423,7 @@ class AppState extends ChangeNotifier {
         throw AppStateException(
           _toUserMessage(
             e,
-            fallback: 'Harita verileri yuklenemedi. Baglantini kontrol et.',
+            fallback: 'Harita verileri yüklenemedi. Bağlantını kontrol et.',
           ),
         );
       } finally {
@@ -437,7 +437,7 @@ class AppState extends ChangeNotifier {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw AppStateException(
-        'Cihazdaki konum servisi kapali. Lutfen acik hale getirin.',
+        'Cihazdaki konum servisi kapalı. Lütfen açık hale getirin.',
       );
     }
 
@@ -451,7 +451,7 @@ class AppState extends ChangeNotifier {
     }
     if (permission == LocationPermission.deniedForever) {
       throw AppStateException(
-        'Konum izni kalici olarak reddedildi. Ayarlardan izin verin.',
+        'Konum izni kalıcı olarak reddedildi. Ayarlardan izin verin.',
       );
     }
 
@@ -486,7 +486,7 @@ class AppState extends ChangeNotifier {
         notifyListeners();
       } catch (e) {
         throw AppStateException(
-          _toUserMessage(e, fallback: 'SOS baslatilamadi. Lutfen tekrar dene.'),
+          _toUserMessage(e, fallback: 'SOS başlatılamadı. Lütfen tekrar dene.'),
         );
       }
     });
@@ -507,7 +507,7 @@ class AppState extends ChangeNotifier {
         throw AppStateException(
           _toUserMessage(
             e,
-            fallback: 'Acil durum kapatilamadi. Lutfen tekrar dene.',
+            fallback: 'Acil durum kapatılamadı. Lütfen tekrar dene.',
           ),
         );
       }
@@ -574,7 +574,7 @@ class AppState extends ChangeNotifier {
         notifyListeners();
       } catch (e) {
         throw AppStateException(
-          _toUserMessage(e, fallback: 'Ihbar gonderilemedi.'),
+          _toUserMessage(e, fallback: 'İhbar gönderilemedi.'),
         );
       }
     });
@@ -790,7 +790,7 @@ class AppState extends ChangeNotifier {
     final id = _currentUser?.id;
     if (id == null) {
       throw ApiException(
-        'Kullanici kimligi bulunamadi. Lutfen tekrar giris yapin.',
+        'Kullanıcı kimliği bulunamadı. Lütfen tekrar giriş yapın.',
       );
     }
     return id;
@@ -905,7 +905,7 @@ class AppState extends ChangeNotifier {
         return 'Ag baglantisi kurulamadi. Internetini kontrol et.';
       }
       if (error.statusCode! >= 500) {
-        return 'Sunucu su anda yanit vermiyor. Lutfen daha sonra tekrar dene.';
+        return 'Sunucu şu anda yanıt vermiyor. Lütfen daha sonra tekrar dene.';
       }
       if (error.statusCode == 400) {
         return error.message.isNotEmpty
@@ -913,7 +913,7 @@ class AppState extends ChangeNotifier {
             : 'Gonderilen bilgiler gecersiz.';
       }
       if (error.statusCode == 401 || error.statusCode == 403) {
-        return 'Bu islem icin oturumun gecersiz. Lutfen tekrar giris yap.';
+        return 'Bu işlem için oturumun geçersiz. Lütfen tekrar giriş yap.';
       }
       if (error.message.isNotEmpty) {
         return error.message;

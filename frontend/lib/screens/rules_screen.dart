@@ -69,10 +69,10 @@ class RulesScreen extends StatelessWidget {
                                   'Tehdit, hakaret ve kotu niyetli icerikler otomatik filtrelenir ve moderasyona dusurulur.',
                                 ),
                                 _ruleItem(
-                                  'Konum ve izin bilgileri sadece guvenlik amacli kullanilir, ucuncu tarafla paylasilmaz.',
+                                  'Konum ve izin bilgileri sadece güvenlik amaçlı kullanılır, üçüncü tarafla paylaşılmaz.',
                                 ),
                                 _ruleItem(
-                                  'Acil durum disi spam bildirimler, topluluk guvenligi icin puan dususune neden olur.',
+                                  'Acil durum dışı spam bildirimler, topluluk güvenliği için puan düşüşüne neden olur.',
                                 ),
                               ],
                             ),

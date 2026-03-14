@@ -38,11 +38,11 @@ class RiskDecisionScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
                 _InfoCard(
                   title: 'ACIL DURUM AKTIF',
-                  text: 'Sana en yakin guvenli bolge rotasi olusturuluyor...',
+                  text: 'Sana en yakın güvenli bölge rotası oluşturuluyor...',
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 _InfoCard(
-                  text: 'Acil durum kisileri ile bilgilerin paylasildi!',
+                  text: 'Acil durum kişileri ile bilgilerin paylaşıldı!',
                   trailing: const Icon(
                     Icons.check_box_rounded,
                     color: Color(0xFF8CF0A6),

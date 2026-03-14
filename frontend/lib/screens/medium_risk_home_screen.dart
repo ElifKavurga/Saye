@@ -325,7 +325,7 @@ class _BluetoothWarningCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Aktif Tarama: Supheli cihaz yakinligi orta riskte. Dikkatli ol.',
+                  'Aktif Tarama: Şüpheli cihaz yakınlığı orta riskte. Dikkatli ol.',
                   style: AppTextStyles.body.copyWith(
                     color: Colors.white.withValues(alpha: 0.95),
                   ),

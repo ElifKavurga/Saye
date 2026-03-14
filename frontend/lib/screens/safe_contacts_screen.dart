@@ -40,7 +40,7 @@ class SafeContactsScreen extends StatelessWidget {
                         ),
                         Expanded(
                           child: Text(
-                            'Acil Durum Kisileri',
+                            'Acil Durum Kişileri',
                             textAlign: TextAlign.center,
                             style: AppTextStyles.title.copyWith(fontSize: 30),
                           ),
@@ -53,7 +53,7 @@ class SafeContactsScreen extends StatelessWidget {
                       child: appState.emergencyContacts.isEmpty
                           ? Center(
                               child: Text(
-                                'Henuz kisi eklenmedi',
+                                'Henüz kişi eklenmedi',
                                 style: AppTextStyles.body,
                               ),
                             )
@@ -156,7 +156,7 @@ class SafeContactsScreen extends StatelessWidget {
                     ElevatedButton.icon(
                       onPressed: () => _openAddContactSheet(context),
                       icon: const Icon(Icons.person_add_alt_1_rounded),
-                      label: const Text('Kisi Ekle'),
+                      label: const Text('Kişi Ekle'),
                     ),
                   ],
                 ),
@@ -195,14 +195,14 @@ class SafeContactsScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Kisi Ekle', style: AppTextStyles.title),
+                Text('Kişi Ekle', style: AppTextStyles.title),
                 const SizedBox(height: AppSpacing.sm),
                 TextFormField(
                   controller: nameController,
-                  decoration: const InputDecoration(hintText: 'Kisi adi'),
+                  decoration: const InputDecoration(hintText: 'Kişi adı'),
                   validator: (value) {
                     if ((value ?? '').trim().isEmpty) {
-                      return 'Ad bos gecilemez';
+                      return 'Ad boş geçilemez';
                     }
                     return null;
                   },
@@ -214,7 +214,7 @@ class SafeContactsScreen extends StatelessWidget {
                   decoration: const InputDecoration(hintText: 'Telefon'),
                   validator: (value) {
                     if ((value ?? '').trim().isEmpty) {
-                      return 'Telefon bos gecilemez';
+                      return 'Telefon boş geçilemez';
                     }
                     return null;
                   },

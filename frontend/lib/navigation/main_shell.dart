@@ -51,6 +51,8 @@ class MainShell extends StatelessWidget {
     ];
 
     return Scaffold(
+      backgroundColor: AppColors.deepNavy,
+      extendBody: true,
       body: Stack(
         children: [
           Container(
