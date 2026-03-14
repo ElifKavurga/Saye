@@ -8,7 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_defaults.dart';
 import '../services/api_service.dart';
-import '../services/emergency_contacts_storage.dart';
+import '../services/emergency_contacts_service.dart';
+import '../services/user_settings_service.dart';
 
 class SessionUser {
   const SessionUser({
@@ -114,6 +115,57 @@ class AppPermission {
   }
 }
 
+class UserSettingsData {
+  const UserSettingsData({
+    this.id,
+    this.userId,
+    this.profileVisible = true,
+    this.locationTrackingEnabled = true,
+    this.backgroundRefreshEnabled = true,
+  });
+
+  final int? id;
+  final int? userId;
+  final bool profileVisible;
+  final bool locationTrackingEnabled;
+  final bool backgroundRefreshEnabled;
+
+  factory UserSettingsData.fromJson(Map<String, dynamic> json) {
+    return UserSettingsData(
+      id: (json['id'] as num?)?.toInt(),
+      userId: (json['userId'] as num?)?.toInt(),
+      profileVisible: json['profileVisible'] as bool? ?? true,
+      locationTrackingEnabled: json['locationTrackingEnabled'] as bool? ?? true,
+      backgroundRefreshEnabled:
+          json['backgroundRefreshEnabled'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> toRequestJson() {
+    return {
+      'profileVisible': profileVisible,
+      'locationTrackingEnabled': locationTrackingEnabled,
+      'backgroundRefreshEnabled': backgroundRefreshEnabled,
+    };
+  }
+
+  UserSettingsData copyWith({
+    bool? profileVisible,
+    bool? locationTrackingEnabled,
+    bool? backgroundRefreshEnabled,
+  }) {
+    return UserSettingsData(
+      id: id,
+      userId: userId,
+      profileVisible: profileVisible ?? this.profileVisible,
+      locationTrackingEnabled:
+          locationTrackingEnabled ?? this.locationTrackingEnabled,
+      backgroundRefreshEnabled:
+          backgroundRefreshEnabled ?? this.backgroundRefreshEnabled,
+    );
+  }
+}
+
 class EmergencyContact {
   const EmergencyContact({
     required this.id,
@@ -128,14 +180,19 @@ class EmergencyContact {
   final bool isPrimary;
 
   Map<String, dynamic> toJson() {
-    return {'id': id, 'name': name, 'phone': phone, 'isPrimary': isPrimary};
+    return {
+      'id': id,
+      'name': name,
+      'phoneNumber': phone,
+      'isPrimary': isPrimary,
+    };
   }
 
   factory EmergencyContact.fromJson(Map<String, dynamic> json) {
     return EmergencyContact(
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
-      phone: json['phone']?.toString() ?? '',
+      phone: json['phoneNumber']?.toString() ?? json['phone']?.toString() ?? '',
       isPrimary: json['isPrimary'] as bool? ?? false,
     );
   }
@@ -151,65 +208,62 @@ class EmergencyContact {
 }
 
 class AppState extends ChangeNotifier {
-  AppState({ApiService? apiService, EmergencyContactsStorage? contactsStorage})
-    : _apiService = apiService ?? ApiService(),
-      _contactsStorage = contactsStorage ?? EmergencyContactsStorage(),
-      _settings = List<SettingOption>.from(AppDefaults.settings),
-      _permissions = [
-        AppPermission(
-          id: 'location_info',
-          title: 'Konum Bilgileri',
-          description:
-              'Acil durumda yakın güvenli bölgeyi hesaplamak için kullanılır.',
-          enabled: true,
-        ),
-        AppPermission(
-          id: 'background_refresh',
-          title: 'Arkaplanda Yenileme',
-          description:
-              'Uygulama kapalıyken risk ve bildirim verilerini günceller.',
-          enabled: true,
-        ),
-        AppPermission(
-          id: 'quick_unlock_access',
-          title: 'Ekran Kilitsiz Kolay Erişim',
-          description:
-              'Acil butona daha hızlı ulaşman için kilit ekranı kısayolu sunar.',
-          enabled: false,
-        ),
-        AppPermission(
-          id: 'gsm_sms',
-          title: 'GSM/SMS izinleri',
-          description:
-              'Acil durumda önceden tanımlı kişilere SMS göndermek için gereklidir.',
-          enabled: false,
-        ),
-        AppPermission(
-          id: 'bluetooth',
-          title: 'Bluetooth',
-          description: 'Yakin cihaz taramasi ve takip analizi icin kullanilir.',
-          enabled: true,
-        ),
-      ],
-      _emergencyContacts = [
-        const EmergencyContact(
-          id: 'c1',
-          name: 'Ayse Demir',
-          phone: '0555 111 22 33',
-          isPrimary: true,
-        ),
-        const EmergencyContact(
-          id: 'c2',
-          name: 'Mehmet Kaya',
-          phone: '0555 444 55 66',
-        ),
-      ] {
+  AppState({
+    ApiService? apiService,
+    EmergencyContactsService? emergencyContactsService,
+    UserSettingsService? userSettingsService,
+  }) : _apiService = apiService ?? ApiService(),
+       _settings = List<SettingOption>.from(AppDefaults.settings),
+       _permissions = [
+         AppPermission(
+           id: 'location_info',
+           title: 'Konum Bilgileri',
+           description:
+               'Acil durumda yakın güvenli bölgeyi hesaplamak için kullanılır.',
+           enabled: true,
+         ),
+         AppPermission(
+           id: 'background_refresh',
+           title: 'Arkaplanda Yenileme',
+           description:
+               'Uygulama kapalıyken risk ve bildirim verilerini günceller.',
+           enabled: true,
+         ),
+         AppPermission(
+           id: 'quick_unlock_access',
+           title: 'Ekran Kilitsiz Kolay Erişim',
+           description:
+               'Acil butona daha hızlı ulaşman için kilit ekranı kısayolu sunar.',
+           enabled: false,
+         ),
+         AppPermission(
+           id: 'gsm_sms',
+           title: 'GSM/SMS izinleri',
+           description:
+               'Acil durumda önceden tanımlı kişilere SMS göndermek için gereklidir.',
+           enabled: false,
+         ),
+         AppPermission(
+           id: 'bluetooth',
+           title: 'Bluetooth',
+           description:
+               'Yakin cihaz taramasi ve takip analizi icin kullanilir.',
+           enabled: true,
+         ),
+       ],
+       _emergencyContacts = [] {
+    _emergencyContactsService =
+        emergencyContactsService ??
+        EmergencyContactsService(apiService: _apiService);
+    _userSettingsService =
+        userSettingsService ?? UserSettingsService(apiService: _apiService);
     _loadEmergencyHealthInfo();
   }
 
   static const String _emergencyHealthInfoKey = 'emergency_health_info';
   final ApiService _apiService;
-  final EmergencyContactsStorage _contactsStorage;
+  late final EmergencyContactsService _emergencyContactsService;
+  late final UserSettingsService _userSettingsService;
 
   int _selectedIndex = 0;
   final List<SettingOption> _settings;
@@ -221,7 +275,10 @@ class AppState extends ChangeNotifier {
   bool _showRiskDecision = false;
   final List<LocalReportNotification> _localReports = [];
   final List<NearbyReport> _nearbyReports = [];
-  bool _isProfileVisibleInAlerts = true;
+  UserSettingsData _userSettings = const UserSettingsData();
+  bool _hasLoadedUserSettings = false;
+  bool _isUserSettingsLoading = false;
+  bool _isUserSettingsSaving = false;
   EmergencyHealthInfo _emergencyHealthInfo = const EmergencyHealthInfo();
   double? _currentLatitude;
   double? _currentLongitude;
@@ -241,16 +298,23 @@ class AppState extends ChangeNotifier {
   List<LocalReportNotification> get localReports =>
       List.unmodifiable(_localReports);
   List<NearbyReport> get nearbyReports => List.unmodifiable(_nearbyReports);
-  bool get isProfileVisibleInAlerts => _isProfileVisibleInAlerts;
+  bool get isProfileVisibleInAlerts => _userSettings.profileVisible;
   EmergencyHealthInfo get emergencyHealthInfo => _emergencyHealthInfo;
   List<AppPermission> get permissions => List.unmodifiable(_permissions);
+  UserSettingsData get userSettings => _userSettings;
   List<EmergencyContact> get emergencyContacts =>
       List.unmodifiable(_emergencyContacts);
   double? get currentLatitude => _currentLatitude;
   double? get currentLongitude => _currentLongitude;
-  String get currentLocationName => _currentLocationName ?? AppDefaults.campusLocation;
+  String get currentLocationName =>
+      _currentLocationName ?? AppDefaults.campusLocation;
   bool get isMapDataLoading => _isMapDataLoading;
   bool get isLoading => _isLoading;
+  bool get hasLoadedUserSettings => _hasLoadedUserSettings;
+  bool get isUserSettingsLoading => _isUserSettingsLoading;
+  bool get isUserSettingsSaving => _isUserSettingsSaving;
+  bool get isUserSettingsBusy =>
+      _isUserSettingsLoading || _isUserSettingsSaving;
   EmergencyContact? get primaryEmergencyContact {
     for (final contact in _emergencyContacts) {
       if (contact.isPrimary) {
@@ -260,11 +324,18 @@ class AppState extends ChangeNotifier {
     return _emergencyContacts.isEmpty ? null : _emergencyContacts.first;
   }
 
+  Future<void> initialize() async {
+    await checkAuthStatus();
+  }
+
   void setIndex(int index) {
     if (_selectedIndex == index) {
       return;
     }
     _selectedIndex = index;
+    if (index == 2 && isAuthenticated) {
+      refreshUserSettingsInBackground(force: true);
+    }
     notifyListeners();
   }
 
@@ -284,18 +355,7 @@ class AppState extends ChangeNotifier {
           '/auth/login',
           body: {'email': email.trim(), 'password': password},
         );
-        print("LOGIN RESPONSE: $response");
-        final authData = _extractAuthData(response);
-        final token = authData['token']?.toString();
-        final userMap = _extractUserMap(authData['user']);
-        if (token == null || token.isEmpty) {
-          throw ApiException('Login response does not include a valid token');
-        }
-        await _apiService.saveToken(token);
-        await _apiService.saveUserSession(userMap);
-        _currentUser = _toSessionUser(userMap);
-        _setDefaultLandingScenario();
-        notifyListeners();
+        await _applyAuthenticatedSession(response);
       } catch (e) {
         throw AppStateException(
           _toUserMessage(
@@ -324,19 +384,7 @@ class AppState extends ChangeNotifier {
             'phone': phone.trim(),
           },
         );
-        final authData = _extractAuthData(response);
-        final token = authData['token']?.toString();
-        final userMap = _extractUserMap(authData['user']);
-        if (token == null || token.isEmpty) {
-          throw ApiException(
-            'Register response does not include a valid token',
-          );
-        }
-        await _apiService.saveToken(token);
-        await _apiService.saveUserSession(userMap);
-        _currentUser = _toSessionUser(userMap);
-        _setDefaultLandingScenario();
-        notifyListeners();
+        await _applyAuthenticatedSession(response);
       } catch (e) {
         throw AppStateException(
           _toUserMessage(e, fallback: 'Kayit islemi tamamlanamadi.'),
@@ -350,39 +398,49 @@ class AppState extends ChangeNotifier {
       try {
         final token = await _apiService.readToken();
         if (token == null || token.isEmpty) {
+          _setEmergencyContacts(const [], notify: false);
+          _resetUserSettings(notify: false);
+          _currentUser = null;
+          _setDefaultLandingScenario();
+          notifyListeners();
           return;
         }
         final userMap = await _apiService.readUserSession();
         if (userMap == null) {
           await _apiService.clearSession();
+          _currentUser = null;
+          _setEmergencyContacts(const [], notify: false);
+          _resetUserSettings(notify: false);
+          _setDefaultLandingScenario();
+          notifyListeners();
           return;
         }
         _currentUser = _toSessionUser(userMap);
         _setDefaultLandingScenario();
+        await _loadEmergencyContactsForCurrentUser(notify: false);
+        await _loadUserSettingsForCurrentUser(force: true, notify: false);
         notifyListeners();
       } catch (e) {
         await _apiService.clearSession();
         _currentUser = null;
+        _setEmergencyContacts(const [], notify: false);
+        _resetUserSettings(notify: false);
         _setDefaultLandingScenario();
         notifyListeners();
       }
     });
   }
 
-  void demoLogin() {
-    Future.microtask(() {
-      _loadingCounter = 0;
-      _isLoading = false;
-
-      _currentUser = const SessionUser(
-        id: 0,
-        email: 'demo@sayende.app',
-        username: 'demo_user',
-        phone: '',
-      );
-
-      _setDefaultLandingScenario();
-      notifyListeners();
+  Future<void> demoLogin() async {
+    await _withLoading(() async {
+      try {
+        final response = await _apiService.post('/auth/demo-login');
+        await _applyAuthenticatedSession(response);
+      } catch (e) {
+        throw AppStateException(
+          _toUserMessage(e, fallback: 'Demo oturumu baslatilamadi.'),
+        );
+      }
     });
   }
 
@@ -413,11 +471,7 @@ class AppState extends ChangeNotifier {
         await Future.wait<void>([
           _updateLocationName(lat, lng),
           _refreshRiskLevel(lat: lat, lng: lng),
-          _refreshNearbyReports(
-            lat: lat,
-            lng: lng,
-            radiusMeters: radiusMeters,
-          ),
+          _refreshNearbyReports(lat: lat, lng: lng, radiusMeters: radiusMeters),
         ]);
       } catch (e) {
         throw AppStateException(
@@ -536,12 +590,10 @@ class AppState extends ChangeNotifier {
   }) async {
     await _withLoading(() async {
       try {
-        final latitude = reportLatitude ??
-            _currentLatitude ??
-            _parseLatitude(latLng);
-        final longitude = reportLongitude ??
-            _currentLongitude ??
-            _parseLongitude(latLng);
+        final latitude =
+            reportLatitude ?? _currentLatitude ?? _parseLatitude(latLng);
+        final longitude =
+            reportLongitude ?? _currentLongitude ?? _parseLongitude(latLng);
 
         if (latitude == null || longitude == null) {
           throw ApiException('Rapor icin gecerli bir konum bulunamadi.');
@@ -580,12 +632,46 @@ class AppState extends ChangeNotifier {
     });
   }
 
-  void setProfileVisibilityInAlerts(bool visible) {
-    if (_isProfileVisibleInAlerts == visible) {
+  Future<void> fetchUserSettings({bool force = false}) async {
+    if (_currentUser == null) {
+      _resetUserSettings();
       return;
     }
-    _isProfileVisibleInAlerts = visible;
+
+    if (_isUserSettingsLoading || (!force && _hasLoadedUserSettings)) {
+      return;
+    }
+
+    _isUserSettingsLoading = true;
     notifyListeners();
+    try {
+      await _loadUserSettingsForCurrentUser(force: force, notify: false);
+      notifyListeners();
+    } catch (e) {
+      throw AppStateException(
+        _toUserMessage(
+          e,
+          fallback: 'Ayarlar yuklenemedi. Lutfen tekrar deneyin.',
+        ),
+      );
+    } finally {
+      _isUserSettingsLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void refreshUserSettingsInBackground({bool force = false}) {
+    unawaited(_refreshUserSettingsSilently(force: force));
+  }
+
+  Future<void> updateProfileVisibilityInAlerts(bool visible) async {
+    if (_userSettings.profileVisible == visible) {
+      return;
+    }
+    await _saveUserSettings(
+      _userSettings.copyWith(profileVisible: visible),
+      fallback: 'Profil gorunurlugu guncellenemedi. Lutfen tekrar deneyin.',
+    );
   }
 
   Future<void> saveEmergencyHealthInfo({
@@ -610,66 +696,128 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void setPermission(String id, bool enabled) {
+  Future<void> updatePermission(String id, bool enabled) async {
     final index = _permissions.indexWhere((item) => item.id == id);
     if (index == -1) {
       return;
     }
-    _permissions = List<AppPermission>.from(_permissions)
-      ..[index] = _permissions[index].copyWith(enabled: enabled);
+
+    if (_isServerBackedPermission(id)) {
+      await _saveUserSettings(
+        _userSettings.copyWith(
+          locationTrackingEnabled: id == 'location_info'
+              ? enabled
+              : _userSettings.locationTrackingEnabled,
+          backgroundRefreshEnabled: id == 'background_refresh'
+              ? enabled
+              : _userSettings.backgroundRefreshEnabled,
+        ),
+        fallback: 'Izin ayari guncellenemedi. Lutfen tekrar deneyin.',
+      );
+      return;
+    }
+
+    _setPermissionLocally(id, enabled);
     notifyListeners();
   }
 
   Future<void> loadEmergencyContacts() async {
-    final rawContacts = await _contactsStorage.readContacts();
-    if (rawContacts.isNotEmpty) {
-      _emergencyContacts
-        ..clear()
-        ..addAll(rawContacts.map((e) => EmergencyContact.fromJson(e)));
+    await _withLoading(() async {
+      try {
+        await _loadEmergencyContactsForCurrentUser();
+      } catch (e) {
+        throw AppStateException(
+          _toUserMessage(
+            e,
+            fallback: 'Acil durum kisileri yuklenemedi. Lutfen tekrar deneyin.',
+          ),
+        );
+      }
+    });
+  }
+
+  Future<void> addEmergencyContact({
+    required String name,
+    required String phone,
+  }) async {
+    await _withLoading(() async {
+      try {
+        final userId = _requireCurrentUserId();
+        await _emergencyContactsService.createContact(
+          userId: userId,
+          name: name,
+          phoneNumber: phone,
+          isPrimary: _emergencyContacts.isEmpty,
+        );
+        await _loadEmergencyContactsForCurrentUser(notify: false);
+        notifyListeners();
+      } catch (e) {
+        throw AppStateException(
+          _toUserMessage(
+            e,
+            fallback: 'Acil durum kisisi eklenemedi. Lutfen tekrar deneyin.',
+          ),
+        );
+      }
+    });
+  }
+
+  Future<void> removeEmergencyContact(String id) async {
+    await _withLoading(() async {
+      try {
+        final userId = _requireCurrentUserId();
+        await _emergencyContactsService.deleteContact(
+          userId: userId,
+          contactId: id,
+        );
+        await _loadEmergencyContactsForCurrentUser(notify: false);
+        notifyListeners();
+      } catch (e) {
+        throw AppStateException(
+          _toUserMessage(
+            e,
+            fallback: 'Acil durum kisisi silinemedi. Lutfen tekrar deneyin.',
+          ),
+        );
+      }
+    });
+  }
+
+  Future<void> setPrimaryEmergencyContact(String id) async {
+    EmergencyContact? contact;
+    for (final item in _emergencyContacts) {
+      if (item.id == id) {
+        contact = item;
+        break;
+      }
     }
-    notifyListeners();
-  }
-
-  void addEmergencyContact({required String name, required String phone}) {
-    final newId = DateTime.now().microsecondsSinceEpoch.toString();
-    final shouldBePrimary = _emergencyContacts.isEmpty;
-    _emergencyContacts.add(
-      EmergencyContact(
-        id: newId,
-        name: name.trim(),
-        phone: phone.trim(),
-        isPrimary: shouldBePrimary,
-      ),
-    );
-    notifyListeners();
-    _persistEmergencyContacts();
-  }
-
-  void removeEmergencyContact(String id) {
-    final index = _emergencyContacts.indexWhere((item) => item.id == id);
-    if (index == -1) {
+    if (contact == null) {
       return;
     }
-    final wasPrimary = _emergencyContacts[index].isPrimary;
-    _emergencyContacts.removeAt(index);
-    if (wasPrimary && _emergencyContacts.isNotEmpty) {
-      _emergencyContacts[0] = _emergencyContacts[0].copyWith(isPrimary: true);
-    }
-    notifyListeners();
-    _persistEmergencyContacts();
-  }
+    final selectedContact = contact;
 
-  void setPrimaryEmergencyContact(String id) {
-    final exists = _emergencyContacts.any((item) => item.id == id);
-    if (!exists) {
-      return;
-    }
-    for (var i = 0; i < _emergencyContacts.length; i++) {
-      final item = _emergencyContacts[i];
-      _emergencyContacts[i] = item.copyWith(isPrimary: item.id == id);
-    }
-    notifyListeners();
-    _persistEmergencyContacts();
+    await _withLoading(() async {
+      try {
+        final userId = _requireCurrentUserId();
+        await _emergencyContactsService.updateContact(
+          userId: userId,
+          contactId: id,
+          name: selectedContact.name,
+          phoneNumber: selectedContact.phone,
+          isPrimary: true,
+        );
+        await _loadEmergencyContactsForCurrentUser(notify: false);
+        notifyListeners();
+      } catch (e) {
+        throw AppStateException(
+          _toUserMessage(
+            e,
+            fallback:
+                'Birincil acil durum kisisi guncellenemedi. Lutfen tekrar deneyin.',
+          ),
+        );
+      }
+    });
   }
 
   Future<void> logout() async {
@@ -681,7 +829,8 @@ class AppState extends ChangeNotifier {
     _showRiskDecision = false;
     _localReports.clear();
     _nearbyReports.clear();
-    _isProfileVisibleInAlerts = true;
+    _emergencyContacts.clear();
+    _resetUserSettings(notify: false);
     _currentLatitude = null;
     _currentLongitude = null;
     _isMapDataLoading = false;
@@ -714,6 +863,148 @@ class AppState extends ChangeNotifier {
 
   void _setDefaultLandingScenario() {
     _showRiskDecision = false;
+  }
+
+  Future<void> _applyAuthenticatedSession(Map<String, dynamic> response) async {
+    final authData = _extractAuthData(response);
+    final token = authData['token']?.toString();
+    final userMap = _extractUserMap(authData['user']);
+    if (token == null || token.isEmpty) {
+      throw ApiException('Auth response does not include a valid token');
+    }
+
+    await _apiService.saveToken(token);
+    await _apiService.saveUserSession(userMap);
+    _currentUser = _toSessionUser(userMap);
+    _setDefaultLandingScenario();
+    await _loadEmergencyContactsForCurrentUser(notify: false);
+    await _loadUserSettingsForCurrentUser(force: true, notify: false);
+    notifyListeners();
+  }
+
+  Future<void> _refreshUserSettingsSilently({bool force = false}) async {
+    try {
+      await fetchUserSettings(force: force);
+    } catch (e) {
+      debugPrint('Failed to refresh user settings: $e');
+    }
+  }
+
+  Future<void> _loadUserSettingsForCurrentUser({
+    bool force = false,
+    bool notify = true,
+  }) async {
+    final userId = _currentUser?.id;
+    if (userId == null) {
+      _resetUserSettings(notify: notify);
+      return;
+    }
+    if (!force && _hasLoadedUserSettings) {
+      return;
+    }
+
+    final rawSettings = await _userSettingsService.fetchSettings(
+      userId: userId,
+    );
+    _applyUserSettings(UserSettingsData.fromJson(rawSettings), notify: notify);
+  }
+
+  Future<void> _saveUserSettings(
+    UserSettingsData nextSettings, {
+    required String fallback,
+  }) async {
+    final previousSettings = _userSettings;
+    final previousPermissions = List<AppPermission>.from(_permissions);
+
+    _applyUserSettings(nextSettings, notify: true);
+    _isUserSettingsSaving = true;
+    notifyListeners();
+
+    try {
+      final userId = _requireCurrentUserId();
+      final rawSettings = await _userSettingsService.updateSettings(
+        userId: userId,
+        body: nextSettings.toRequestJson(),
+      );
+      _applyUserSettings(UserSettingsData.fromJson(rawSettings), notify: false);
+      notifyListeners();
+    } catch (e) {
+      _userSettings = previousSettings;
+      _permissions = previousPermissions;
+      notifyListeners();
+      throw AppStateException(_toUserMessage(e, fallback: fallback));
+    } finally {
+      _isUserSettingsSaving = false;
+      notifyListeners();
+    }
+  }
+
+  void _applyUserSettings(UserSettingsData settings, {bool notify = true}) {
+    _userSettings = settings;
+    _hasLoadedUserSettings = true;
+    _setPermissionLocally('location_info', settings.locationTrackingEnabled);
+    _setPermissionLocally(
+      'background_refresh',
+      settings.backgroundRefreshEnabled,
+    );
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  void _resetUserSettings({bool notify = true}) {
+    _userSettings = const UserSettingsData();
+    _hasLoadedUserSettings = false;
+    _isUserSettingsLoading = false;
+    _isUserSettingsSaving = false;
+    _setPermissionLocally('location_info', true);
+    _setPermissionLocally('background_refresh', true);
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  void _setPermissionLocally(String id, bool enabled) {
+    final index = _permissions.indexWhere((item) => item.id == id);
+    if (index == -1) {
+      return;
+    }
+    _permissions = List<AppPermission>.from(_permissions)
+      ..[index] = _permissions[index].copyWith(enabled: enabled);
+  }
+
+  bool _isServerBackedPermission(String id) {
+    return id == 'location_info' || id == 'background_refresh';
+  }
+
+  Future<void> _loadEmergencyContactsForCurrentUser({
+    bool notify = true,
+  }) async {
+    final userId = _currentUser?.id;
+    if (userId == null) {
+      _setEmergencyContacts(const [], notify: notify);
+      return;
+    }
+
+    final rawContacts = await _emergencyContactsService.fetchContacts(
+      userId: userId,
+    );
+    _setEmergencyContacts(
+      rawContacts.map(EmergencyContact.fromJson).toList(growable: false),
+      notify: notify,
+    );
+  }
+
+  void _setEmergencyContacts(
+    List<EmergencyContact> contacts, {
+    bool notify = true,
+  }) {
+    _emergencyContacts
+      ..clear()
+      ..addAll(contacts);
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   Future<void> _refreshRiskLevel({
@@ -856,14 +1147,14 @@ class AppState extends ChangeNotifier {
 
   String _toBackendCategory(String category) {
     const mapping = <String, String>{
-        'Trafik': 'TRAFFIC',
+      'Trafik': 'TRAFFIC',
       'Saglik': 'HEALTH',
       'Suc': 'SECURITY',
       'Takip': 'SECURITY',
       'Hayvan': 'ANIMALS',
       'Ariza': 'INFRASTRUCTURE',
-        'TRAFIK': 'TRAFFIC',
-        'SAGLIK': 'HEALTH',
+      'TRAFIK': 'TRAFFIC',
+      'SAGLIK': 'HEALTH',
       'SUÇ': 'SECURITY',
       'SAĞLIK': 'HEALTH',
       'SUC': 'SECURITY',
@@ -970,10 +1261,13 @@ class AppState extends ChangeNotifier {
 
     final primary = pick(primaryCandidates);
     final secondary = pick(secondaryCandidates);
-    final parts = <String>[
-      if (primary != null) primary,
-      if (secondary != null && secondary != primary) secondary,
-    ];
+    final parts = <String>[];
+    if (primary != null) {
+      parts.add(primary);
+    }
+    if (secondary != null && secondary != primary) {
+      parts.add(secondary);
+    }
 
     if (parts.isNotEmpty) {
       return parts.join(', ');
@@ -1014,11 +1308,6 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> _persistEmergencyContacts() async {
-    final jsonList = _emergencyContacts.map((c) => c.toJson()).toList();
-    await _contactsStorage.saveContacts(jsonList);
-  }
-
   Future<void> _loadEmergencyHealthInfo() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_emergencyHealthInfoKey);
@@ -1054,20 +1343,21 @@ class AppState extends ChangeNotifier {
   }
 
   void _startLocationStream({double radiusMeters = 1000}) {
-    _locationStreamSubscription ??= Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      ),
-    ).listen((Position position) {
-      unawaited(
-        updateUserLocation(
-          lat: position.latitude,
-          lng: position.longitude,
-          radiusMeters: radiusMeters,
-        ),
-      );
-    });
+    _locationStreamSubscription ??=
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+          ),
+        ).listen((Position position) {
+          unawaited(
+            updateUserLocation(
+              lat: position.latitude,
+              lng: position.longitude,
+              radiusMeters: radiusMeters,
+            ),
+          );
+        });
   }
 
   @override

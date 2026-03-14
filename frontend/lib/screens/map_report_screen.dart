@@ -58,7 +58,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
     final longitude = widget.appState.currentLongitude;
     final hasLocation = latitude != null && longitude != null;
     final selectedPoint =
-        _selectedPoint ?? (hasLocation ? LatLng(latitude!, longitude!) : null);
+        _selectedPoint ?? (hasLocation ? LatLng(latitude, longitude) : null);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -100,8 +100,8 @@ class _MapReportScreenState extends State<MapReportScreen> {
                 hasLocation && selectedPoint != null
                     ? _LiveMap(
                         reports: widget.appState.nearbyReports,
-                        centerLatitude: latitude!,
-                        centerLongitude: longitude!,
+                        centerLatitude: latitude,
+                        centerLongitude: longitude,
                         selectedLocation: selectedPoint,
                         isLoading: widget.appState.isMapDataLoading,
                         onTap: _handleMapTap,
@@ -417,7 +417,9 @@ class _LiveMap extends StatelessWidget {
 
     return Container(
       height: 255,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.md)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
       clipBehavior: Clip.hardEdge,
       child: Stack(
         children: [

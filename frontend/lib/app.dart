@@ -24,8 +24,7 @@ class _SayeAppState extends State<SayeApp> {
   @override
   void initState() {
     super.initState();
-    unawaited(_appState.checkAuthStatus());
-    unawaited(_appState.loadEmergencyContacts());
+    unawaited(_appState.initialize());
     _splashTimer = Timer(const Duration(milliseconds: 2600), () {
       if (!mounted) {
         return;
@@ -75,7 +74,7 @@ class _SayeAppState extends State<SayeApp> {
                           phone: phone,
                         ),
                     isLoading: _appState.isLoading,
-                    onDemoLogin: _appState.demoLogin,
+                    onDemoLogin: () => _appState.demoLogin(),
                   ),
           );
         },

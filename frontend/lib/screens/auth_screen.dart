@@ -20,7 +20,7 @@ class AuthScreen extends StatefulWidget {
     required String phone,
   })
   onRegister;
-  final VoidCallback onDemoLogin;
+  final Future<void> Function() onDemoLogin;
   final bool isLoading;
 
   @override
@@ -120,7 +120,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                   child: TextButton(
                                     onPressed: widget.isLoading
                                         ? null
-                                        : widget.onDemoLogin,
+                                        : () async {
+                                            await _submitAuthAction(
+                                              widget.onDemoLogin,
+                                            );
+                                          },
                                     child: const Text('Demo Giris'),
                                   ),
                                 ),

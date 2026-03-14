@@ -5,38 +5,55 @@ import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'safe_contacts_screen.dart';
 
-class PermissionsScreen extends StatelessWidget {
+class PermissionsScreen extends StatefulWidget {
   const PermissionsScreen({super.key, required this.appState});
 
   final AppState appState;
+
+  @override
+  State<PermissionsScreen> createState() => _PermissionsScreenState();
+}
+
+class _PermissionsScreenState extends State<PermissionsScreen> {
+  AppState get appState => widget.appState;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      appState.refreshUserSettingsInBackground(force: true);
+    });
+  }
 
   Future<void> _handlePermissionChange(
     BuildContext context,
     AppPermission permission,
     bool value,
   ) async {
-    if (!value) {
-      appState.setPermission(permission.id, false);
+    if (appState.isUserSettingsBusy) {
       return;
     }
 
-    final osPermission = _mapPermission(permission.id);
-    if (osPermission == null) {
-      appState.setPermission(permission.id, true);
-      return;
+    bool nextValue = value;
+    if (value) {
+      final osPermission = _mapPermission(permission.id);
+      if (osPermission != null) {
+        final status = await osPermission.request();
+        if (!context.mounted) {
+          return;
+        }
+        nextValue =
+            status == PermissionStatus.granted ||
+            status == PermissionStatus.limited ||
+            status == PermissionStatus.provisional;
+      }
     }
 
-    final status = await osPermission.request();
-    if (!context.mounted) {
-      return;
+    try {
+      await appState.updatePermission(permission.id, nextValue);
+    } catch (error) {
+      _showError(error);
     }
-
-    final granted =
-        status == PermissionStatus.granted ||
-        status == PermissionStatus.limited ||
-        status == PermissionStatus.provisional;
-
-    appState.setPermission(permission.id, granted);
   }
 
   Permission? _mapPermission(String permissionId) {
@@ -52,6 +69,19 @@ class PermissionsScreen extends StatelessWidget {
       default:
         return null;
     }
+  }
+
+  void _showError(Object error) {
+    if (!mounted) {
+      return;
+    }
+
+    final message = error is AppStateException
+        ? error.message
+        : error.toString();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
   }
 
   @override
@@ -80,6 +110,11 @@ class PermissionsScreen extends StatelessWidget {
                       children: [
                         _TopHeader(onBack: () => Navigator.of(context).pop()),
                         const SizedBox(height: AppSpacing.lg),
+                        if (appState.isUserSettingsBusy)
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                            child: LinearProgressIndicator(),
+                          ),
                         Container(
                           padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
@@ -96,7 +131,7 @@ class PermissionsScreen extends StatelessWidget {
                             children: [
                               Center(
                                 child: Text(
-                                  'İzinler',
+                                  'Izinler',
                                   style: AppTextStyles.title.copyWith(
                                     fontSize: 36,
                                   ),
@@ -104,7 +139,7 @@ class PermissionsScreen extends StatelessWidget {
                               ),
                               const Divider(color: Colors.white70, height: 18),
                               Text(
-                                'Uygulama için gerekli cihaz izinlerini buradan yönetebilirsiniz.',
+                                'Uygulama icin gerekli cihaz izinlerini buradan yonetebilirsiniz.',
                                 style: AppTextStyles.body.copyWith(
                                   color: Colors.white.withValues(alpha: 0.9),
                                   fontSize: 21,
@@ -128,18 +163,20 @@ class PermissionsScreen extends StatelessWidget {
                                     Icons.group_rounded,
                                     color: Colors.white,
                                   ),
-                                  label: const Text('Acil Durum Kişileri'),
+                                  label: const Text('Acil Durum Kisileri'),
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.md),
                               ...appState.permissions.map(
                                 (permission) => _PermissionTile(
                                   permission: permission,
-                                  onChanged: (value) => _handlePermissionChange(
-                                    context,
-                                    permission,
-                                    value,
-                                  ),
+                                  onChanged: appState.isUserSettingsBusy
+                                      ? null
+                                      : (value) => _handlePermissionChange(
+                                          context,
+                                          permission,
+                                          value,
+                                        ),
                                 ),
                               ),
                             ],
@@ -202,14 +239,14 @@ class _PermissionTile extends StatelessWidget {
   const _PermissionTile({required this.permission, required this.onChanged});
 
   final AppPermission permission;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: InkWell(
-        onTap: () => onChanged(!permission.enabled),
+        onTap: onChanged == null ? null : () => onChanged!(!permission.enabled),
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -3,19 +3,56 @@ import 'package:flutter/material.dart';
 import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
-import 'emergency_info_screen.dart';
+import 'permissions_screen.dart';
 import 'profile_screen.dart';
 import 'rules_screen.dart';
 import 'safe_contacts_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, required this.appState});
 
   final AppState appState;
 
   @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  AppState get appState => widget.appState;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      appState.refreshUserSettingsInBackground(force: true);
+    });
+  }
+
+  Future<void> _handleProfileVisibilityChanged(bool value) async {
+    try {
+      await appState.updateProfileVisibilityInAlerts(value);
+    } catch (error) {
+      _showError(error);
+    }
+  }
+
+  void _showError(Object error) {
+    if (!mounted) {
+      return;
+    }
+
+    final message = error is AppStateException
+        ? error.message
+        : error.toString();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final user = appState.currentUser;
+    final isBusy = appState.isUserSettingsBusy;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -33,8 +70,13 @@ class SettingsScreen extends StatelessWidget {
               children: [
                 _SettingsHeader(onBack: () => appState.setIndex(0)),
                 const SizedBox(height: AppSpacing.md),
+                if (isBusy)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: AppSpacing.md),
+                    child: LinearProgressIndicator(),
+                  ),
                 Text(
-                  'Hesap, gizlilik ve güvenlik ayarlarını buradan yönetebilirsin.',
+                  'Hesap, gizlilik ve guvenlik ayarlarini buradan yonetebilirsin.',
                   style: AppTextStyles.body.copyWith(
                     color: Colors.white70,
                     fontSize: 14,
@@ -43,10 +85,10 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _InfoCard(
-                  title: 'Hesabını güvene almamıza yardımcı ol!',
+                  title: 'Hesabini guvene almamiza yardimci ol!',
                   body:
-                      'Bilgilerini gözden geçirmeni ve hesabına ilave giriş koruması eklemeni tavsiye ediyoruz. Doğru bilgiler, güvenlik sorunu durumunda iletişime geçmemize yardımcı olur.',
-                  footerLabel: 'Acil Durum İlk Çağrı Kişileri',
+                      'Bilgilerini gozden gecirmeni ve hesabina ilave giris korumasi eklemeni tavsiye ediyoruz. Dogru bilgiler, guvenlik sorunu durumunda iletisime gecmemize yardimci olur.',
+                  footerLabel: 'Acil Durum Ilk Cagri Kisileri',
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
@@ -60,21 +102,21 @@ class SettingsScreen extends StatelessWidget {
                   title: 'Hesap Bilgileri',
                   body:
                       'Ad: ${user?.username.isNotEmpty == true ? user!.username : AppDefaults.fallbackProfileName}\nE-posta: ${user?.email.isNotEmpty == true ? user!.email : AppDefaults.fallbackProfileEmail}\nTelefon: ${user?.phone.isNotEmpty == true ? user!.phone : '-'}',
-                  footerLabel: 'Profil ekranına git',
+                  footerLabel: 'Profil ekranina git',
                   onTap: () => appState.setIndex(3),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _InfoCard(
-                  title: 'Profil Görünürlüğü',
+                  title: 'Profil Gorunurlugu',
                   body:
-                      'Yapılan ihbarlarda profil adın görünsün mü? Bu ayar açık olduğunda bildirim geçmişinde hesabın ilişkilendirilir.',
+                      'Yapilan ihbarlarda profil adin gorunsun mu? Bu ayar acik oldugunda bildirim gecmisinde hesabin iliskilendirilir.',
                   trailing: Switch.adaptive(
                     value: appState.isProfileVisibleInAlerts,
-                    onChanged: appState.setProfileVisibilityInAlerts,
+                    onChanged: isBusy ? null : _handleProfileVisibilityChanged,
                   ),
                   footerLabel: appState.isProfileVisibleInAlerts
                       ? 'Aktif'
-                      : 'Kapalı',
+                      : 'Kapali',
                   onTap: () {},
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -98,12 +140,12 @@ class SettingsScreen extends StatelessWidget {
                     Expanded(
                       child: _MiniActionCard(
                         icon: Icons.verified_user_rounded,
-                        label: 'İzinler',
+                        label: 'Izinler',
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute<void>(
                               builder: (_) =>
-                                  EmergencyInfoScreen(appState: appState),
+                                  PermissionsScreen(appState: appState),
                             ),
                           );
                         },
@@ -142,7 +184,10 @@ class _SettingsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 14),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 14,
+      ),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -247,7 +292,7 @@ class _InfoCard extends StatelessWidget {
                     ),
                   ),
                   // ignore: use_null_aware_elements
-                  if (trailing case final trailingWidget?) trailingWidget,
+                  if (trailing != null) trailing!,
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),

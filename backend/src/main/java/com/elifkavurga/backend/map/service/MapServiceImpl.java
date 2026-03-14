@@ -2,73 +2,44 @@ package com.elifkavurga.backend.map.service;
 
 import com.elifkavurga.backend.map.dto.RiskResponse;
 import com.elifkavurga.backend.report.dto.ReportResponse;
-import com.elifkavurga.backend.report.entity.Report;
 import com.elifkavurga.backend.report.repository.ReportRepository;
+import com.elifkavurga.backend.report.repository.projection.NearbyReportProjection;
+import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
-import lombok.RequiredArgsConstructor;
+import org.locationtech.jts.geom.Point;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MapServiceImpl implements MapService {
 
+    private static final GeometryFactory GEOMETRY_FACTORY =
+            new GeometryFactory(new PrecisionModel(), 4326);
+
     private final ReportRepository reportRepository;
     private final Clock clock;
 
-    private static double distanceMeters(double lat1, double lng1, double lat2, double lng2) {
-        // haversine formula
-        double earthRadius = 6371000; // meters
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLng = Math.toRadians(lng2 - lng1);
-        double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                   Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                   Math.sin(dLng/2) * Math.sin(dLng/2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return earthRadius * c;
-    }
-
-    private List<Report> queryNearby(double lat, double lng, double radiusMeters) {
-        Instant cutoff = Instant.now(clock).minus(12, java.time.temporal.ChronoUnit.HOURS);
-        try {
-            GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 4326);
-            List<Report> candidates = reportRepository.findByLocationWithinRadius(
-                    gf.createPoint(new Coordinate(lng, lat)),
-                    radiusMeters
-            );
-            // Keep deterministic behavior across different DB spatial implementations.
-            return candidates.stream()
-                    .filter(r -> isActive(r, cutoff))
-                    .filter(r -> r.getLatitude() != null && r.getLongitude() != null)
-                    .filter(r -> distanceMeters(lat, lng, r.getLatitude(), r.getLongitude()) <= radiusMeters)
-                    .collect(Collectors.toList());
-        } catch (Exception ex) {
-            // log and fallback to manual filtering (e.g. H2 lacks ST_DWithin)
-            System.out.println("spatial query failed, falling back: " + ex.getMessage());
-            return reportRepository.findActiveReportsWithin12Hours().stream()
-                    .filter(r -> r.getLatitude() != null && r.getLongitude() != null)
-                    .filter(r -> distanceMeters(lat, lng, r.getLatitude(), r.getLongitude()) <= radiusMeters)
-                    .collect(Collectors.toList());
-        }
+    private List<NearbyReportProjection> queryNearby(double lat, double lng, double radiusMeters) {
+        Instant cutoff = Instant.now(clock).minus(12, ChronoUnit.HOURS);
+        return reportRepository.findActiveNearbyReports(createPoint(lat, lng), radiusMeters, cutoff);
     }
 
     @Override
     public List<ReportResponse> findReportsNearby(double lat, double lng, double radiusMeters) {
         return queryNearby(lat, lng, radiusMeters).stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public RiskResponse computeRisk(double lat, double lng) {
-        Instant now = Instant.now(clock);
-        Instant cutoff = now.minus(12, java.time.temporal.ChronoUnit.HOURS);
         final double maxRadius = 1000.0; // meters
 
         java.util.Map<String, Double> categoryWeights = java.util.Map.of(
@@ -82,18 +53,15 @@ public class MapServiceImpl implements MapService {
 
         double rawScore = 0.0;
 
-        List<Report> nearby = queryNearby(lat, lng, maxRadius);
-        for (Report r : nearby) {
-            if (!isActive(r, cutoff)) continue;
+        List<NearbyReportProjection> nearby = queryNearby(lat, lng, maxRadius);
+        for (NearbyReportProjection report : nearby) {
+            Double distanceMeters = report.getDistanceMeters();
+            if (distanceMeters == null) {
+                continue;
+            }
 
-            Double rlat = r.getLatitude();
-            Double rlng = r.getLongitude();
-            if (rlat == null || rlng == null) continue;
-
-            double dist = distanceMeters(lat, lng, rlat, rlng);
-            if (dist > maxRadius) continue;
-            double distanceFactor = 1.0 - (dist / maxRadius);
-            String cat = r.getCategory() != null ? r.getCategory().name() : "";
+            double distanceFactor = Math.max(0.0, 1.0 - (distanceMeters / maxRadius));
+            String cat = report.getCategory() != null ? report.getCategory() : "";
             double catWeight = categoryWeights.getOrDefault(cat, 1.0);
             rawScore += catWeight * distanceFactor;
         }
@@ -114,24 +82,21 @@ public class MapServiceImpl implements MapService {
                 .build();
     }
 
-    private boolean isActive(Report r, Instant cutoff) {
-        Instant createdAt = r.getCreatedAt();
-        Instant updatedAt = r.getUpdatedAt();
-        return (createdAt != null && !createdAt.isBefore(cutoff))
-                || (updatedAt != null && !updatedAt.isBefore(cutoff));
+    private Point createPoint(double lat, double lng) {
+        return GEOMETRY_FACTORY.createPoint(new Coordinate(lng, lat));
     }
 
-    private ReportResponse toResponse(Report r) {
+    private ReportResponse toResponse(NearbyReportProjection report) {
         return ReportResponse.builder()
-                .id(r.getId())
-                .userId(r.getUserId())
-                .category(r.getCategory() != null ? r.getCategory().name() : null)
-                .description(r.getDescription())
-                .latitude(r.getLatitude())
-                .longitude(r.getLongitude())
-                .createdAt(r.getCreatedAt())
-                .status(r.getStatus() != null ? r.getStatus().name() : null)
-                .confidenceScore(r.getConfidenceScore())
+                .id(report.getId())
+                .userId(report.getUserId())
+                .category(report.getCategory())
+                .description(report.getDescription())
+                .latitude(report.getLatitude())
+                .longitude(report.getLongitude())
+                .createdAt(report.getCreatedAt())
+                .status(report.getStatus())
+                .confidenceScore(report.getConfidenceScore())
                 .build();
     }
 }
