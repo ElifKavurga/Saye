@@ -73,6 +73,11 @@ class EmergencyHealthInfo {
   final String allergyNotes;
   final String emergencyNote;
 
+  bool get hasContent =>
+      bloodType.trim().isNotEmpty ||
+      allergyNotes.trim().isNotEmpty ||
+      emergencyNote.trim().isNotEmpty;
+
   EmergencyHealthInfo copyWith({
     String? bloodType,
     String? allergyNotes,
@@ -583,18 +588,26 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void saveEmergencyHealthInfo({
+  Future<void> saveEmergencyHealthInfo({
     String? bloodType,
     String? allergyNotes,
     String? emergencyNote,
-  }) {
+  }) async {
+    final previous = _emergencyHealthInfo;
     _emergencyHealthInfo = _emergencyHealthInfo.copyWith(
-      bloodType: bloodType?.trim(),
-      allergyNotes: allergyNotes?.trim(),
-      emergencyNote: emergencyNote?.trim(),
+      bloodType: bloodType?.trim() ?? '',
+      allergyNotes: allergyNotes?.trim() ?? '',
+      emergencyNote: emergencyNote?.trim() ?? '',
     );
-    notifyListeners();
-    unawaited(_persistEmergencyHealthInfo());
+
+    try {
+      await _persistEmergencyHealthInfo();
+    } catch (_) {
+      _emergencyHealthInfo = previous;
+      rethrow;
+    } finally {
+      notifyListeners();
+    }
   }
 
   void setPermission(String id, bool enabled) {
@@ -669,7 +682,6 @@ class AppState extends ChangeNotifier {
     _localReports.clear();
     _nearbyReports.clear();
     _isProfileVisibleInAlerts = true;
-    _emergencyHealthInfo = const EmergencyHealthInfo();
     _currentLatitude = null;
     _currentLongitude = null;
     _isMapDataLoading = false;
@@ -1021,9 +1033,9 @@ class AppState extends ChangeNotifier {
       }
 
       _emergencyHealthInfo = EmergencyHealthInfo(
-        bloodType: data['bloodType']?.toString() ?? '',
-        allergyNotes: data['allergyNotes']?.toString() ?? '',
-        emergencyNote: data['emergencyNote']?.toString() ?? '',
+        bloodType: data['bloodType']?.toString().trim() ?? '',
+        allergyNotes: data['allergyNotes']?.toString().trim() ?? '',
+        emergencyNote: data['emergencyNote']?.toString().trim() ?? '',
       );
       notifyListeners();
     } catch (e) {
