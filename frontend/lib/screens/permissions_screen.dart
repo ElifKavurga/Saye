@@ -62,8 +62,6 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
         return Permission.location;
       case 'background_refresh':
         return Permission.locationAlways;
-      case 'bluetooth':
-        return Permission.bluetoothConnect;
       case 'gsm_sms':
         return Permission.sms;
       default:

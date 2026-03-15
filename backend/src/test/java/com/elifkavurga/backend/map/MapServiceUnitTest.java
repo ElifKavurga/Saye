@@ -2,6 +2,9 @@ package com.elifkavurga.backend.map;
 
 import com.elifkavurga.backend.map.dto.RiskResponse;
 import com.elifkavurga.backend.map.service.MapServiceImpl;
+import com.elifkavurga.backend.map.service.MapRiskProcessor;
+import com.elifkavurga.backend.map.service.RiskCircleBuilder;
+import com.elifkavurga.backend.map.service.RiskClusterService;
 import com.elifkavurga.backend.report.repository.ReportRepository;
 import com.elifkavurga.backend.report.repository.projection.NearbyReportProjection;
 import org.locationtech.jts.geom.Point;
@@ -28,9 +31,9 @@ class MapServiceUnitTest {
     @BeforeEach
     void setup() {
         repo = Mockito.mock(ReportRepository.class);
-        // fix clock to a known instant
         fixedClock = Clock.fixed(Instant.parse("2026-03-02T00:00:00Z"), ZoneOffset.UTC);
-        service = new MapServiceImpl(repo, fixedClock);
+        MapRiskProcessor mapRiskProcessor = new MapRiskProcessor(new RiskClusterService(), new RiskCircleBuilder());
+        service = new MapServiceImpl(repo, mapRiskProcessor, fixedClock);
     }
 
     @Test
@@ -44,13 +47,11 @@ class MapServiceUnitTest {
         RiskResponse first = service.computeRisk(0.0, 0.0);
         RiskResponse second = service.computeRisk(0.0, 0.0);
 
-        // deterministic: subsequent calls return same value
         assertThat(first).isEqualTo(second);
         assertThat(first.getScore()).isGreaterThan(0);
         assertThat(first.getLevel()).isIn("low", "medium", "high");
-        // based on weights/security+lighting this should be around 40-45 => medium
-        assertThat(first.getLevel()).isEqualTo("medium");
-        assertThat(first.getScore()).isBetween(39.9, 40.1);
+        assertThat(first.getLevel()).isEqualTo("high");
+        assertThat(first.getScore()).isEqualTo(80.0);
     }
 
     private NearbyReportProjection nearbyReport(String category, double distanceMeters) {

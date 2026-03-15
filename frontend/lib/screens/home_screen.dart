@@ -86,11 +86,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: AppSpacing.md),
                     _MapPreviewCard(onTap: widget.onOpenMap),
                     const SizedBox(height: AppSpacing.md),
-                    _BluetoothCard(
-                      color: riskColor,
-                      message: _bluetoothMessage(risk),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
                     Text(
                       'BASILI TUT: YARDIM CAGIR',
                       textAlign: TextAlign.center,
@@ -580,59 +575,6 @@ class _MapPreviewCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _BluetoothCard extends StatelessWidget {
-  const _BluetoothCard({required this.color, required this.message});
-
-  final Color color;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        gradient: LinearGradient(
-          colors: [const Color(0xFF1A4F8A), color.withValues(alpha: 0.52)],
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF0A2D55),
-              border: Border.all(color: Colors.white24),
-            ),
-            child: const Icon(Icons.radar_rounded, color: Color(0xFF26D0FF)),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Bluetooth Takip Analizi',
-                  style: AppTextStyles.title.copyWith(fontSize: 18),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  message,
-                  style: AppTextStyles.body.copyWith(
-                    color: Colors.white.withValues(alpha: 0.95),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

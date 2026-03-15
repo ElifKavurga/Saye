@@ -16,7 +16,6 @@ class EmergencyInfoScreen extends StatefulWidget {
 class _EmergencyInfoScreenState extends State<EmergencyInfoScreen> {
   bool _locationPermissionEnabled = false;
   bool _backgroundLocationEnabled = false;
-  bool _bluetoothPermissionEnabled = false;
   bool _smsPermissionEnabled = false;
 
   @override
@@ -49,8 +48,6 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen> {
                                 _locationPermissionEnabled,
                             backgroundLocationEnabled:
                                 _backgroundLocationEnabled,
-                            bluetoothPermissionEnabled:
-                                _bluetoothPermissionEnabled,
                             smsPermissionEnabled: _smsPermissionEnabled,
                             onLocationChanged: (value) async {
                               if (!value) {
@@ -82,25 +79,6 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen> {
                               }
                               setState(() {
                                 _backgroundLocationEnabled =
-                                    status == PermissionStatus.granted ||
-                                    status == PermissionStatus.limited ||
-                                    status == PermissionStatus.provisional;
-                              });
-                            },
-                            onBluetoothChanged: (value) async {
-                              if (!value) {
-                                setState(
-                                  () => _bluetoothPermissionEnabled = false,
-                                );
-                                return;
-                              }
-                              final status =
-                                  await Permission.bluetoothConnect.request();
-                              if (!mounted) {
-                                return;
-                              }
-                              setState(() {
-                                _bluetoothPermissionEnabled =
                                     status == PermissionStatus.granted ||
                                     status == PermissionStatus.limited ||
                                     status == PermissionStatus.provisional;
@@ -181,21 +159,17 @@ class _PermissionSection extends StatelessWidget {
   const _PermissionSection({
     required this.locationPermissionEnabled,
     required this.backgroundLocationEnabled,
-    required this.bluetoothPermissionEnabled,
     required this.smsPermissionEnabled,
     required this.onLocationChanged,
     required this.onBackgroundLocationChanged,
-    required this.onBluetoothChanged,
     required this.onSmsChanged,
   });
 
   final bool locationPermissionEnabled;
   final bool backgroundLocationEnabled;
-  final bool bluetoothPermissionEnabled;
   final bool smsPermissionEnabled;
   final ValueChanged<bool> onLocationChanged;
   final ValueChanged<bool> onBackgroundLocationChanged;
-  final ValueChanged<bool> onBluetoothChanged;
   final ValueChanged<bool> onSmsChanged;
 
   @override
@@ -241,16 +215,6 @@ class _PermissionSection extends StatelessWidget {
                   'Uygulama kapalıyken risk ve bildirim verilerini günceller.',
               value: backgroundLocationEnabled,
               onChanged: onBackgroundLocationChanged,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: _PermissionToggleTile(
-              title: 'Bluetooth',
-              description:
-                  'Yakin cihaz taramasi ve takip analizi icin kullanilir.',
-              value: bluetoothPermissionEnabled,
-              onChanged: onBluetoothChanged,
             ),
           ),
           _PermissionToggleTile(

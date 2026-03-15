@@ -280,13 +280,6 @@ class AppState extends ChangeNotifier {
                'Acil durumda önceden tanımlı kişilere SMS göndermek için gereklidir.',
            enabled: false,
          ),
-         AppPermission(
-           id: 'bluetooth',
-           title: 'Bluetooth',
-           description:
-               'Yakin cihaz taramasi ve takip analizi icin kullanilir.',
-           enabled: true,
-         ),
        ],
        _emergencyContacts = [] {
     _emergencyContactsService =
@@ -806,9 +799,6 @@ class AppState extends ChangeNotifier {
           backgroundRefreshEnabled: id == 'background_refresh'
               ? enabled
               : _userSettings.backgroundRefreshEnabled,
-          bluetoothEnabled: id == 'bluetooth'
-              ? enabled
-              : _userSettings.bluetoothEnabled,
           gsmSmsEnabled: id == 'gsm_sms' ? enabled : _userSettings.gsmSmsEnabled,
           quickUnlockAccessEnabled: id == 'quick_unlock_access'
               ? enabled
@@ -1065,7 +1055,6 @@ class AppState extends ChangeNotifier {
       'background_refresh',
       settings.backgroundRefreshEnabled,
     );
-    _setPermissionLocally('bluetooth', settings.bluetoothEnabled);
     _setPermissionLocally('gsm_sms', settings.gsmSmsEnabled);
     _setPermissionLocally(
       'quick_unlock_access',
@@ -1083,7 +1072,6 @@ class AppState extends ChangeNotifier {
     _isUserSettingsSaving = false;
     _setPermissionLocally('location_info', true);
     _setPermissionLocally('background_refresh', true);
-    _setPermissionLocally('bluetooth', true);
     _setPermissionLocally('gsm_sms', false);
     _setPermissionLocally('quick_unlock_access', false);
     if (notify) {
@@ -1103,7 +1091,6 @@ class AppState extends ChangeNotifier {
   bool _isServerBackedPermission(String id) {
     return id == 'location_info' ||
         id == 'background_refresh' ||
-        id == 'bluetooth' ||
         id == 'gsm_sms' ||
         id == 'quick_unlock_access';
   }

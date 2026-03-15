@@ -43,8 +43,6 @@ class MediumRiskHomeScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
                 _MapCard(onTap: onOpenMap),
                 const SizedBox(height: AppSpacing.md),
-                const _BluetoothWarningCard(),
-                const SizedBox(height: AppSpacing.md),
                 Text(
                   'BASILI TUT: YARDIM CAGIR',
                   textAlign: TextAlign.center,
