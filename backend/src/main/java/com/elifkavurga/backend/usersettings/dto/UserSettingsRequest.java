@@ -16,4 +16,13 @@ public class UserSettingsRequest {
 
     @NotNull
     private Boolean backgroundRefreshEnabled;
+
+    @NotNull
+    private Boolean bluetoothEnabled;
+
+    @NotNull
+    private Boolean gsmSmsEnabled;
+
+    @NotNull
+    private Boolean quickUnlockAccessEnabled;
 }

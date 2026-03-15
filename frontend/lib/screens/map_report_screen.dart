@@ -8,7 +8,6 @@ import 'package:latlong2/latlong.dart';
 import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
-import 'report_sent_screen.dart';
 
 class MapReportScreen extends StatefulWidget {
   const MapReportScreen({
@@ -107,6 +106,8 @@ class _MapReportScreenState extends State<MapReportScreen> {
                         onTap: _handleMapTap,
                       )
                     : _MapLoadingView(),
+                const SizedBox(height: AppSpacing.sm),
+                const _RiskLegend(),
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   'Anahtar Kelime Seçerek Başka Kişileri Uyar!',
@@ -167,6 +168,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
     final noteController = TextEditingController();
     final parentContext = context;
     final formattedLocation = _formatLatLng(selectedPoint);
+    bool isSubmitting = false;
 
     await showModalBottomSheet<void>(
       context: context,
@@ -176,93 +178,113 @@ class _MapReportScreenState extends State<MapReportScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.md,
-            MediaQuery.of(context).viewInsets.bottom + AppSpacing.md,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Ihbar Gonder',
-                style: AppTextStyles.title.copyWith(fontSize: 22),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Kategori: ${_selectedCategory ?? '-'}',
-                style: AppTextStyles.body.copyWith(color: Colors.white70),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Konum: $formattedLocation',
-                style: AppTextStyles.body.copyWith(color: Colors.white70),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: noteController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'Kısa açıklama (opsiyonel)',
-                  fillColor: Color(0xFF1A3D66),
+        return StatefulBuilder(
+          builder: (context, setModalState) => Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              MediaQuery.of(context).viewInsets.bottom + AppSpacing.md,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ihbar Gonder',
+                  style: AppTextStyles.title.copyWith(fontSize: 22),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    try {
-                      await widget.appState.addLocalReport(
-                        category: _selectedCategory!,
-                        locationLabel: widget.appState.currentLocationName,
-                        latLng: formattedLocation,
-                        description: noteController.text.trim(),
-                        reportLatitude: selectedPoint.latitude,
-                        reportLongitude: selectedPoint.longitude,
-                      );
-                    } catch (e) {
-                      if (!parentContext.mounted) {
-                        return;
-                      }
-                      ScaffoldMessenger.of(parentContext).showSnackBar(
-                        SnackBar(
-                          content: Text('İhbar gönderilemedi: $e'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                      return;
-                    }
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Kategori: ${_selectedCategory ?? '-'}',
+                  style: AppTextStyles.body.copyWith(color: Colors.white70),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Konum: $formattedLocation',
+                  style: AppTextStyles.body.copyWith(color: Colors.white70),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: noteController,
+                  maxLines: 3,
+                  enabled: !isSubmitting,
+                  decoration: const InputDecoration(
+                    hintText: 'Kısa açıklama (opsiyonel)',
+                    fillColor: Color(0xFF1A3D66),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isSubmitting
+                        ? null
+                        : () async {
+                            setModalState(() {
+                              isSubmitting = true;
+                            });
+                            try {
+                              await widget.appState.addLocalReport(
+                                category: _selectedCategory!,
+                                locationLabel:
+                                    widget.appState.currentLocationName,
+                                latLng: formattedLocation,
+                                description: noteController.text.trim(),
+                                reportLatitude: selectedPoint.latitude,
+                                reportLongitude: selectedPoint.longitude,
+                              );
+                            } catch (e) {
+                              if (context.mounted) {
+                                setModalState(() {
+                                  isSubmitting = false;
+                                });
+                              }
+                              if (!parentContext.mounted) {
+                                return;
+                              }
+                              ScaffoldMessenger.of(parentContext)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: Text('İhbar gönderilemedi: $e'),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              return;
+                            }
 
-                    if (!parentContext.mounted) {
-                      return;
-                    }
-                    Navigator.of(parentContext).pop();
-                    if (!mounted) {
-                      return;
-                    }
-                    if (!parentContext.mounted) {
-                      return;
-                    }
-                    await Navigator.of(parentContext).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const ReportSentScreen(),
-                      ),
-                    );
-                    if (!mounted) {
-                      return;
-                    }
-                    setState(() {
-                      _selectedCategory = null;
-                    });
-                  },
-                  child: const Text('Gonder'),
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                            }
+                            if (!mounted || !parentContext.mounted) {
+                              return;
+                            }
+                            setState(() {
+                              _selectedCategory = null;
+                            });
+                            ScaffoldMessenger.of(parentContext)
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Ihbar basariyla gonderildi ve harita guncellendi.',
+                                  ),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                          },
+                    child: isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Gonder'),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -273,7 +295,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
 
   Future<void> _syncLocationAndRisk() async {
     try {
-      await widget.appState.fetchRealLocation();
+      await widget.appState.ensureMapDataLoaded(force: true);
       if (!mounted) {
         return;
       }
@@ -394,6 +416,81 @@ class _MapLoadingView extends StatelessWidget {
   }
 }
 
+class _RiskLegend extends StatelessWidget {
+  const _RiskLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF183B61).withValues(alpha: 0.84),
+            const Color(0xFF102C4B).withValues(alpha: 0.72),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: const [
+          _LegendItem(color: Color(0xFF2E7D32), label: 'Dusuk'),
+          SizedBox(width: AppSpacing.sm),
+          _LegendItem(color: Color(0xFFFF8F00), label: 'Orta'),
+          SizedBox(width: AppSpacing.sm),
+          _LegendItem(color: Color(0xFFC62828), label: 'Yuksek'),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Row(
+        children: [
+          Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTextStyles.caption.copyWith(
+                color: Colors.white.withValues(alpha: 0.84),
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.15,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _RiskSeverity { low, medium, high }
+
 class _LiveMap extends StatelessWidget {
   const _LiveMap({
     required this.reports,
@@ -414,6 +511,8 @@ class _LiveMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final centerPoint = LatLng(centerLatitude, centerLongitude);
+    final sortedReports = _sortReportsForDisplay(reports);
+    final riskCircles = _buildRiskCircles(sortedReports);
 
     return Container(
       height: 255,
@@ -439,26 +538,54 @@ class _LiveMap extends StatelessWidget {
                   },
                 ),
               ),
+              CircleLayer(
+                circles: [
+                  for (final circle in riskCircles)
+                    CircleMarker(
+                      point: LatLng(circle.centerLatitude, circle.centerLongitude),
+                      radius: circle.radiusMeters,
+                      useRadiusInMeter: true,
+                      color: circle.strokeColor.withValues(alpha: 0.25),
+                      borderColor: circle.strokeColor,
+                      borderStrokeWidth: 2.0,
+                    ),
+                ],
+              ),
               MarkerLayer(
                 markers: [
                   for (final report in reports)
                     Marker(
-                      width: 38,
-                      height: 38,
+                      width: 28,
+                      height: 28,
                       point: LatLng(report.latitude, report.longitude),
                       child: Tooltip(
                         message:
                             '${_displayCategory(report.category)} - ${report.status.isEmpty ? 'Bildirildi' : report.status}',
                         child: Container(
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Color(0xFF151515),
+                            color: const Color(
+                              0xFF08111E,
+                            ).withValues(alpha: 0.94),
+                            border: Border.all(
+                              color: _colorForReportCategory(
+                                report.category,
+                              ).withValues(alpha: 0.18),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.24),
+                                blurRadius: 10,
+                                spreadRadius: 1,
+                              ),
+                            ],
                           ),
-                          alignment: Alignment.center,
-                          child: Icon(
-                            _iconForReportCategory(report.category),
-                            size: 20,
-                            color: _colorForReportCategory(report.category),
+                          child: Center(
+                            child: Icon(
+                              _iconForReportCategory(report.category),
+                              size: 13,
+                              color: _colorForReportCategory(report.category),
+                            ),
                           ),
                         ),
                       ),
@@ -471,9 +598,18 @@ class _LiveMap extends StatelessWidget {
                       child: Tooltip(
                         message: 'Seçilen Konum',
                         child: Container(
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Color(0xFF1C7DFF),
+                            color: const Color(0xFF1C7DFF),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF1C7DFF,
+                                ).withValues(alpha: 0.26),
+                                blurRadius: 18,
+                                spreadRadius: 2,
+                              ),
+                            ],
                           ),
                           alignment: Alignment.center,
                           child: const Icon(
@@ -485,13 +621,18 @@ class _LiveMap extends StatelessWidget {
                       ),
                     ),
                   Marker(
-                    width: 36,
-                    height: 36,
+                    width: 34,
+                    height: 34,
                     point: centerPoint,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1C7DFF).withValues(alpha: 0.2),
+                        color: const Color(0xFF1C7DFF).withValues(alpha: 0.16),
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(
+                            0xFF8FC4FF,
+                          ).withValues(alpha: 0.35),
+                        ),
                       ),
                       child: const Icon(
                         Icons.my_location_rounded,
@@ -519,6 +660,65 @@ class _LiveMap extends StatelessWidget {
   static bool _isDifferentPoint(LatLng a, LatLng b) {
     return (a.latitude - b.latitude).abs() > 0.00001 ||
         (a.longitude - b.longitude).abs() > 0.00001;
+  }
+
+  List<_RiskCircleVisual> _buildRiskCircles(List<NearbyReport> reports) {
+    final circlesById = <String, _RiskCircleVisual>{};
+
+    for (final report in reports) {
+      final circleId = report.riskCircleId;
+      final radiusMeters = _effectiveRiskRadius(report);
+      final nextCircle = _RiskCircleVisual(
+        centerLatitude: report.riskCenterLatitude,
+        centerLongitude: report.riskCenterLongitude,
+        radiusMeters: radiusMeters,
+        riskScore: report.riskScore,
+        strokeColor: _colorForRiskLevel(report.riskLevel),
+      );
+
+      final existingCircle = circlesById[circleId];
+      if (existingCircle == null) {
+        circlesById[circleId] = nextCircle;
+        continue;
+      }
+
+      circlesById[circleId] = existingCircle.merge(nextCircle);
+    }
+
+    final circles = circlesById.values.toList(growable: false);
+    circles.sort((a, b) => b.riskScore.compareTo(a.riskScore));
+    return circles;
+  }
+
+  static List<NearbyReport> _sortReportsForDisplay(List<NearbyReport> reports) {
+    final ordered = List<NearbyReport>.from(reports);
+    ordered.sort((a, b) {
+      final aIsSecurity = _isSecurityReport(a);
+      final bIsSecurity = _isSecurityReport(b);
+      if (aIsSecurity != bIsSecurity) {
+        return aIsSecurity ? 1 : -1;
+      }
+
+      final severityCompare =
+          _severityForReport(a).index.compareTo(_severityForReport(b).index);
+      if (severityCompare != 0) {
+        return severityCompare;
+      }
+
+      return _riskIntensity(a).compareTo(_riskIntensity(b));
+    });
+    return ordered;
+  }
+
+  static bool _isSecurityReport(NearbyReport report) {
+    switch (_normalizedCategory(report.category)) {
+      case 'suc':
+      case 'security':
+      case 'takip':
+        return true;
+      default:
+        return false;
+    }
   }
 
   static String _normalizedCategory(String category) {
@@ -581,6 +781,99 @@ class _LiveMap extends StatelessWidget {
       default:
         return const Color(0xFFFF5722);
     }
+  }
+
+  static Color _colorForRiskLevel(String riskLevel) {
+    switch (riskLevel.trim().toUpperCase()) {
+      case 'HIGH':
+        return const Color(0xFFE53935);
+      case 'MEDIUM':
+        return const Color(0xFFFFA000);
+      case 'LOW':
+        return const Color(0xFF43A047);
+      default:
+        return const Color(0xFFFFA000);
+    }
+  }
+
+  static _RiskSeverity _severityForReport(NearbyReport report) {
+    final normalizedRiskLevel = report.riskLevel.trim().toUpperCase();
+    switch (normalizedRiskLevel) {
+      case 'HIGH':
+        return _RiskSeverity.high;
+      case 'MEDIUM':
+        return _RiskSeverity.medium;
+      case 'LOW':
+        return _RiskSeverity.low;
+    }
+
+    switch (_normalizedCategory(report.category)) {
+      case 'suc':
+      case 'security':
+      case 'takip':
+      case 'hayvan':
+      case 'animals':
+        return _RiskSeverity.high;
+      case 'trafik':
+      case 'traffic':
+      case 'saglik':
+      case 'health':
+        return _RiskSeverity.medium;
+      default:
+        return _RiskSeverity.low;
+    }
+  }
+
+  static double _effectiveRiskRadius(NearbyReport report) {
+    final severity = _severityForReport(report);
+    final fallbackRadius = switch (severity) {
+      _RiskSeverity.high => 400.0,
+      _RiskSeverity.medium => 150.0,
+      _RiskSeverity.low => 150.0,
+    };
+    final baseRadius = report.riskRadiusMeters > 0
+        ? report.riskRadiusMeters
+        : fallbackRadius;
+    final createdAt = report.createdAt;
+    if (createdAt == null) {
+      return baseRadius;
+    }
+    final ageHours = DateTime.now().difference(createdAt).inMinutes / 60.0;
+    final minimumDecay = switch (severity) {
+      _RiskSeverity.high => 0.68,
+      _RiskSeverity.medium => 0.60,
+      _RiskSeverity.low => 0.55,
+    };
+    final decay = (1 - (ageHours / 24.0)).clamp(minimumDecay, 1.0);
+    return baseRadius * decay;
+  }
+
+  static double _riskIntensity(NearbyReport report) {
+    final severity = _severityForReport(report);
+    final baseIntensity = switch (severity) {
+      _RiskSeverity.high => 0.90,
+      _RiskSeverity.medium => 0.76,
+      _RiskSeverity.low => 0.62,
+    };
+    final createdAt = report.createdAt;
+    if (createdAt == null) {
+      return baseIntensity;
+    }
+    final ageHours = DateTime.now().difference(createdAt).inMinutes / 60.0;
+    final fadeWindowHours = switch (severity) {
+      _RiskSeverity.high => 30.0,
+      _RiskSeverity.medium => 22.0,
+      _RiskSeverity.low => 18.0,
+    };
+    final minimumIntensity = switch (severity) {
+      _RiskSeverity.high => 0.62,
+      _RiskSeverity.medium => 0.50,
+      _RiskSeverity.low => 0.42,
+    };
+    return (baseIntensity - (ageHours / fadeWindowHours)).clamp(
+      minimumIntensity,
+      1.0,
+    );
   }
 
   static String _displayCategory(String category) {
@@ -664,6 +957,34 @@ class _CategoryChip extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _RiskCircleVisual {
+  const _RiskCircleVisual({
+    required this.centerLatitude,
+    required this.centerLongitude,
+    required this.radiusMeters,
+    required this.riskScore,
+    required this.strokeColor,
+  });
+
+  final double centerLatitude;
+  final double centerLongitude;
+  final double radiusMeters;
+  final double riskScore;
+  final Color strokeColor;
+
+  _RiskCircleVisual merge(_RiskCircleVisual other) {
+    return _RiskCircleVisual(
+      centerLatitude: centerLatitude,
+      centerLongitude: centerLongitude,
+      radiusMeters: radiusMeters > other.radiusMeters
+          ? radiusMeters
+          : other.radiusMeters,
+      riskScore: riskScore > other.riskScore ? riskScore : other.riskScore,
+      strokeColor: riskScore >= other.riskScore ? strokeColor : other.strokeColor,
     );
   }
 }

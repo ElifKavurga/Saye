@@ -29,14 +29,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchLocationIfNeeded() async {
-    // Only fetch if we don't have location yet
-    if (widget.appState.currentLatitude == null || widget.appState.currentLongitude == null) {
-      try {
-        await widget.appState.fetchRealLocation();
-      } catch (e) {
-        // Silently fail, location will show default
-        debugPrint('Failed to fetch location: $e');
+    try {
+      await widget.appState.ensureMapDataLoaded();
+    } catch (e) {
+      debugPrint('Failed to prepare map data: $e');
+      if (!mounted) {
+        return;
       }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Harita verileri simdi yuklenemiyor. Lutfen tekrar deneyin.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -228,7 +235,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.of(context).pop();
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => AlertsFeedScreen(appState: widget.appState),
+                        builder: (_) =>
+                            AlertsFeedScreen(appState: widget.appState),
                       ),
                     );
                   },

@@ -49,7 +49,10 @@ class UserSettingsControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.userId").value(testUserId))
                 .andExpect(jsonPath("$.data.profileVisible").value(true))
                 .andExpect(jsonPath("$.data.locationTrackingEnabled").value(true))
-                .andExpect(jsonPath("$.data.backgroundRefreshEnabled").value(true));
+                .andExpect(jsonPath("$.data.backgroundRefreshEnabled").value(true))
+                .andExpect(jsonPath("$.data.bluetoothEnabled").value(true))
+                .andExpect(jsonPath("$.data.gsmSmsEnabled").value(false))
+                .andExpect(jsonPath("$.data.quickUnlockAccessEnabled").value(false));
     }
 
     @Test
@@ -61,21 +64,30 @@ class UserSettingsControllerIntegrationTest {
                                 {
                                   "profileVisible": false,
                                   "locationTrackingEnabled": false,
-                                  "backgroundRefreshEnabled": true
+                                  "backgroundRefreshEnabled": true,
+                                  "bluetoothEnabled": false,
+                                  "gsmSmsEnabled": true,
+                                  "quickUnlockAccessEnabled": true
                                 }
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.userId").value(testUserId))
                 .andExpect(jsonPath("$.data.profileVisible").value(false))
                 .andExpect(jsonPath("$.data.locationTrackingEnabled").value(false))
-                .andExpect(jsonPath("$.data.backgroundRefreshEnabled").value(true));
+                .andExpect(jsonPath("$.data.backgroundRefreshEnabled").value(true))
+                .andExpect(jsonPath("$.data.bluetoothEnabled").value(false))
+                .andExpect(jsonPath("$.data.gsmSmsEnabled").value(true))
+                .andExpect(jsonPath("$.data.quickUnlockAccessEnabled").value(true));
 
         mvc.perform(get("/api/settings/me")
                         .header("X-USER-ID", testUserId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.profileVisible").value(false))
                 .andExpect(jsonPath("$.data.locationTrackingEnabled").value(false))
-                .andExpect(jsonPath("$.data.backgroundRefreshEnabled").value(true));
+                .andExpect(jsonPath("$.data.backgroundRefreshEnabled").value(true))
+                .andExpect(jsonPath("$.data.bluetoothEnabled").value(false))
+                .andExpect(jsonPath("$.data.gsmSmsEnabled").value(true))
+                .andExpect(jsonPath("$.data.quickUnlockAccessEnabled").value(true));
     }
 
     private User buildUser(String usernamePrefix) {

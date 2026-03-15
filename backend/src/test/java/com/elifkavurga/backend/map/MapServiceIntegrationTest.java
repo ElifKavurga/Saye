@@ -51,6 +51,14 @@ public class MapServiceIntegrationTest {
         r2.setCreatedAt(now.minusSeconds(3600));
         reportRepository.save(r2);
 
+        Report r5 = new Report();
+        r5.setCategory(ReportCategory.SECURITY);
+        r5.setDescription("Crime same block");
+        r5.setLatitude(0.001);
+        r5.setLongitude(0.0);
+        r5.setCreatedAt(now.minusSeconds(180));
+        reportRepository.save(r5);
+
         Report r3 = new Report();
         r3.setCategory(ReportCategory.ANIMALS);
         r3.setDescription("Animal far away");
@@ -88,10 +96,16 @@ public class MapServiceIntegrationTest {
     void findReportsNearbyReturnsExpectedList() {
         // radius 1000 meters should include nearby reports
         List<ReportResponse> reports = mapService.findReportsNearby(0.0, 0.0, 1000.0);
-        assertThat(reports).hasSize(2);
+        assertThat(reports).hasSize(3);
         assertThat(reports).extracting("description")
-                .containsExactlyInAnyOrder("Crime close", "Followed a bit further");
+                .containsExactlyInAnyOrder("Crime close", "Followed a bit further", "Crime same block");
         assertThat(reports).extracting("description").doesNotContain("Old crime");
+        assertThat(reports).extracting("riskRadiusMeters")
+                .containsExactlyInAnyOrder(480.0, 480.0, 260.0);
+        assertThat(reports).extracting("riskLevel")
+                .containsExactlyInAnyOrder("HIGH", "HIGH", "MEDIUM");
+        assertThat(reports).extracting("clusterSize")
+                .containsExactlyInAnyOrder(2, 2, 1);
     }
 
 }

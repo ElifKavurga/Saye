@@ -14,6 +14,9 @@ public class UserSettingsResponse {
     private final Boolean profileVisible;
     private final Boolean locationTrackingEnabled;
     private final Boolean backgroundRefreshEnabled;
+    private final Boolean bluetoothEnabled;
+    private final Boolean gsmSmsEnabled;
+    private final Boolean quickUnlockAccessEnabled;
     private final Instant createdAt;
     private final Instant updatedAt;
 }

@@ -99,6 +99,8 @@ public class ReportServiceImpl implements ReportService {
                 .createdAt(r.getCreatedAt())
                 .status(r.getStatus() != null ? r.getStatus().name() : null)
                 .confidenceScore(r.getConfidenceScore())
+                .riskCenterLatitude(r.getLatitude())
+                .riskCenterLongitude(r.getLongitude())
                 .build();
     }
 }

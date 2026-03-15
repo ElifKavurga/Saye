@@ -24,6 +24,7 @@ public class MapServiceImpl implements MapService {
             new GeometryFactory(new PrecisionModel(), 4326);
 
     private final ReportRepository reportRepository;
+    private final MapRiskProcessor mapRiskProcessor;
     private final Clock clock;
 
     private List<NearbyReportProjection> queryNearby(double lat, double lng, double radiusMeters) {
@@ -33,70 +34,15 @@ public class MapServiceImpl implements MapService {
 
     @Override
     public List<ReportResponse> findReportsNearby(double lat, double lng, double radiusMeters) {
-        return queryNearby(lat, lng, radiusMeters).stream()
-                .map(this::toResponse)
-                .toList();
+        return mapRiskProcessor.buildRiskReports(queryNearby(lat, lng, radiusMeters));
     }
 
     @Override
     public RiskResponse computeRisk(double lat, double lng) {
-        final double maxRadius = 1000.0; // meters
-
-        java.util.Map<String, Double> categoryWeights = java.util.Map.of(
-                "SECURITY", 3.0,
-                "LIGHTING", 2.0,
-                "ANIMALS", 1.0,
-                "HEALTH", 2.0,
-                "INFRASTRUCTURE", 1.0,
-                "TRAFFIC", 2.0
-        );
-
-        double rawScore = 0.0;
-
-        List<NearbyReportProjection> nearby = queryNearby(lat, lng, maxRadius);
-        for (NearbyReportProjection report : nearby) {
-            Double distanceMeters = report.getDistanceMeters();
-            if (distanceMeters == null) {
-                continue;
-            }
-
-            double distanceFactor = Math.max(0.0, 1.0 - (distanceMeters / maxRadius));
-            String cat = report.getCategory() != null ? report.getCategory() : "";
-            double catWeight = categoryWeights.getOrDefault(cat, 1.0);
-            rawScore += catWeight * distanceFactor;
-        }
-
-        double score = Math.min(100.0, rawScore * 10.0);
-        String level;
-        if (score <= 30.0) {
-            level = "low";
-        } else if (score <= 60.0) {
-            level = "medium";
-        } else {
-            level = "high";
-        }
-
-        return RiskResponse.builder()
-                .level(level)
-                .score(score)
-                .build();
+        return mapRiskProcessor.computeOverallRisk(queryNearby(lat, lng, 1000.0));
     }
 
     private Point createPoint(double lat, double lng) {
         return GEOMETRY_FACTORY.createPoint(new Coordinate(lng, lat));
-    }
-
-    private ReportResponse toResponse(NearbyReportProjection report) {
-        return ReportResponse.builder()
-                .id(report.getId())
-                .userId(report.getUserId())
-                .category(report.getCategory())
-                .description(report.getDescription())
-                .latitude(report.getLatitude())
-                .longitude(report.getLongitude())
-                .createdAt(report.getCreatedAt())
-                .status(report.getStatus())
-                .confidenceScore(report.getConfidenceScore())
-                .build();
     }
 }

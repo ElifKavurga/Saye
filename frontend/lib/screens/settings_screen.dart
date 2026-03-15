@@ -20,14 +20,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   AppState get appState => widget.appState;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      appState.refreshUserSettingsInBackground(force: true);
-    });
-  }
-
   Future<void> _handleProfileVisibilityChanged(bool value) async {
     try {
       await appState.updateProfileVisibilityInAlerts(value);

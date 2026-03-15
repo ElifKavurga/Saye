@@ -32,6 +32,7 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
                 ) AS distanceMeters
             FROM reports r
             WHERE r.location IS NOT NULL
+              AND r.status IN ('PENDING', 'REVIEWING')
               AND (r.created_at >= :cutoff OR r.updated_at >= :cutoff)
               AND ST_DWithin(
                   r.location::geography,
@@ -48,6 +49,7 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
             SELECT *
             FROM reports r
             WHERE r.category = :category
+              AND r.status IN ('PENDING', 'REVIEWING')
               AND (r.created_at >= (NOW() - INTERVAL '12 hours')
                    OR r.updated_at >= (NOW() - INTERVAL '12 hours'))
               AND ST_DWithin(
@@ -65,8 +67,9 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     @Query(value = """
             SELECT *
             FROM reports r
-            WHERE r.created_at >= (NOW() - INTERVAL '12 hours')
-               OR r.updated_at >= (NOW() - INTERVAL '12 hours')
+            WHERE r.status IN ('PENDING', 'REVIEWING')
+              AND (r.created_at >= (NOW() - INTERVAL '12 hours')
+               OR r.updated_at >= (NOW() - INTERVAL '12 hours'))
             """, nativeQuery = true)
     java.util.List<Report> findActiveReportsWithin12Hours();
 }

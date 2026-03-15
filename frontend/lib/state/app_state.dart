@@ -52,6 +52,13 @@ class NearbyReport {
     required this.longitude,
     required this.status,
     required this.createdAt,
+    required this.riskRadiusMeters,
+    required this.riskLevel,
+    required this.riskScore,
+    required this.clusterSize,
+    required this.riskCenterLatitude,
+    required this.riskCenterLongitude,
+    required this.riskCircleId,
   });
 
   final int id;
@@ -61,6 +68,13 @@ class NearbyReport {
   final double longitude;
   final String status;
   final DateTime? createdAt;
+  final double riskRadiusMeters;
+  final String riskLevel;
+  final double riskScore;
+  final int clusterSize;
+  final double riskCenterLatitude;
+  final double riskCenterLongitude;
+  final String riskCircleId;
 }
 
 class EmergencyHealthInfo {
@@ -122,6 +136,9 @@ class UserSettingsData {
     this.profileVisible = true,
     this.locationTrackingEnabled = true,
     this.backgroundRefreshEnabled = true,
+    this.bluetoothEnabled = true,
+    this.gsmSmsEnabled = false,
+    this.quickUnlockAccessEnabled = false,
   });
 
   final int? id;
@@ -129,6 +146,9 @@ class UserSettingsData {
   final bool profileVisible;
   final bool locationTrackingEnabled;
   final bool backgroundRefreshEnabled;
+  final bool bluetoothEnabled;
+  final bool gsmSmsEnabled;
+  final bool quickUnlockAccessEnabled;
 
   factory UserSettingsData.fromJson(Map<String, dynamic> json) {
     return UserSettingsData(
@@ -138,6 +158,10 @@ class UserSettingsData {
       locationTrackingEnabled: json['locationTrackingEnabled'] as bool? ?? true,
       backgroundRefreshEnabled:
           json['backgroundRefreshEnabled'] as bool? ?? true,
+      bluetoothEnabled: json['bluetoothEnabled'] as bool? ?? true,
+      gsmSmsEnabled: json['gsmSmsEnabled'] as bool? ?? false,
+      quickUnlockAccessEnabled:
+          json['quickUnlockAccessEnabled'] as bool? ?? false,
     );
   }
 
@@ -146,6 +170,9 @@ class UserSettingsData {
       'profileVisible': profileVisible,
       'locationTrackingEnabled': locationTrackingEnabled,
       'backgroundRefreshEnabled': backgroundRefreshEnabled,
+      'bluetoothEnabled': bluetoothEnabled,
+      'gsmSmsEnabled': gsmSmsEnabled,
+      'quickUnlockAccessEnabled': quickUnlockAccessEnabled,
     };
   }
 
@@ -153,6 +180,9 @@ class UserSettingsData {
     bool? profileVisible,
     bool? locationTrackingEnabled,
     bool? backgroundRefreshEnabled,
+    bool? bluetoothEnabled,
+    bool? gsmSmsEnabled,
+    bool? quickUnlockAccessEnabled,
   }) {
     return UserSettingsData(
       id: id,
@@ -162,6 +192,10 @@ class UserSettingsData {
           locationTrackingEnabled ?? this.locationTrackingEnabled,
       backgroundRefreshEnabled:
           backgroundRefreshEnabled ?? this.backgroundRefreshEnabled,
+      bluetoothEnabled: bluetoothEnabled ?? this.bluetoothEnabled,
+      gsmSmsEnabled: gsmSmsEnabled ?? this.gsmSmsEnabled,
+      quickUnlockAccessEnabled:
+          quickUnlockAccessEnabled ?? this.quickUnlockAccessEnabled,
     );
   }
 }
@@ -208,6 +242,9 @@ class EmergencyContact {
 }
 
 class AppState extends ChangeNotifier {
+  static const double _fallbackLatitude = 38.3552;
+  static const double _fallbackLongitude = 38.3095;
+
   AppState({
     ApiService? apiService,
     EmergencyContactsService? emergencyContactsService,
@@ -273,6 +310,7 @@ class AppState extends ChangeNotifier {
   RiskLevel _riskLevel = RiskLevel.low;
   bool _emergencyActive = false;
   bool _showRiskDecision = false;
+  bool _hasAcknowledgedHighRisk = false;
   final List<LocalReportNotification> _localReports = [];
   final List<NearbyReport> _nearbyReports = [];
   UserSettingsData _userSettings = const UserSettingsData();
@@ -284,6 +322,8 @@ class AppState extends ChangeNotifier {
   double? _currentLongitude;
   String? _currentLocationName;
   bool _isMapDataLoading = false;
+  DateTime? _lastMapSyncAt;
+  Future<void>? _mapDataLoadFuture;
   bool _isLoading = false;
   int _loadingCounter = 0;
   StreamSubscription<Position>? _locationStreamSubscription;
@@ -417,8 +457,7 @@ class AppState extends ChangeNotifier {
         }
         _currentUser = _toSessionUser(userMap);
         _setDefaultLandingScenario();
-        await _loadEmergencyContactsForCurrentUser(notify: false);
-        await _loadUserSettingsForCurrentUser(force: true, notify: false);
+        await _loadSessionSideData(notify: false);
         notifyListeners();
       } catch (e) {
         await _apiService.clearSession();
@@ -448,10 +487,13 @@ class AppState extends ChangeNotifier {
     switch (_riskLevel) {
       case RiskLevel.low:
         _riskLevel = RiskLevel.medium;
+        break;
       case RiskLevel.medium:
         _riskLevel = RiskLevel.high;
+        break;
       case RiskLevel.high:
         _riskLevel = RiskLevel.low;
+        break;
     }
     notifyListeners();
   }
@@ -461,30 +503,71 @@ class AppState extends ChangeNotifier {
     required double lng,
     double radiusMeters = 1000,
   }) async {
-    await _withLoading(() async {
-      _currentLatitude = lat;
-      _currentLongitude = lng;
-      _isMapDataLoading = true;
-      notifyListeners();
+    _currentLatitude = lat;
+    _currentLongitude = lng;
+    _isMapDataLoading = true;
+    notifyListeners();
 
-      try {
-        await Future.wait<void>([
-          _updateLocationName(lat, lng),
-          _refreshRiskLevel(lat: lat, lng: lng),
-          _refreshNearbyReports(lat: lat, lng: lng, radiusMeters: radiusMeters),
-        ]);
-      } catch (e) {
-        throw AppStateException(
-          _toUserMessage(
-            e,
-            fallback: 'Harita verileri yüklenemedi. Bağlantını kontrol et.',
-          ),
-        );
-      } finally {
-        _isMapDataLoading = false;
-        notifyListeners();
+    try {
+      await Future.wait<void>([
+        _updateLocationName(lat, lng),
+        _refreshRiskLevel(lat: lat, lng: lng),
+        _refreshNearbyReports(lat: lat, lng: lng, radiusMeters: radiusMeters),
+      ]);
+      _lastMapSyncAt = DateTime.now();
+    } catch (e) {
+      throw AppStateException(
+        _toUserMessage(
+          e,
+          fallback: 'Harita verileri yüklenemedi. Bağlantını kontrol et.',
+        ),
+      );
+    } finally {
+      _isMapDataLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> ensureMapDataLoaded({
+    bool force = false,
+    double radiusMeters = 1000,
+  }) async {
+    if (_mapDataLoadFuture != null) {
+      return _mapDataLoadFuture!;
+    }
+
+    final hasKnownLocation =
+        _currentLatitude != null && _currentLongitude != null;
+    final hasFreshData =
+        !force &&
+        _lastMapSyncAt != null &&
+        DateTime.now().difference(_lastMapSyncAt!) < const Duration(minutes: 2);
+
+    if (hasKnownLocation && hasFreshData) {
+      return;
+    }
+
+    final loadFuture = _loadMapData(radiusMeters: radiusMeters);
+    _mapDataLoadFuture = loadFuture;
+    try {
+      await loadFuture;
+    } finally {
+      if (identical(_mapDataLoadFuture, loadFuture)) {
+        _mapDataLoadFuture = null;
       }
-    });
+    }
+  }
+
+  Future<void> refreshMapData({
+    double? lat,
+    double? lng,
+    double radiusMeters = 1000,
+  }) async {
+    await updateUserLocation(
+      lat: lat ?? _currentLatitude ?? _fallbackLatitude,
+      lng: lng ?? _currentLongitude ?? _fallbackLongitude,
+      radiusMeters: radiusMeters,
+    );
   }
 
   Future<void> fetchRealLocation({double radiusMeters = 1000}) async {
@@ -570,12 +653,14 @@ class AppState extends ChangeNotifier {
 
   void acceptRiskDecision() {
     _showRiskDecision = false;
+    _hasAcknowledgedHighRisk = true;
     _riskLevel = RiskLevel.high;
     notifyListeners();
   }
 
   void declineRiskDecision() {
     _showRiskDecision = false;
+    _hasAcknowledgedHighRisk = true;
     _riskLevel = RiskLevel.low;
     notifyListeners();
   }
@@ -588,48 +673,58 @@ class AppState extends ChangeNotifier {
     double? reportLatitude,
     double? reportLongitude,
   }) async {
-    await _withLoading(() async {
-      try {
-        final latitude =
-            reportLatitude ?? _currentLatitude ?? _parseLatitude(latLng);
-        final longitude =
-            reportLongitude ?? _currentLongitude ?? _parseLongitude(latLng);
+    try {
+      final latitude =
+          reportLatitude ?? _currentLatitude ?? _parseLatitude(latLng);
+      final longitude =
+          reportLongitude ?? _currentLongitude ?? _parseLongitude(latLng);
 
-        if (latitude == null || longitude == null) {
-          throw ApiException('Rapor icin gecerli bir konum bulunamadi.');
-        }
+      if (latitude == null || longitude == null) {
+        throw ApiException('Rapor icin gecerli bir konum bulunamadi.');
+      }
 
-        final backendCategory = _toBackendCategory(category);
+      final backendCategory = _toBackendCategory(category);
+      final submittedAt = DateTime.now();
 
-        await _postReport(
-          category: backendCategory,
+      await _postReport(
+        category: backendCategory,
+        description: description,
+        latitude: latitude,
+        longitude: longitude,
+      );
+
+      _localReports.insert(
+        0,
+        LocalReportNotification(
+          category: category,
+          locationLabel: locationLabel,
+          latLng: latLng,
           description: description,
-          latitude: latitude,
-          longitude: longitude,
-        );
-
-        _localReports.insert(
-          0,
-          LocalReportNotification(
-            category: category,
-            locationLabel: locationLabel,
-            latLng: latLng,
-            description: description,
-            createdAt: DateTime.now(),
-          ),
-        );
-        await _refreshNearbyReports(
-          lat: latitude,
-          lng: longitude,
+          createdAt: submittedAt,
+        ),
+      );
+      _insertOptimisticNearbyReport(
+        category: backendCategory,
+        description: description,
+        latitude: latitude,
+        longitude: longitude,
+        createdAt: submittedAt,
+      );
+      notifyListeners();
+      try {
+        await refreshMapData(
+          lat: _currentLatitude ?? latitude,
+          lng: _currentLongitude ?? longitude,
           radiusMeters: 1000,
         );
-        notifyListeners();
-      } catch (e) {
-        throw AppStateException(
+      } catch (refreshError) {
+        debugPrint('Report submitted but map refresh failed: $refreshError');
+      }
+    } catch (e) {
+      throw AppStateException(
           _toUserMessage(e, fallback: 'İhbar gönderilemedi.'),
         );
-      }
-    });
+    }
   }
 
   Future<void> fetchUserSettings({bool force = false}) async {
@@ -711,6 +806,13 @@ class AppState extends ChangeNotifier {
           backgroundRefreshEnabled: id == 'background_refresh'
               ? enabled
               : _userSettings.backgroundRefreshEnabled,
+          bluetoothEnabled: id == 'bluetooth'
+              ? enabled
+              : _userSettings.bluetoothEnabled,
+          gsmSmsEnabled: id == 'gsm_sms' ? enabled : _userSettings.gsmSmsEnabled,
+          quickUnlockAccessEnabled: id == 'quick_unlock_access'
+              ? enabled
+              : _userSettings.quickUnlockAccessEnabled,
         ),
         fallback: 'Izin ayari guncellenemedi. Lutfen tekrar deneyin.',
       );
@@ -827,6 +929,7 @@ class AppState extends ChangeNotifier {
     _riskLevel = RiskLevel.low;
     _emergencyActive = false;
     _showRiskDecision = false;
+    _hasAcknowledgedHighRisk = false;
     _localReports.clear();
     _nearbyReports.clear();
     _emergencyContacts.clear();
@@ -834,6 +937,8 @@ class AppState extends ChangeNotifier {
     _currentLatitude = null;
     _currentLongitude = null;
     _isMapDataLoading = false;
+    _lastMapSyncAt = null;
+    _mapDataLoadFuture = null;
     notifyListeners();
   }
 
@@ -877,17 +982,30 @@ class AppState extends ChangeNotifier {
     await _apiService.saveUserSession(userMap);
     _currentUser = _toSessionUser(userMap);
     _setDefaultLandingScenario();
-    await _loadEmergencyContactsForCurrentUser(notify: false);
-    await _loadUserSettingsForCurrentUser(force: true, notify: false);
+    await _loadSessionSideData(notify: false);
     notifyListeners();
+  }
+
+  Future<void> _loadSessionSideData({bool notify = false}) async {
+    try {
+      await _loadEmergencyContactsForCurrentUser(notify: notify);
+    } catch (e) {
+      debugPrint('Failed to load emergency contacts: $e');
+      _setEmergencyContacts(const [], notify: notify);
+    }
+
+    try {
+      await _loadUserSettingsForCurrentUser(force: true, notify: notify);
+    } catch (e) {
+      debugPrint('Failed to load user settings: $e');
+      _resetUserSettings(notify: notify);
+    }
   }
 
   Future<void> _refreshUserSettingsSilently({bool force = false}) async {
     try {
       await fetchUserSettings(force: force);
-    } catch (e) {
-      debugPrint('Failed to refresh user settings: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> _loadUserSettingsForCurrentUser({
@@ -947,6 +1065,12 @@ class AppState extends ChangeNotifier {
       'background_refresh',
       settings.backgroundRefreshEnabled,
     );
+    _setPermissionLocally('bluetooth', settings.bluetoothEnabled);
+    _setPermissionLocally('gsm_sms', settings.gsmSmsEnabled);
+    _setPermissionLocally(
+      'quick_unlock_access',
+      settings.quickUnlockAccessEnabled,
+    );
     if (notify) {
       notifyListeners();
     }
@@ -959,6 +1083,9 @@ class AppState extends ChangeNotifier {
     _isUserSettingsSaving = false;
     _setPermissionLocally('location_info', true);
     _setPermissionLocally('background_refresh', true);
+    _setPermissionLocally('bluetooth', true);
+    _setPermissionLocally('gsm_sms', false);
+    _setPermissionLocally('quick_unlock_access', false);
     if (notify) {
       notifyListeners();
     }
@@ -974,7 +1101,11 @@ class AppState extends ChangeNotifier {
   }
 
   bool _isServerBackedPermission(String id) {
-    return id == 'location_info' || id == 'background_refresh';
+    return id == 'location_info' ||
+        id == 'background_refresh' ||
+        id == 'bluetooth' ||
+        id == 'gsm_sms' ||
+        id == 'quick_unlock_access';
   }
 
   Future<void> _loadEmergencyContactsForCurrentUser({
@@ -1011,6 +1142,7 @@ class AppState extends ChangeNotifier {
     required double lat,
     required double lng,
   }) async {
+    final previousRiskLevel = _riskLevel;
     Map<String, dynamic> riskResponse;
     try {
       riskResponse = await _apiService.get('/map/risk?lat=$lat&lng=$lng');
@@ -1025,12 +1157,26 @@ class AppState extends ChangeNotifier {
     switch (levelRaw) {
       case 'LOW':
         _riskLevel = RiskLevel.low;
+        break;
       case 'MEDIUM':
         _riskLevel = RiskLevel.medium;
+        break;
       case 'HIGH':
         _riskLevel = RiskLevel.high;
+        break;
       default:
         throw ApiException('Unknown risk level: $levelRaw');
+    }
+
+    if (_riskLevel != RiskLevel.high) {
+      _showRiskDecision = false;
+      _hasAcknowledgedHighRisk = false;
+      return;
+    }
+
+    final enteredHighRisk = previousRiskLevel != RiskLevel.high;
+    if (!_emergencyActive && enteredHighRisk && !_hasAcknowledgedHighRisk) {
+      _showRiskDecision = true;
     }
   }
 
@@ -1074,6 +1220,17 @@ class AppState extends ChangeNotifier {
       longitude: longitude,
       status: item['status']?.toString() ?? '',
       createdAt: DateTime.tryParse(item['createdAt']?.toString() ?? ''),
+      riskRadiusMeters: (item['riskRadiusMeters'] as num?)?.toDouble() ?? 150,
+      riskLevel: item['riskLevel']?.toString() ?? 'MEDIUM',
+      riskScore: (item['riskScore'] as num?)?.toDouble() ?? 25,
+      clusterSize: (item['clusterSize'] as num?)?.toInt() ?? 1,
+      riskCenterLatitude:
+          (item['riskCenterLatitude'] as num?)?.toDouble() ?? latitude,
+      riskCenterLongitude:
+          (item['riskCenterLongitude'] as num?)?.toDouble() ?? longitude,
+      riskCircleId:
+          item['riskCircleId']?.toString() ??
+          'circle-$id-${latitude.toStringAsFixed(6)}-${longitude.toStringAsFixed(6)}',
     );
   }
 
@@ -1351,13 +1508,120 @@ class AppState extends ChangeNotifier {
           ),
         ).listen((Position position) {
           unawaited(
-            updateUserLocation(
+            refreshMapData(
               lat: position.latitude,
               lng: position.longitude,
               radiusMeters: radiusMeters,
             ),
           );
         });
+  }
+
+  Future<void> _loadMapData({required double radiusMeters}) async {
+    if (_currentLatitude != null && _currentLongitude != null) {
+      await refreshMapData(radiusMeters: radiusMeters);
+      return;
+    }
+
+    try {
+      await fetchRealLocation(radiusMeters: radiusMeters);
+      return;
+    } catch (e) {
+      debugPrint('Falling back to default map coordinates: $e');
+    }
+
+    await refreshMapData(
+      lat: _fallbackLatitude,
+      lng: _fallbackLongitude,
+      radiusMeters: radiusMeters,
+    );
+  }
+
+  void _insertOptimisticNearbyReport({
+    required String category,
+    required String description,
+    required double latitude,
+    required double longitude,
+    required DateTime createdAt,
+  }) {
+    final duplicateExists = _nearbyReports.any(
+      (report) =>
+          _normalizeRiskCategory(report.category) ==
+              _normalizeRiskCategory(category) &&
+          (report.latitude - latitude).abs() < 0.00001 &&
+          (report.longitude - longitude).abs() < 0.00001,
+    );
+    if (duplicateExists) {
+      return;
+    }
+
+    _nearbyReports.insert(
+      0,
+      NearbyReport(
+        id: -createdAt.microsecondsSinceEpoch,
+        category: category,
+        description: description,
+        latitude: latitude,
+        longitude: longitude,
+        status: 'PENDING',
+        createdAt: createdAt,
+        riskRadiusMeters: _fallbackRiskRadiusForCategory(category),
+        riskLevel: _fallbackRiskLevelForCategory(category),
+        riskScore: _fallbackRiskScoreForCategory(category),
+        clusterSize: 1,
+        riskCenterLatitude: latitude,
+        riskCenterLongitude: longitude,
+        riskCircleId:
+            'circle-${latitude.toStringAsFixed(6)}-${longitude.toStringAsFixed(6)}',
+      ),
+    );
+  }
+
+  double _fallbackRiskRadiusForCategory(String category) {
+    switch (_normalizeRiskCategory(category)) {
+      case 'SECURITY':
+        return 400;
+      case 'ANIMALS':
+        return 360;
+      case 'HEALTH':
+        return 320;
+      case 'TRAFFIC':
+        return 150;
+      default:
+        return 220;
+    }
+  }
+
+  String _fallbackRiskLevelForCategory(String category) {
+    switch (_normalizeRiskCategory(category)) {
+      case 'SECURITY':
+      case 'ANIMALS':
+      case 'HEALTH':
+        return 'HIGH';
+      case 'TRAFFIC':
+        return 'MEDIUM';
+      default:
+        return 'MEDIUM';
+    }
+  }
+
+  double _fallbackRiskScoreForCategory(String category) {
+    switch (_normalizeRiskCategory(category)) {
+      case 'SECURITY':
+        return 70;
+      case 'ANIMALS':
+        return 65;
+      case 'HEALTH':
+        return 60;
+      case 'TRAFFIC':
+        return 40;
+      default:
+        return 35;
+    }
+  }
+
+  String _normalizeRiskCategory(String category) {
+    return category.trim().toUpperCase();
   }
 
   @override

@@ -44,6 +44,9 @@ public class UserSettingsServiceImpl implements UserSettingsService {
         settings.setProfileVisible(request.getProfileVisible());
         settings.setLocationTrackingEnabled(request.getLocationTrackingEnabled());
         settings.setBackgroundRefreshEnabled(request.getBackgroundRefreshEnabled());
+        settings.setBluetoothEnabled(request.getBluetoothEnabled());
+        settings.setGsmSmsEnabled(request.getGsmSmsEnabled());
+        settings.setQuickUnlockAccessEnabled(request.getQuickUnlockAccessEnabled());
         return toResponse(userSettingsRepository.save(settings));
     }
 
@@ -58,6 +61,9 @@ public class UserSettingsServiceImpl implements UserSettingsService {
         settings.setProfileVisible(true);
         settings.setLocationTrackingEnabled(true);
         settings.setBackgroundRefreshEnabled(true);
+        settings.setBluetoothEnabled(true);
+        settings.setGsmSmsEnabled(false);
+        settings.setQuickUnlockAccessEnabled(false);
         return settings;
     }
 
@@ -102,6 +108,9 @@ public class UserSettingsServiceImpl implements UserSettingsService {
                 .profileVisible(settings.getProfileVisible())
                 .locationTrackingEnabled(settings.getLocationTrackingEnabled())
                 .backgroundRefreshEnabled(settings.getBackgroundRefreshEnabled())
+                .bluetoothEnabled(settings.getBluetoothEnabled())
+                .gsmSmsEnabled(settings.getGsmSmsEnabled())
+                .quickUnlockAccessEnabled(settings.getQuickUnlockAccessEnabled())
                 .createdAt(settings.getCreatedAt())
                 .updatedAt(settings.getUpdatedAt())
                 .build();

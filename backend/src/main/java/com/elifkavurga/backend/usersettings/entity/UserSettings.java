@@ -31,4 +31,13 @@ public class UserSettings extends BaseEntity {
 
     @Column(name = "background_refresh_enabled", nullable = false)
     private Boolean backgroundRefreshEnabled = true;
+
+    @Column(name = "bluetooth_enabled", nullable = false)
+    private Boolean bluetoothEnabled = true;
+
+    @Column(name = "gsm_sms_enabled", nullable = false)
+    private Boolean gsmSmsEnabled = false;
+
+    @Column(name = "quick_unlock_access_enabled", nullable = false)
+    private Boolean quickUnlockAccessEnabled = false;
 }

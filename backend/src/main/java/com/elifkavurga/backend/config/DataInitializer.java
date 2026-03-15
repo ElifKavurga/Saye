@@ -13,6 +13,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,10 +30,13 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final ReportRepository reportRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
     public void run(String... args) {
+        ensureSpatialDatabaseObjects();
+
         List<User> seededUsers = new ArrayList<>();
 
         if (userRepository.count() == 0) {
@@ -97,5 +101,26 @@ public class DataInitializer implements CommandLineRunner {
         Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(longitude, latitude));
         point.setSRID(4326);
         return point;
+    }
+
+    private void ensureSpatialDatabaseObjects() {
+        jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS postgis");
+        jdbcTemplate.execute("""
+                CREATE INDEX IF NOT EXISTS idx_reports_location
+                ON reports
+                USING GIST(location)
+                """);
+        jdbcTemplate.execute("""
+                ALTER TABLE user_settings
+                ADD COLUMN IF NOT EXISTS bluetooth_enabled boolean NOT NULL DEFAULT true
+                """);
+        jdbcTemplate.execute("""
+                ALTER TABLE user_settings
+                ADD COLUMN IF NOT EXISTS gsm_sms_enabled boolean NOT NULL DEFAULT false
+                """);
+        jdbcTemplate.execute("""
+                ALTER TABLE user_settings
+                ADD COLUMN IF NOT EXISTS quick_unlock_access_enabled boolean NOT NULL DEFAULT false
+                """);
     }
 }
