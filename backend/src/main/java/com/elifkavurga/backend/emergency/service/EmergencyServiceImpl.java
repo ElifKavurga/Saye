@@ -15,6 +15,7 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -44,12 +45,17 @@ public class EmergencyServiceImpl implements EmergencyService {
         event.setStartedAt(Instant.now(clock));
         event.setStatus(EmergencyStatus.ACTIVE);
         event.setCurrentRiskLevel(request.getCurrentRiskLevel());
+        event.setCalledContactName(request.getCalledContactName());
+        event.setCalledPhoneNumber(request.getCalledPhoneNumber());
         event.setSharedTo(request.getSharedTo() != null ? List.copyOf(request.getSharedTo()) : List.of());
 
         GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 4326);
         event.setLocation(gf.createPoint(new Coordinate(request.getLongitude(), request.getLatitude())));
 
         EmergencyEvent savedEvent = repository.save(event);
+        if (StringUtils.hasText(savedEvent.getCalledPhoneNumber())) {
+            notificationLogService.logSent(savedEvent.getId(), NotificationType.CALL, savedEvent.getCalledPhoneNumber());
+        }
         for (String recipient : savedEvent.getSharedTo()) {
             notificationLogService.logSent(savedEvent.getId(), NotificationType.SMS, recipient);
         }
@@ -86,6 +92,9 @@ public class EmergencyServiceImpl implements EmergencyService {
                 .endedAt(event.getEndedAt())
                 .latitude(event.getLatitude())
                 .longitude(event.getLongitude())
+                .currentRiskLevel(event.getCurrentRiskLevel())
+                .calledContactName(event.getCalledContactName())
+                .calledPhoneNumber(event.getCalledPhoneNumber())
                 .active(event.getStatus() == EmergencyStatus.ACTIVE)
                 .sharedTo(event.getSharedTo() != null ? List.copyOf(event.getSharedTo()) : List.of())
                 .build();

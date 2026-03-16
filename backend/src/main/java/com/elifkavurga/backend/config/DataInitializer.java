@@ -110,6 +110,16 @@ public class DataInitializer implements CommandLineRunner {
                 ON reports
                 USING GIST(location)
                 """);
+        jdbcTemplate.update("""
+                UPDATE reports
+                SET category = 'LIGHTING'
+                WHERE category IN ('HEALTH', 'SAGLIK', 'SAĞLIK')
+                """);
+        jdbcTemplate.update("""
+                UPDATE reports
+                SET category = 'INFRASTRUCTURE'
+                WHERE category IN ('TRACKING', 'TAKIP')
+                """);
         jdbcTemplate.execute("""
                 ALTER TABLE user_settings
                 ADD COLUMN IF NOT EXISTS bluetooth_enabled boolean NOT NULL DEFAULT true
@@ -121,6 +131,15 @@ public class DataInitializer implements CommandLineRunner {
         jdbcTemplate.execute("""
                 ALTER TABLE user_settings
                 ADD COLUMN IF NOT EXISTS quick_unlock_access_enabled boolean NOT NULL DEFAULT false
+                """);
+        jdbcTemplate.execute("""
+                ALTER TABLE notification_logs
+                DROP CONSTRAINT IF EXISTS notification_logs_type_check
+                """);
+        jdbcTemplate.execute("""
+                ALTER TABLE notification_logs
+                ADD CONSTRAINT notification_logs_type_check
+                CHECK (type IN ('CALL', 'SMS', 'PUSH'))
                 """);
     }
 }

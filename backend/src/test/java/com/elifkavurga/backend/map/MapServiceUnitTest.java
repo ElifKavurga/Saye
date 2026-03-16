@@ -3,7 +3,9 @@ package com.elifkavurga.backend.map;
 import com.elifkavurga.backend.map.dto.RiskResponse;
 import com.elifkavurga.backend.map.service.MapServiceImpl;
 import com.elifkavurga.backend.map.service.MapRiskProcessor;
+import com.elifkavurga.backend.map.service.RiskCircle;
 import com.elifkavurga.backend.map.service.RiskCircleBuilder;
+import com.elifkavurga.backend.map.service.RiskCluster;
 import com.elifkavurga.backend.map.service.RiskClusterService;
 import com.elifkavurga.backend.report.repository.ReportRepository;
 import com.elifkavurga.backend.report.repository.projection.NearbyReportProjection;
@@ -52,6 +54,21 @@ class MapServiceUnitTest {
         assertThat(first.getLevel()).isIn("low", "medium", "high");
         assertThat(first.getLevel()).isEqualTo("high");
         assertThat(first.getScore()).isEqualTo(80.0);
+    }
+
+    @Test
+    void infrastructureCircleUsesUpdatedRadius() {
+        RiskCircle circle = new RiskCircleBuilder().build(
+                new RiskCluster(
+                        "cluster-1",
+                        0.0,
+                        0.0,
+                        List.of(nearbyReport("INFRASTRUCTURE", 0.0))
+                )
+        );
+
+        assertThat(circle.radiusMeters()).isEqualTo(150.0);
+        assertThat(circle.riskLevel()).isEqualTo("MEDIUM");
     }
 
     private NearbyReportProjection nearbyReport(String category, double distanceMeters) {

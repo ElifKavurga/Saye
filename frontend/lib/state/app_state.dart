@@ -247,11 +247,13 @@ class EmergencyContact {
 class _EmergencyActivationPlan {
   const _EmergencyActivationPlan({
     required this.callTarget,
+    required this.callTargetName,
     required this.currentRiskLevel,
     required this.smsRecipients,
   });
 
   final String callTarget;
+  final String callTargetName;
   final String currentRiskLevel;
   final List<String> smsRecipients;
 }
@@ -627,6 +629,8 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
           userId: userId,
           latitude: latitude,
           longitude: longitude,
+          calledContactName: '112 Acil Cagri Merkezi',
+          calledPhoneNumber: '112',
         );
 
         _emergencyActive = true;
@@ -690,6 +694,8 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
             userId: userId,
             latitude: latitude,
             longitude: longitude,
+            calledContactName: activationPlan.callTargetName,
+            calledPhoneNumber: activationPlan.callTarget,
             sharedTo: activationPlan.smsRecipients,
             currentRiskLevel: activationPlan.currentRiskLevel,
           );
@@ -1420,6 +1426,8 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     required int userId,
     required double latitude,
     required double longitude,
+    required String calledContactName,
+    required String calledPhoneNumber,
     List<String> sharedTo = const [],
     String currentRiskLevel = 'LOW',
   }) async {
@@ -1427,6 +1435,8 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       'userId': userId,
       'latitude': latitude,
       'longitude': longitude,
+      'calledContactName': calledContactName,
+      'calledPhoneNumber': calledPhoneNumber,
       'sharedTo': sharedTo,
       'currentRiskLevel': currentRiskLevel,
     };
@@ -1457,27 +1467,30 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
   String _toBackendCategory(String category) {
     const mapping = <String, String>{
       'Trafik': 'TRAFFIC',
-      'Saglik': 'HEALTH',
+      'Aydinlatma': 'LIGHTING',
+      'Altyapi': 'INFRASTRUCTURE',
       'Suc': 'SECURITY',
-      'Takip': 'SECURITY',
+      'Takip': 'INFRASTRUCTURE',
       'Hayvan': 'ANIMALS',
       'Ariza': 'INFRASTRUCTURE',
       'TRAFIK': 'TRAFFIC',
-      'SAGLIK': 'HEALTH',
+      'AYDINLATMA': 'LIGHTING',
+      'ALTYAPI': 'INFRASTRUCTURE',
+      'SAGLIK': 'LIGHTING',
       'SUÇ': 'SECURITY',
-      'SAĞLIK': 'HEALTH',
+      'SAĞLIK': 'LIGHTING',
       'SUC': 'SECURITY',
-      'TAKIP': 'SECURITY',
+      'TAKIP': 'INFRASTRUCTURE',
       'HAYVAN': 'ANIMALS',
       'ARIZA': 'INFRASTRUCTURE',
       'LIGHTING': 'LIGHTING',
-      'HEALTH': 'HEALTH',
+      'HEALTH': 'LIGHTING',
       'SECURITY': 'SECURITY',
       'TRAFFIC': 'TRAFFIC',
       'ANIMALS': 'ANIMALS',
       'INFRASTRUCTURE': 'INFRASTRUCTURE',
     };
-    return mapping[category] ?? category.toUpperCase();
+    return mapping[category] ?? _normalizeRiskCategory(category);
   }
 
   double? _parseLatitude(String latLng) {
@@ -1746,12 +1759,14 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
         return 400;
       case 'ANIMALS':
         return 360;
-      case 'HEALTH':
-        return 320;
+      case 'LIGHTING':
+        return 200;
+      case 'INFRASTRUCTURE':
+        return 150;
       case 'TRAFFIC':
         return 150;
       default:
-        return 220;
+        return 180;
     }
   }
 
@@ -1759,12 +1774,13 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     switch (_normalizeRiskCategory(category)) {
       case 'SECURITY':
       case 'ANIMALS':
-      case 'HEALTH':
         return 'HIGH';
+      case 'LIGHTING':
+      case 'INFRASTRUCTURE':
       case 'TRAFFIC':
         return 'MEDIUM';
       default:
-        return 'MEDIUM';
+        return 'LOW';
     }
   }
 
@@ -1774,8 +1790,9 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
         return 70;
       case 'ANIMALS':
         return 65;
-      case 'HEALTH':
-        return 60;
+      case 'LIGHTING':
+      case 'INFRASTRUCTURE':
+        return 45;
       case 'TRAFFIC':
         return 40;
       default:
@@ -1784,7 +1801,40 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   String _normalizeRiskCategory(String category) {
-    return category.trim().toUpperCase();
+    final normalized = category
+        .trim()
+        .toUpperCase()
+        .replaceAll('Ç', 'C')
+        .replaceAll('Ğ', 'G')
+        .replaceAll('İ', 'I')
+        .replaceAll('Ö', 'O')
+        .replaceAll('Ş', 'S')
+        .replaceAll('Ü', 'U');
+
+    switch (normalized) {
+      case 'TRAFIK':
+      case 'TRAFFIC':
+        return 'TRAFFIC';
+      case 'AYDINLATMA':
+      case 'LIGHTING':
+      case 'SAGLIK':
+      case 'HEALTH':
+        return 'LIGHTING';
+      case 'ALTYAPI':
+      case 'ARIZA':
+      case 'INFRASTRUCTURE':
+      case 'TAKIP':
+      case 'TRACKING':
+        return 'INFRASTRUCTURE';
+      case 'SUC':
+      case 'SECURITY':
+        return 'SECURITY';
+      case 'HAYVAN':
+      case 'ANIMALS':
+        return 'ANIMALS';
+      default:
+        return normalized;
+    }
   }
 
   _EmergencyActivationPlan _buildEmergencyActivationPlan() {
@@ -1792,6 +1842,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     if (_riskLevel == RiskLevel.high) {
       return const _EmergencyActivationPlan(
         callTarget: '112',
+        callTargetName: '112 Acil Cagri Merkezi',
         currentRiskLevel: 'HIGH',
         smsRecipients: [],
       );
@@ -1802,9 +1853,6 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     final smsRecipients = <String>[];
 
     for (final contact in _emergencyContacts) {
-      if (primaryContact != null && contact.id == primaryContact.id) {
-        continue;
-      }
       final normalizedPhone = _sanitizePhoneNumber(contact.phone);
       if (normalizedPhone.isEmpty || smsRecipients.contains(normalizedPhone)) {
         continue;
@@ -1814,6 +1862,9 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
 
     return _EmergencyActivationPlan(
       callTarget: primaryPhone.isNotEmpty ? primaryPhone : '112',
+      callTargetName: primaryPhone.isNotEmpty
+          ? primaryContact?.name ?? primaryPhone
+          : '112 Acil Cagri Merkezi',
       currentRiskLevel: currentRiskLevel,
       smsRecipients: smsRecipients,
     );

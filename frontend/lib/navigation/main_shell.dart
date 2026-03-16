@@ -6,7 +6,6 @@ import '../screens/map_report_screen.dart';
 import '../screens/medium_risk_home_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/risk_alert_home_screen.dart';
-import '../screens/risk_decision_screen.dart';
 import '../screens/settings_screen.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
@@ -21,11 +20,6 @@ class MainShell extends StatelessWidget {
     final pages = [
       appState.emergencyActive
           ? EmergencyActiveScreen(appState: appState)
-          : appState.showRiskDecision
-          ? RiskDecisionScreen(
-              appState: appState,
-              onOpenProfile: () => appState.setIndex(3),
-            )
           : appState.riskLevel == RiskLevel.high
           ? RiskAlertHomeScreen(
               appState: appState,
@@ -44,7 +38,10 @@ class MainShell extends StatelessWidget {
               onOpenProfile: () => appState.setIndex(3),
             ),
       appState.selectedIndex == 1
-          ? MapReportScreen(appState: appState, onBack: () => appState.setIndex(0))
+          ? MapReportScreen(
+              appState: appState,
+              onBack: () => appState.setIndex(0),
+            )
           : const SizedBox.shrink(),
       SettingsScreen(appState: appState),
       ProfileScreen(appState: appState),

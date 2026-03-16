@@ -44,7 +44,7 @@ class MediumRiskHomeScreen extends StatelessWidget {
                 _MapCard(onTap: onOpenMap),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'BASILI TUT: YARDIM CAGIR',
+                  'ORTADAKI BUTONA BAS: YARDIM CAGIR',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.body.copyWith(color: Colors.white70),
                 ),

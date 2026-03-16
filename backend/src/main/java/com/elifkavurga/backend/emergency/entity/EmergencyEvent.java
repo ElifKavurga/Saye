@@ -49,6 +49,12 @@ public class EmergencyEvent extends BaseEntity {
     @Column(name = "current_risk_level")
     private String currentRiskLevel;
 
+    @Column(name = "called_contact_name")
+    private String calledContactName;
+
+    @Column(name = "called_phone_number")
+    private String calledPhoneNumber;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EmergencyStatus status = EmergencyStatus.ACTIVE;

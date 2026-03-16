@@ -101,7 +101,7 @@ public class MapServiceIntegrationTest {
                 .containsExactlyInAnyOrder("Crime close", "Followed a bit further", "Crime same block");
         assertThat(reports).extracting("description").doesNotContain("Old crime");
         assertThat(reports).extracting("riskRadiusMeters")
-                .containsExactlyInAnyOrder(480.0, 480.0, 260.0);
+                .containsExactlyInAnyOrder(480.0, 480.0, 200.0);
         assertThat(reports).extracting("riskLevel")
                 .containsExactlyInAnyOrder("HIGH", "HIGH", "MEDIUM");
         assertThat(reports).extracting("clusterSize")

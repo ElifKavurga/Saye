@@ -67,24 +67,33 @@ class EmergencyControllerIntegrationTest {
                                   "latitude": 41.0082,
                                   "longitude": 28.9784,
                                   "currentRiskLevel": "HIGH",
+                                  "calledContactName": "112 Acil Cagri Merkezi",
+                                  "calledPhoneNumber": "112",
                                   "sharedTo": ["anne", "kardes"]
                                 }
                                 """.formatted(testUserId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.active").value(true))
                 .andExpect(jsonPath("$.data.userId").value(testUserId))
+                .andExpect(jsonPath("$.data.currentRiskLevel").value("HIGH"))
+                .andExpect(jsonPath("$.data.calledContactName").value("112 Acil Cagri Merkezi"))
+                .andExpect(jsonPath("$.data.calledPhoneNumber").value("112"))
                 .andExpect(jsonPath("$.data.sharedTo.length()").value(2));
 
         assertThat(repository.findAll())
                 .singleElement()
-                .extracting("currentRiskLevel")
-                .isEqualTo("HIGH");
+                .satisfies(event -> {
+                    assertThat(event.getCurrentRiskLevel()).isEqualTo("HIGH");
+                    assertThat(event.getCalledContactName()).isEqualTo("112 Acil Cagri Merkezi");
+                    assertThat(event.getCalledPhoneNumber()).isEqualTo("112");
+                });
 
         mvc.perform(get("/emergency/status").param("userId", String.valueOf(testUserId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.active").value(true))
                 .andExpect(jsonPath("$.data.latitude").value(41.0082))
-                .andExpect(jsonPath("$.data.longitude").value(28.9784));
+                .andExpect(jsonPath("$.data.longitude").value(28.9784))
+                .andExpect(jsonPath("$.data.calledPhoneNumber").value("112"));
     }
 
     @Test

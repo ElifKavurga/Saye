@@ -42,8 +42,9 @@ public class RiskCircleBuilder {
         return switch (normalized) {
             case "SECURITY" -> new CategoryProfile(400.0, 60.0);
             case "ANIMALS" -> new CategoryProfile(360.0, 55.0);
-            case "HEALTH" -> new CategoryProfile(320.0, 50.0);
-            case "LIGHTING", "INFRASTRUCTURE" -> new CategoryProfile(220.0, 35.0);
+            // The builder adds 40m per report when composing the final circle.
+            case "LIGHTING", "HEALTH" -> new CategoryProfile(160.0, 35.0);
+            case "INFRASTRUCTURE", "TRACKING" -> new CategoryProfile(110.0, 35.0);
             case "TRAFFIC" -> new CategoryProfile(150.0, 30.0);
             default -> CategoryProfile.DEFAULT;
         };

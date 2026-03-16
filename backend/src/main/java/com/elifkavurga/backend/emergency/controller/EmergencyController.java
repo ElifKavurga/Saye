@@ -49,6 +49,8 @@ public class EmergencyController {
                                       "latitude": 41.0082,
                                       "longitude": 28.9784,
                                       "currentRiskLevel": "HIGH",
+                                      "calledContactName": "112 Acil Cagri Merkezi",
+                                      "calledPhoneNumber": "112",
                                       "sharedTo": ["905551112233", "905441112233"]
                                     }
                                     """

@@ -43,8 +43,8 @@ public class ReportController {
                             value = """
                                     {
                                       "userId": 30,
-                                      "category": "SUC",
-                                      "description": "Parkta supheli bir durum var",
+                                      "category": "LIGHTING",
+                                      "description": "Yuruyus yolunda aydinlatma yetersiz",
                                       "latitude": 41.0082,
                                       "longitude": 28.9784
                                     }

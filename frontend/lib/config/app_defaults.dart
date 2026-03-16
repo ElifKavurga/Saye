@@ -31,9 +31,8 @@ class AppDefaults {
 
   static const List<String> reportCategories = [
     'Trafik',
-    'Ariza',
-    'Saglik',
-    'Takip',
+    'Aydınlatma',
+    'Altyapı',
     'Hayvan',
     'Suc',
   ];

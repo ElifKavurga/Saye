@@ -16,7 +16,11 @@ public class ReportRequest implements Serializable {
     private Long userId;
 
     @NotNull
-    @Schema(description = "Bildirim kategorisi", example = "SUC", allowableValues = {"SUC", "TAKIP", "HAYVAN", "SAGLIK", "ARIZA", "TRAFIK"})
+    @Schema(
+            description = "Bildirim kategorisi",
+            example = "LIGHTING",
+            allowableValues = {"LIGHTING", "ANIMALS", "SECURITY", "TRAFFIC", "INFRASTRUCTURE"}
+    )
     private String category;
 
     @Schema(description = "Opsiyonel aciklama", example = "Parkta supheli bir durum var")

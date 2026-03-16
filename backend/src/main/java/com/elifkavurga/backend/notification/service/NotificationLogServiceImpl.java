@@ -30,7 +30,11 @@ public class NotificationLogServiceImpl implements NotificationLogService {
         log.setType(type);
         log.setTo(recipient);
         log.setUser(event.getUser());
-        log.setMessage("Acil durum bildirimi gonderildi: " + recipient);
+        if (type == NotificationType.CALL) {
+            log.setMessage("Acil durum arama yonlendirmesi baslatildi: " + recipient);
+        } else {
+            log.setMessage("Acil durum bildirimi gonderildi: " + recipient);
+        }
         log.setIsRead(false);
         log.setStatus(NotificationStatus.SENT);
         repository.save(log);

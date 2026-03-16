@@ -29,9 +29,8 @@ class _MapReportScreenState extends State<MapReportScreen> {
 
   static const Map<String, IconData> _categoryIcons = {
     'Trafik': Icons.traffic_rounded,
-    'Ariza': Icons.build_circle_rounded,
-    'Saglik': Icons.medical_information_rounded,
-    'Takip': Icons.remove_red_eye_rounded,
+    'Aydınlatma': Icons.lightbulb_rounded,
+    'Altyapı': Icons.construction_rounded,
     'Hayvan': Icons.pets_rounded,
     'Suc': Icons.gpp_bad_rounded,
   };
@@ -728,7 +727,6 @@ class _LiveMap extends StatelessWidget {
     switch (_normalizedCategory(report.category)) {
       case 'suc':
       case 'security':
-      case 'takip':
         return true;
       default:
         return false;
@@ -744,30 +742,44 @@ class _LiveMap extends StatelessWidget {
         .replaceAll('ö', 'o')
         .replaceAll('ş', 's')
         .replaceAll('ü', 'u');
-    return normalized;
+    switch (normalized) {
+      case 'aydinlatma':
+      case 'saglik':
+      case 'health':
+      case 'lighting':
+        return 'lighting';
+      case 'altyapi':
+      case 'ariza':
+      case 'takip':
+      case 'tracking':
+      case 'infrastructure':
+        return 'infrastructure';
+      case 'suc':
+      case 'security':
+        return 'security';
+      case 'hayvan':
+      case 'animals':
+        return 'animals';
+      case 'trafik':
+      case 'traffic':
+        return 'traffic';
+      default:
+        return normalized;
+    }
   }
 
   static IconData _iconForReportCategory(String category) {
     switch (_normalizedCategory(category)) {
-      case 'trafik':
       case 'traffic':
         return Icons.traffic_rounded;
-      case 'saglik':
-      case 'health':
-        return Icons.medical_services_rounded;
-      case 'suc':
+      case 'lighting':
+        return Icons.lightbulb_rounded;
       case 'security':
         return Icons.gpp_bad_rounded;
-      case 'takip':
-        return Icons.remove_red_eye_rounded;
-      case 'hayvan':
       case 'animals':
         return Icons.pets_rounded;
-      case 'ariza':
       case 'infrastructure':
-        return Icons.build_rounded;
-      case 'lighting':
-        return Icons.lightbulb_outline_rounded;
+        return Icons.construction_rounded;
       default:
         return Icons.warning_amber_rounded;
     }
@@ -775,21 +787,14 @@ class _LiveMap extends StatelessWidget {
 
   static Color _colorForReportCategory(String category) {
     switch (_normalizedCategory(category)) {
-      case 'trafik':
       case 'traffic':
-      case 'ariza':
-      case 'infrastructure':
         return const Color(0xFFFF9800);
-      case 'saglik':
-      case 'health':
       case 'lighting':
-        return const Color(0xFFF44336);
-      case 'suc':
+        return const Color(0xFFFFD54F);
+      case 'infrastructure':
+        return const Color(0xFFFF7043);
       case 'security':
         return const Color(0xFFE91E63);
-      case 'takip':
-        return const Color(0xFF9C27B0);
-      case 'hayvan':
       case 'animals':
         return const Color(0xFF8BC34A);
       default:
@@ -822,16 +827,12 @@ class _LiveMap extends StatelessWidget {
     }
 
     switch (_normalizedCategory(report.category)) {
-      case 'suc':
       case 'security':
-      case 'takip':
-      case 'hayvan':
       case 'animals':
         return _RiskSeverity.high;
-      case 'trafik':
       case 'traffic':
-      case 'saglik':
-      case 'health':
+      case 'lighting':
+      case 'infrastructure':
         return _RiskSeverity.medium;
       default:
         return _RiskSeverity.low;
@@ -895,22 +896,16 @@ class _LiveMap extends StatelessWidget {
       case 'trafik':
       case 'traffic':
         return 'Trafik';
-      case 'saglik':
-      case 'health':
-        return 'Sağlık';
       case 'lighting':
-        return 'Lighting';
-      case 'suc':
+        return 'Aydınlatma';
       case 'security':
         return 'Suç';
-      case 'takip':
-        return 'Takip';
       case 'hayvan':
       case 'animals':
         return 'Hayvan';
       case 'ariza':
       case 'infrastructure':
-        return 'Arıza';
+        return 'Altyapı';
       default:
         return category;
     }
