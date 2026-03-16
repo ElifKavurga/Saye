@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../config/app_defaults.dart';
 import '../services/api_service.dart';
@@ -241,7 +244,19 @@ class EmergencyContact {
   }
 }
 
-class AppState extends ChangeNotifier {
+class _EmergencyActivationPlan {
+  const _EmergencyActivationPlan({
+    required this.callTarget,
+    required this.currentRiskLevel,
+    required this.smsRecipients,
+  });
+
+  final String callTarget;
+  final String currentRiskLevel;
+  final List<String> smsRecipients;
+}
+
+class AppState extends ChangeNotifier with WidgetsBindingObserver {
   static const double _fallbackLatitude = 38.3552;
   static const double _fallbackLongitude = 38.3095;
 
@@ -287,6 +302,11 @@ class AppState extends ChangeNotifier {
         EmergencyContactsService(apiService: _apiService);
     _userSettingsService =
         userSettingsService ?? UserSettingsService(apiService: _apiService);
+    _apiService.setSessionHandlers(
+      onSessionExpired: _handleSessionExpired,
+      onSessionTokensUpdated: _handleSessionTokensUpdated,
+    );
+    WidgetsBinding.instance.addObserver(this);
     _loadEmergencyHealthInfo();
   }
 
@@ -317,7 +337,11 @@ class AppState extends ChangeNotifier {
   bool _isMapDataLoading = false;
   DateTime? _lastMapSyncAt;
   Future<void>? _mapDataLoadFuture;
+  List<String> _pendingEmergencySmsRecipients = const [];
+  String? _pendingEmergencySmsBody;
+  bool _isLaunchingPendingEmergencySms = false;
   bool _isLoading = false;
+  bool _isSessionResetInProgress = false;
   int _loadingCounter = 0;
   StreamSubscription<Position>? _locationStreamSubscription;
 
@@ -430,22 +454,18 @@ class AppState extends ChangeNotifier {
     await _withLoading(() async {
       try {
         final token = await _apiService.readToken();
-        if (token == null || token.isEmpty) {
-          _setEmergencyContacts(const [], notify: false);
-          _resetUserSettings(notify: false);
-          _currentUser = null;
-          _setDefaultLandingScenario();
-          notifyListeners();
+        final refreshToken = await _apiService.readRefreshToken();
+        if (token == null ||
+            token.isEmpty ||
+            refreshToken == null ||
+            refreshToken.isEmpty) {
+          await _resetSessionState(clearPersistedSession: false, notify: true);
           return;
         }
         final userMap = await _apiService.readUserSession();
         if (userMap == null) {
           await _apiService.clearSession();
-          _currentUser = null;
-          _setEmergencyContacts(const [], notify: false);
-          _resetUserSettings(notify: false);
-          _setDefaultLandingScenario();
-          notifyListeners();
+          await _resetSessionState(clearPersistedSession: false, notify: true);
           return;
         }
         _currentUser = _toSessionUser(userMap);
@@ -454,11 +474,7 @@ class AppState extends ChangeNotifier {
         notifyListeners();
       } catch (e) {
         await _apiService.clearSession();
-        _currentUser = null;
-        _setEmergencyContacts(const [], notify: false);
-        _resetUserSettings(notify: false);
-        _setDefaultLandingScenario();
-        notifyListeners();
+        await _resetSessionState(clearPersistedSession: false, notify: true);
       }
     });
   }
@@ -509,6 +525,9 @@ class AppState extends ChangeNotifier {
       ]);
       _lastMapSyncAt = DateTime.now();
     } catch (e) {
+      if (_isSessionExpiredError(e)) {
+        return;
+      }
       throw AppStateException(
         _toUserMessage(
           e,
@@ -615,6 +634,9 @@ class AppState extends ChangeNotifier {
         _selectedIndex = 0;
         notifyListeners();
       } catch (e) {
+        if (_isSessionExpiredError(e)) {
+          return;
+        }
         throw AppStateException(
           _toUserMessage(e, fallback: 'SOS başlatılamadı. Lütfen tekrar dene.'),
         );
@@ -634,11 +656,84 @@ class AppState extends ChangeNotifier {
         _emergencyActive = false;
         notifyListeners();
       } catch (e) {
+        if (_isSessionExpiredError(e)) {
+          return;
+        }
         throw AppStateException(
           _toUserMessage(
             e,
             fallback: 'Acil durum kapatılamadı. Lütfen tekrar dene.',
           ),
+        );
+      }
+    });
+  }
+
+  Future<void> activateEmergencyDynamic() async {
+    await _withLoading(() async {
+      try {
+        final userId = _requireCurrentUserId();
+        final latitude = _currentLatitude ?? _fallbackLatitude;
+        final longitude = _currentLongitude ?? _fallbackLongitude;
+        final activationPlan = _buildEmergencyActivationPlan();
+        final smsBody = activationPlan.smsRecipients.isEmpty
+            ? null
+            : _buildEmergencySmsBody(
+                latitude: latitude,
+                longitude: longitude,
+                riskLevel: activationPlan.currentRiskLevel,
+              );
+
+        Object? backendError;
+        try {
+          await _postEmergencyStart(
+            userId: userId,
+            latitude: latitude,
+            longitude: longitude,
+            sharedTo: activationPlan.smsRecipients,
+            currentRiskLevel: activationPlan.currentRiskLevel,
+          );
+          _emergencyActive = true;
+          _showRiskDecision = false;
+          _selectedIndex = 0;
+          notifyListeners();
+        } catch (error) {
+          backendError = error;
+        }
+
+        if (smsBody == null) {
+          _clearPendingEmergencySms();
+        } else {
+          _schedulePendingEmergencySms(
+            recipients: activationPlan.smsRecipients,
+            body: smsBody,
+          );
+        }
+
+        Object? launchError;
+        try {
+          await _launchPhoneCall(activationPlan.callTarget);
+        } catch (error) {
+          launchError = error;
+          if (_pendingEmergencySmsRecipients.isNotEmpty) {
+            try {
+              await _launchPendingEmergencySms();
+            } catch (_) {}
+          }
+        }
+
+        if (backendError != null) {
+          throw backendError;
+        }
+        if (launchError != null) {
+          throw launchError;
+        }
+      } catch (e) {
+        if (_isSessionExpiredError(e)) {
+          return;
+        }
+        throw AppStateException(
+          _toUserMessage(e, fallback: 'SOS baslatilamadi. Lutfen tekrar dene.'),
         );
       }
     });
@@ -714,9 +809,12 @@ class AppState extends ChangeNotifier {
         debugPrint('Report submitted but map refresh failed: $refreshError');
       }
     } catch (e) {
+      if (_isSessionExpiredError(e)) {
+        return;
+      }
       throw AppStateException(
-          _toUserMessage(e, fallback: 'İhbar gönderilemedi.'),
-        );
+        _toUserMessage(e, fallback: 'İhbar gönderilemedi.'),
+      );
     }
   }
 
@@ -736,6 +834,9 @@ class AppState extends ChangeNotifier {
       await _loadUserSettingsForCurrentUser(force: force, notify: false);
       notifyListeners();
     } catch (e) {
+      if (_isSessionExpiredError(e)) {
+        return;
+      }
       throw AppStateException(
         _toUserMessage(
           e,
@@ -799,7 +900,9 @@ class AppState extends ChangeNotifier {
           backgroundRefreshEnabled: id == 'background_refresh'
               ? enabled
               : _userSettings.backgroundRefreshEnabled,
-          gsmSmsEnabled: id == 'gsm_sms' ? enabled : _userSettings.gsmSmsEnabled,
+          gsmSmsEnabled: id == 'gsm_sms'
+              ? enabled
+              : _userSettings.gsmSmsEnabled,
           quickUnlockAccessEnabled: id == 'quick_unlock_access'
               ? enabled
               : _userSettings.quickUnlockAccessEnabled,
@@ -818,6 +921,9 @@ class AppState extends ChangeNotifier {
       try {
         await _loadEmergencyContactsForCurrentUser();
       } catch (e) {
+        if (_isSessionExpiredError(e)) {
+          return;
+        }
         throw AppStateException(
           _toUserMessage(
             e,
@@ -844,6 +950,9 @@ class AppState extends ChangeNotifier {
         await _loadEmergencyContactsForCurrentUser(notify: false);
         notifyListeners();
       } catch (e) {
+        if (_isSessionExpiredError(e)) {
+          return;
+        }
         throw AppStateException(
           _toUserMessage(
             e,
@@ -865,6 +974,9 @@ class AppState extends ChangeNotifier {
         await _loadEmergencyContactsForCurrentUser(notify: false);
         notifyListeners();
       } catch (e) {
+        if (_isSessionExpiredError(e)) {
+          return;
+        }
         throw AppStateException(
           _toUserMessage(
             e,
@@ -901,6 +1013,9 @@ class AppState extends ChangeNotifier {
         await _loadEmergencyContactsForCurrentUser(notify: false);
         notifyListeners();
       } catch (e) {
+        if (_isSessionExpiredError(e)) {
+          return;
+        }
         throw AppStateException(
           _toUserMessage(
             e,
@@ -913,23 +1028,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await _apiService.clearSession();
-    _currentUser = null;
-    _selectedIndex = 0;
-    _riskLevel = RiskLevel.low;
-    _emergencyActive = false;
-    _showRiskDecision = false;
-    _hasAcknowledgedHighRisk = false;
-    _localReports.clear();
-    _nearbyReports.clear();
-    _emergencyContacts.clear();
-    _resetUserSettings(notify: false);
-    _currentLatitude = null;
-    _currentLongitude = null;
-    _isMapDataLoading = false;
-    _lastMapSyncAt = null;
-    _mapDataLoadFuture = null;
-    notifyListeners();
+    await _resetSessionState(clearPersistedSession: true, notify: true);
   }
 
   Map<String, dynamic> _extractAuthData(Map<String, dynamic> response) {
@@ -963,17 +1062,77 @@ class AppState extends ChangeNotifier {
   Future<void> _applyAuthenticatedSession(Map<String, dynamic> response) async {
     final authData = _extractAuthData(response);
     final token = authData['token']?.toString();
+    final refreshToken = authData['refreshToken']?.toString();
     final userMap = _extractUserMap(authData['user']);
-    if (token == null || token.isEmpty) {
-      throw ApiException('Auth response does not include a valid token');
+    if (token == null ||
+        token.isEmpty ||
+        refreshToken == null ||
+        refreshToken.isEmpty) {
+      throw ApiException('Auth response does not include valid session tokens');
     }
 
-    await _apiService.saveToken(token);
-    await _apiService.saveUserSession(userMap);
+    await _apiService.saveAuthSession(
+      token: token,
+      refreshToken: refreshToken,
+      user: userMap,
+    );
     _currentUser = _toSessionUser(userMap);
     _setDefaultLandingScenario();
     await _loadSessionSideData(notify: false);
     notifyListeners();
+  }
+
+  Future<void> _handleSessionTokensUpdated(
+    String accessToken,
+    String refreshToken,
+  ) async {
+    notifyListeners();
+  }
+
+  Future<void> _handleSessionExpired() async {
+    await _resetSessionState(clearPersistedSession: false, notify: true);
+  }
+
+  Future<void> _resetSessionState({
+    required bool clearPersistedSession,
+    required bool notify,
+  }) async {
+    if (_isSessionResetInProgress) {
+      return;
+    }
+
+    _isSessionResetInProgress = true;
+    try {
+      if (clearPersistedSession) {
+        await _apiService.clearSession();
+      }
+
+      _currentUser = null;
+      _selectedIndex = 0;
+      _riskLevel = RiskLevel.low;
+      _emergencyActive = false;
+      _showRiskDecision = false;
+      _hasAcknowledgedHighRisk = false;
+      _localReports.clear();
+      _nearbyReports.clear();
+      _emergencyContacts.clear();
+      _clearPendingEmergencySms();
+      _resetUserSettings(notify: false);
+      _currentLatitude = null;
+      _currentLongitude = null;
+      _currentLocationName = null;
+      _isMapDataLoading = false;
+      _lastMapSyncAt = null;
+      _mapDataLoadFuture = null;
+      _loadingCounter = 0;
+      _isLoading = false;
+      _setDefaultLandingScenario();
+      if (notify) {
+        notifyListeners();
+      }
+    } finally {
+      _isSessionResetInProgress = false;
+    }
   }
 
   Future<void> _loadSessionSideData({bool notify = false}) async {
@@ -1040,6 +1199,9 @@ class AppState extends ChangeNotifier {
       _userSettings = previousSettings;
       _permissions = previousPermissions;
       notifyListeners();
+      if (_isSessionExpiredError(e)) {
+        return;
+      }
       throw AppStateException(_toUserMessage(e, fallback: fallback));
     } finally {
       _isUserSettingsSaving = false;
@@ -1258,21 +1420,24 @@ class AppState extends ChangeNotifier {
     required int userId,
     required double latitude,
     required double longitude,
+    List<String> sharedTo = const [],
+    String currentRiskLevel = 'LOW',
   }) async {
     final payload = <String, dynamic>{
       'userId': userId,
       'latitude': latitude,
       'longitude': longitude,
-      'sharedTo': <String>[],
+      'sharedTo': sharedTo,
+      'currentRiskLevel': currentRiskLevel,
     };
 
     try {
-      await _apiService.post('/emergency/start', body: payload);
+      await _apiService.post('/api/emergency/start', body: payload);
     } on ApiException catch (e) {
       if (e.statusCode != 404) {
         rethrow;
       }
-      await _apiService.post('/api/emergency/start', body: payload);
+      await _apiService.post('/emergency/start', body: payload);
     }
   }
 
@@ -1336,6 +1501,9 @@ class AppState extends ChangeNotifier {
       return error.message;
     }
     if (error is ApiException) {
+      if (error.isSessionExpired) {
+        return '';
+      }
       if (error.statusCode == null) {
         return 'Ag baglantisi kurulamadi. Internetini kontrol et.';
       }
@@ -1355,6 +1523,10 @@ class AppState extends ChangeNotifier {
       }
     }
     return fallback;
+  }
+
+  bool _isSessionExpiredError(Object error) {
+    return error is ApiException && error.isSessionExpired;
   }
 
   Future<void> _updateLocationName(double lat, double lng) async {
@@ -1436,12 +1608,16 @@ class AppState extends ChangeNotifier {
     return '${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}';
   }
 
-  Future<T> _withLoading<T>(Future<T> Function() action) async {
+  Future<void> _withLoading(Future<void> Function() action) async {
     _loadingCounter++;
     _isLoading = _loadingCounter > 0;
     notifyListeners();
     try {
-      return await action();
+      await action();
+    } on ApiException catch (error) {
+      if (!_isSessionExpiredError(error)) {
+        rethrow;
+      }
     } finally {
       _loadingCounter--;
       if (_loadingCounter < 0) {
@@ -1611,8 +1787,150 @@ class AppState extends ChangeNotifier {
     return category.trim().toUpperCase();
   }
 
+  _EmergencyActivationPlan _buildEmergencyActivationPlan() {
+    final currentRiskLevel = _riskLevelToBackendValue(_riskLevel);
+    if (_riskLevel == RiskLevel.high) {
+      return const _EmergencyActivationPlan(
+        callTarget: '112',
+        currentRiskLevel: 'HIGH',
+        smsRecipients: [],
+      );
+    }
+
+    final primaryContact = primaryEmergencyContact;
+    final primaryPhone = _sanitizePhoneNumber(primaryContact?.phone ?? '');
+    final smsRecipients = <String>[];
+
+    for (final contact in _emergencyContacts) {
+      if (primaryContact != null && contact.id == primaryContact.id) {
+        continue;
+      }
+      final normalizedPhone = _sanitizePhoneNumber(contact.phone);
+      if (normalizedPhone.isEmpty || smsRecipients.contains(normalizedPhone)) {
+        continue;
+      }
+      smsRecipients.add(normalizedPhone);
+    }
+
+    return _EmergencyActivationPlan(
+      callTarget: primaryPhone.isNotEmpty ? primaryPhone : '112',
+      currentRiskLevel: currentRiskLevel,
+      smsRecipients: smsRecipients,
+    );
+  }
+
+  String _riskLevelToBackendValue(RiskLevel level) {
+    switch (level) {
+      case RiskLevel.low:
+        return 'LOW';
+      case RiskLevel.medium:
+        return 'MEDIUM';
+      case RiskLevel.high:
+        return 'HIGH';
+    }
+  }
+
+  String _buildEmergencySmsBody({
+    required double latitude,
+    required double longitude,
+    required String riskLevel,
+  }) {
+    final mapsUrl =
+        'https://maps.google.com/?q=${latitude.toStringAsFixed(6)},${longitude.toStringAsFixed(6)}';
+    return 'Yardima ihtiyacim var. Konumum: $currentLocationName. '
+        'Harita: $mapsUrl. Risk seviyesi: $riskLevel.';
+  }
+
+  String _sanitizePhoneNumber(String value) {
+    final compact = value.trim().replaceAll(RegExp(r'[^0-9+]'), '');
+    if (compact.isEmpty) {
+      return '';
+    }
+    if (!compact.startsWith('+')) {
+      return compact.replaceAll('+', '');
+    }
+    final digits = compact.substring(1).replaceAll('+', '');
+    return '+$digits';
+  }
+
+  Future<void> _launchPhoneCall(String phoneNumber) async {
+    final normalizedPhone = _sanitizePhoneNumber(phoneNumber);
+    if (normalizedPhone.isEmpty) {
+      throw const AppStateException(
+        'Arama baslatmak icin gecerli bir telefon numarasi bulunamadi.',
+      );
+    }
+
+    final launched = await launchUrl(
+      Uri(scheme: 'tel', path: normalizedPhone),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!launched) {
+      throw AppStateException(
+        '$normalizedPhone numarasina yonlendirme baslatilamadi.',
+      );
+    }
+  }
+
+  void _schedulePendingEmergencySms({
+    required List<String> recipients,
+    required String body,
+  }) {
+    _pendingEmergencySmsRecipients = List.unmodifiable(recipients);
+    _pendingEmergencySmsBody = body;
+  }
+
+  void _clearPendingEmergencySms() {
+    _pendingEmergencySmsRecipients = const [];
+    _pendingEmergencySmsBody = null;
+  }
+
+  Future<void> _launchPendingEmergencySms() async {
+    final recipients = List<String>.from(_pendingEmergencySmsRecipients);
+    final body = _pendingEmergencySmsBody;
+    if (recipients.isEmpty || body == null || _isLaunchingPendingEmergencySms) {
+      return;
+    }
+
+    _isLaunchingPendingEmergencySms = true;
+    _clearPendingEmergencySms();
+
+    try {
+      final recipientSeparator = defaultTargetPlatform == TargetPlatform.iOS
+          ? ','
+          : ';';
+      final launched = await launchUrl(
+        Uri(
+          scheme: 'sms',
+          path: recipients.join(recipientSeparator),
+          queryParameters: <String, String>{'body': body},
+        ),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        throw const AppStateException('SMS uygulamasi acilamadi.');
+      }
+    } finally {
+      _isLaunchingPendingEmergencySms = false;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      return;
+    }
+    if (_pendingEmergencySmsRecipients.isEmpty ||
+        _pendingEmergencySmsBody == null) {
+      return;
+    }
+    unawaited(_launchPendingEmergencySms());
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _clearPendingEmergencySms();
     _locationStreamSubscription?.cancel();
     super.dispose();
   }

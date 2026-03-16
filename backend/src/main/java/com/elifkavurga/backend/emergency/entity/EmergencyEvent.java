@@ -46,6 +46,9 @@ public class EmergencyEvent extends BaseEntity {
     @Column(columnDefinition = "geometry(Point,4326)")
     private Point location;
 
+    @Column(name = "current_risk_level")
+    private String currentRiskLevel;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EmergencyStatus status = EmergencyStatus.ACTIVE;

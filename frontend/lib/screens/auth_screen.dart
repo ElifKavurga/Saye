@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -302,10 +303,17 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _submitAuthAction(Future<void> Function() action) async {
     try {
       await action();
-    } catch (e) {
+    } catch (error) {
       if (!mounted) {
         return;
       }
+      final message = error is AppStateException
+          ? error.message
+          : error.toString();
+      if (message.trim().isEmpty) {
+        return;
+      }
+      final e = message;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('İşlem başarısız: $e'),

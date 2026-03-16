@@ -234,7 +234,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
                                 reportLatitude: selectedPoint.latitude,
                                 reportLongitude: selectedPoint.longitude,
                               );
-                            } catch (e) {
+                            } catch (error) {
                               if (context.mounted) {
                                 setModalState(() {
                                   isSubmitting = false;
@@ -243,6 +243,13 @@ class _MapReportScreenState extends State<MapReportScreen> {
                               if (!parentContext.mounted) {
                                 return;
                               }
+                              final message = error is AppStateException
+                                  ? error.message
+                                  : error.toString();
+                              if (message.trim().isEmpty) {
+                                return;
+                              }
+                              final e = message;
                               ScaffoldMessenger.of(parentContext)
                                 ..hideCurrentSnackBar()
                                 ..showSnackBar(
@@ -306,15 +313,18 @@ class _MapReportScreenState extends State<MapReportScreen> {
           _selectedPoint = LatLng(latitude, longitude);
         });
       }
-    } catch (e) {
+    } catch (error) {
       if (!mounted) {
         return;
       }
+      final message = error is AppStateException
+          ? error.message
+          : error.toString();
+      if (message.trim().isEmpty) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          behavior: SnackBarBehavior.floating,
-        ),
+        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
       );
     }
   }
@@ -542,7 +552,10 @@ class _LiveMap extends StatelessWidget {
                 circles: [
                   for (final circle in riskCircles)
                     CircleMarker(
-                      point: LatLng(circle.centerLatitude, circle.centerLongitude),
+                      point: LatLng(
+                        circle.centerLatitude,
+                        circle.centerLongitude,
+                      ),
                       radius: circle.radiusMeters,
                       useRadiusInMeter: true,
                       color: circle.strokeColor.withValues(alpha: 0.25),
@@ -699,8 +712,9 @@ class _LiveMap extends StatelessWidget {
         return aIsSecurity ? 1 : -1;
       }
 
-      final severityCompare =
-          _severityForReport(a).index.compareTo(_severityForReport(b).index);
+      final severityCompare = _severityForReport(
+        a,
+      ).index.compareTo(_severityForReport(b).index);
       if (severityCompare != 0) {
         return severityCompare;
       }
@@ -984,7 +998,9 @@ class _RiskCircleVisual {
           ? radiusMeters
           : other.radiusMeters,
       riskScore: riskScore > other.riskScore ? riskScore : other.riskScore,
-      strokeColor: riskScore >= other.riskScore ? strokeColor : other.strokeColor,
+      strokeColor: riskScore >= other.riskScore
+          ? strokeColor
+          : other.strokeColor,
     );
   }
 }

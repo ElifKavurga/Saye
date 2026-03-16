@@ -101,14 +101,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: GestureDetector(
                         onLongPress: () async {
                           try {
-                            await widget.appState.activateEmergency();
+                            await widget.appState.activateEmergencyDynamic();
                           } catch (e) {
                             if (!context.mounted) {
                               return;
                             }
+                            final message = e is AppStateException
+                                ? e.message
+                                : e.toString();
+                            if (message.trim().isEmpty) {
+                              return;
+                            }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('SOS baslatilamadi: $e'),
+                                content: Text('SOS baslatilamadi: $message'),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -152,14 +158,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: OutlinedButton.icon(
                           onPressed: () async {
                             try {
-                              await widget.appState.activateEmergency();
+                              await widget.appState.activateEmergencyDynamic();
                             } catch (e) {
                               if (!context.mounted) {
                                 return;
                               }
+                              final message = e is AppStateException
+                                  ? e.message
+                                  : e.toString();
+                              if (message.trim().isEmpty) {
+                                return;
+                              }
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('SOS baslatilamadi: $e'),
+                                  content: Text('SOS baslatilamadi: $message'),
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );
@@ -276,6 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // ignore: unused_element
   String _bluetoothMessage(RiskLevel level) {
     switch (level) {
       case RiskLevel.low:

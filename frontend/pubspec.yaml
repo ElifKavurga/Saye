@@ -43,6 +43,7 @@ dependencies:
   latlong2: ^0.9.1
   permission_handler: ^11.3.1
   shared_preferences: ^2.2.3
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

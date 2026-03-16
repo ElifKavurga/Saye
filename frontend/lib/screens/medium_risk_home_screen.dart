@@ -55,14 +55,20 @@ class MediumRiskHomeScreen extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () async {
                       try {
-                        await appState.activateEmergency();
+                        await appState.activateEmergencyDynamic();
                       } catch (e) {
                         if (!context.mounted) {
                           return;
                         }
+                        final message = e is AppStateException
+                            ? e.message
+                            : e.toString();
+                        if (message.trim().isEmpty) {
+                          return;
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('SOS baslatilamadi: $e'),
+                            content: Text('SOS baslatilamadi: $message'),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -70,14 +76,20 @@ class MediumRiskHomeScreen extends StatelessWidget {
                     },
                     onLongPress: () async {
                       try {
-                        await appState.activateEmergency();
+                        await appState.activateEmergencyDynamic();
                       } catch (e) {
                         if (!context.mounted) {
                           return;
                         }
+                        final message = e is AppStateException
+                            ? e.message
+                            : e.toString();
+                        if (message.trim().isEmpty) {
+                          return;
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('SOS baslatilamadi: $e'),
+                            content: Text('SOS baslatilamadi: $message'),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -167,10 +179,7 @@ class _LogoStrip extends StatelessWidget {
 }
 
 class _LocationRow extends StatelessWidget {
-  const _LocationRow({
-    required this.location,
-    required this.onProfileTap,
-  });
+  const _LocationRow({required this.location, required this.onProfileTap});
 
   final String location;
   final VoidCallback onProfileTap;
@@ -287,6 +296,7 @@ class _MapCard extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _BluetoothWarningCard extends StatelessWidget {
   const _BluetoothWarningCard();
 

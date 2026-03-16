@@ -43,6 +43,7 @@ public class EmergencyServiceImpl implements EmergencyService {
         event.setUser(user);
         event.setStartedAt(Instant.now(clock));
         event.setStatus(EmergencyStatus.ACTIVE);
+        event.setCurrentRiskLevel(request.getCurrentRiskLevel());
         event.setSharedTo(request.getSharedTo() != null ? List.copyOf(request.getSharedTo()) : List.of());
 
         GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 4326);

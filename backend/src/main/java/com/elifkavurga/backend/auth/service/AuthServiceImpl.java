@@ -70,6 +70,14 @@ public class AuthServiceImpl implements AuthService {
         return toAuthResponse(demoUser);
     }
 
+    @Override
+    public AuthResponse refresh(String refreshToken) {
+        Long userId = tokenService.validateRefreshToken(refreshToken);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BadRequestException("User not found"));
+        return toAuthResponse(user);
+    }
+
     private User createDemoUser() {
         User user = new User();
         user.setEmail(DEMO_EMAIL);
@@ -87,7 +95,8 @@ public class AuthServiceImpl implements AuthService {
 
     private AuthResponse toAuthResponse(User user) {
         return AuthResponse.builder()
-                .token(tokenService.issueToken(user))
+                .token(tokenService.issueAccessToken(user))
+                .refreshToken(tokenService.issueRefreshToken(user))
                 .user(AuthUserResponse.builder()
                         .id(user.getId())
                         .email(user.getEmail())

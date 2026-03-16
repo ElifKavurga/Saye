@@ -36,6 +36,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final message = error is AppStateException
         ? error.message
         : error.toString();
+    if (message.trim().isEmpty) {
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );

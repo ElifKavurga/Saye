@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/emergency")
+@RequestMapping({"/emergency", "/api/emergency"})
 @RequiredArgsConstructor
 @Tag(name = "Emergency", description = "Acil durum baslatma, durdurma ve durum sorgulama endpointleri")
 public class EmergencyController {
@@ -48,6 +48,7 @@ public class EmergencyController {
                                       "userId": 42,
                                       "latitude": 41.0082,
                                       "longitude": 28.9784,
+                                      "currentRiskLevel": "HIGH",
                                       "sharedTo": ["905551112233", "905441112233"]
                                     }
                                     """
