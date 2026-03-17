@@ -1,7 +1,9 @@
 package com.elifkavurga.backend.user.entity;
 
 import com.elifkavurga.backend.common.entity.BaseEntity;
+import com.elifkavurga.backend.security.AesStringAttributeConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -42,6 +44,7 @@ public class User extends BaseEntity {
     private String username;
 
     @Column
+    @Convert(converter = AesStringAttributeConverter.class)
     private String phone;
 
     @Column(name = "password_hash")

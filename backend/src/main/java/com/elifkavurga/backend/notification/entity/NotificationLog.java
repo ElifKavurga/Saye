@@ -3,9 +3,11 @@ package com.elifkavurga.backend.notification.entity;
 import com.elifkavurga.backend.common.entity.BaseEntity;
 import com.elifkavurga.backend.emergency.entity.EmergencyEvent;
 import com.elifkavurga.backend.user.entity.User;
+import com.elifkavurga.backend.security.AesStringAttributeConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -44,6 +46,7 @@ public class NotificationLog extends BaseEntity {
     private NotificationType type;
 
     @Column(name = "recipient", nullable = false)
+    @Convert(converter = AesStringAttributeConverter.class)
     private String to;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

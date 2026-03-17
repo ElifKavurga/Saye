@@ -2,11 +2,13 @@ package com.elifkavurga.backend.emergency.entity;
 
 import com.elifkavurga.backend.common.entity.BaseEntity;
 import com.elifkavurga.backend.user.entity.User;
+import com.elifkavurga.backend.security.AesStringAttributeConverter;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -52,6 +54,7 @@ public class EmergencyEvent extends BaseEntity {
 
     @ElementCollection
     @CollectionTable(name = "emergency_event_shared_to", joinColumns = @JoinColumn(name = "event_id"))
+    @Convert(converter = AesStringAttributeConverter.class)
     @Column(name = "contact_value", nullable = false)
     private List<String> sharedTo = new ArrayList<>();
 

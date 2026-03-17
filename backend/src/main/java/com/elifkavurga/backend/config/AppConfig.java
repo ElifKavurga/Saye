@@ -7,7 +7,10 @@ import org.springframework.context.annotation.Configuration;
 import java.time.Clock;
 
 @Configuration
-@EnableConfigurationProperties(AppSecurityProperties.class)
+@EnableConfigurationProperties({
+        AppSecurityProperties.class,
+        AppEncryptionProperties.class,
+})
 public class AppConfig {
 
     @Bean

@@ -5,14 +5,18 @@ spring:
     url: jdbc:postgresql://localhost:5432/saye_db
     driver-class-name: org.postgresql.Driver
     username: postgres
-    password: 1461
+    password: "1234"
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.spatial.dialect.postgis.PostgisPG95Dialect
+        show_sql: true
+        format_sql: true
 
 app:
   security:
     demo-login-enabled: true
+  encryption:
+    aes-secret-key: ${APP_AES_SECRET_KEY:my_super_secret_key_32_chars_long}
