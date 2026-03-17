@@ -5,7 +5,7 @@ spring:
     url: jdbc:postgresql://localhost:5432/saye_db
     driver-class-name: org.postgresql.Driver
     username: postgres
-    password: "1234"
+    password: ${POSTGRES_PASSWORD:1234}
   jpa:
     hibernate:
       ddl-auto: update
@@ -14,9 +14,20 @@ spring:
         dialect: org.hibernate.spatial.dialect.postgis.PostgisPG95Dialect
         show_sql: true
         format_sql: true
+  sql:
+    init:
+      mode: always
 
 app:
   security:
     demo-login-enabled: true
+    jwt-secret: ${APP_JWT_SECRET:saye-development-jwt-secret-key-change-me-2026}
+    access-token-ttl: 15m
+    refresh-token-ttl: 30d
   encryption:
     aes-secret-key: ${APP_AES_SECRET_KEY:my_super_secret_key_32_chars_long}
+
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID:}
+  auth-token: ${TWILIO_AUTH_TOKEN:}
+  phone-number: ${TWILIO_PHONE_NUMBER:}

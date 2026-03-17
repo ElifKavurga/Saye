@@ -30,7 +30,11 @@ public class NotificationLogServiceImpl implements NotificationLogService {
         log.setType(type);
         log.setTo(recipient);
         log.setUser(event.getUser());
-        log.setMessage("Acil durum bildirimi gonderildi: " + recipient);
+        if (type == NotificationType.CALL) {
+            log.setMessage("Acil durum arama yonlendirmesi baslatildi: " + recipient);
+        } else {
+            log.setMessage("Acil durum bildirimi gonderildi: " + recipient);
+        }
         log.setIsRead(false);
         log.setStatus(NotificationStatus.SENT);
         repository.save(log);
@@ -38,7 +42,7 @@ public class NotificationLogServiceImpl implements NotificationLogService {
 
     @Override
     public List<NotificationLogResponse> listByEventId(Long eventId) {
-        return repository.findAllByEventIdOrderByCreatedAtAsc(eventId).stream()
+        return repository.findAllByEvent_IdOrderByCreatedAtAsc(eventId).stream()
                 .map(log -> NotificationLogResponse.builder()
                         .id(log.getId())
                         .eventId(log.getEventId())

@@ -24,6 +24,18 @@ public class EmergencyStartRequest {
     @Schema(description = "Baslangic boylami", example = "28.9784")
     private Double longitude;
 
+    @Schema(description = "Acil durum baslatildiginda istemcideki risk seviyesi", example = "HIGH")
+    private String currentRiskLevel;
+
+    @Schema(description = "Aramaya yonlendirilen kisi veya kurum", example = "112 Acil Cagri Merkezi")
+    private String calledContactName;
+
+    @Schema(description = "Aramaya yonlendirilen telefon numarasi", example = "112")
+    private String calledPhoneNumber;
+
     @ArraySchema(schema = @Schema(example = "905551112233"), arraySchema = @Schema(description = "Bildirim gonderilecek acil kontaklar"))
     private List<String> sharedTo;
+
+    @Schema(description = "SMS bildiriminin cihaz tarafinda zaten otomatik gonderilip gonderilmedigi", example = "true")
+    private Boolean deviceSmsHandled;
 }

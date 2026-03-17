@@ -4,72 +4,431 @@ import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, required this.appState});
 
   final AppState appState;
 
   @override
-  Widget build(BuildContext context) {
-    final user = appState.currentUser;
-    final displayName = (user?.username.isNotEmpty ?? false)
-        ? user!.username
-        : AppDefaults.fallbackProfileName;
-    final displayEmail = (user?.email.isNotEmpty ?? false)
-        ? user!.email
-        : AppDefaults.fallbackProfileEmail;
-    final displayPhone = (user?.phone.isNotEmpty ?? false) ? user!.phone : '-';
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          AppSpacing.md,
-          AppSpacing.md,
-          120,
+class _ProfileScreenState extends State<ProfileScreen> {
+  Future<void> _openEmergencyHealthEditor() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => EmergencyHealthEditScreen(
+          appState: widget.appState,
         ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _HeaderCard(
-                  displayName: displayName,
-                  displayEmail: displayEmail,
-                  displayPhone: displayPhone,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _QuickStatsCard(reportCount: appState.localReports.length),
-                const SizedBox(height: AppSpacing.md),
-                _SectionTitle('Bildirim Gecmisim'),
-                const SizedBox(height: AppSpacing.sm),
-                if (appState.localReports.isEmpty)
-                  const _EmptyReportCard()
-                else
-                  ...appState.localReports.map(
-                    (report) => Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                      child: _ReportCard(report: report),
+      ),
+    );
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appState = widget.appState;
+    return AnimatedBuilder(
+      animation: appState,
+      builder: (context, _) {
+        final user = appState.currentUser;
+        final displayName = (user?.username.isNotEmpty ?? false)
+            ? user!.username
+            : AppDefaults.fallbackProfileName;
+        final displayEmail = (user?.email.isNotEmpty ?? false)
+            ? user!.email
+            : AppDefaults.fallbackProfileEmail;
+        final displayPhone =
+            (user?.phone.isNotEmpty ?? false) ? user!.phone : '-';
+
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              120,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _HeaderCard(
+                      displayName: displayName,
+                      displayEmail: displayEmail,
+                      displayPhone: displayPhone,
                     ),
-                  ),
-                const SizedBox(height: AppSpacing.lg),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      appState.logout();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8B1F33),
-                      foregroundColor: Colors.white,
+                    const SizedBox(height: AppSpacing.md),
+                    _QuickStatsCard(reportCount: appState.localReports.length),
+                    const SizedBox(height: AppSpacing.md),
+                    _HealthInfoCard(
+                      info: appState.emergencyHealthInfo,
+                      onTap: _openEmergencyHealthEditor,
                     ),
-                    child: const Text('Cikis Yap'),
-                  ),
+                    const SizedBox(height: AppSpacing.md),
+                    _SectionTitle('Bildirim Geçmişim'),
+                    const SizedBox(height: AppSpacing.sm),
+                    if (appState.localReports.isEmpty)
+                      const _EmptyReportCard()
+                    else
+                      ...appState.localReports.map(
+                        (report) => Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: _ReportCard(report: report),
+                        ),
+                      ),
+                    const SizedBox(height: AppSpacing.lg),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          appState.logout();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8B1F33),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Çıkış Yap'),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
+        );
+      },
+    );
+  }
+}
+
+class _HealthInfoCard extends StatelessWidget {
+  const _HealthInfoCard({
+    required this.info,
+    required this.onTap,
+  });
+
+  final EmergencyHealthInfo info;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasInfo = info.hasContent;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: const Color(0xFF10294A).withValues(alpha: 0.94),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: Colors.white10),
+            boxShadow: AppShadows.soft,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.aquaGlow.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: const Icon(
+                  Icons.medical_services_rounded,
+                  color: AppColors.aquaGlow,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Acil Sağlık Bilgileri',
+                      style: AppTextStyles.title.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    if (hasInfo) ...[
+                      _HealthInfoLine(label: 'Kan Grubu', value: info.bloodType),
+                      const SizedBox(height: 6),
+                      _HealthInfoLine(
+                        label: 'Alerjiler',
+                        value: info.allergyNotes,
+                      ),
+                      const SizedBox(height: 6),
+                      _HealthInfoLine(
+                        label: 'Acil Not',
+                        value: info.emergencyNote,
+                      ),
+                    ] else
+                      Text(
+                        'Bilgi eklenmemis',
+                        style: AppTextStyles.body.copyWith(
+                          color: Colors.white70,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              TextButton(
+                onPressed: onTap,
+                child: Text(hasInfo ? 'Düzenle' : 'Ekle'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HealthInfoLine extends StatelessWidget {
+  const _HealthInfoLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final displayValue = value.trim().isEmpty ? '-' : value.trim();
+
+    return RichText(
+      text: TextSpan(
+        text: '$label: ',
+        style: AppTextStyles.body.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+        ),
+        children: [
+          TextSpan(
+            text: displayValue,
+            style: AppTextStyles.body.copyWith(
+              color: Colors.white70,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class EmergencyHealthEditScreen extends StatefulWidget {
+  const EmergencyHealthEditScreen({super.key, required this.appState});
+
+  final AppState appState;
+
+  @override
+  State<EmergencyHealthEditScreen> createState() =>
+      _EmergencyHealthEditScreenState();
+}
+
+class _EmergencyHealthEditScreenState extends State<EmergencyHealthEditScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _bloodTypeController;
+  late final TextEditingController _allergiesController;
+  late final TextEditingController _emergencyNoteController;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final info = widget.appState.emergencyHealthInfo;
+    _bloodTypeController = TextEditingController(text: info.bloodType);
+    _allergiesController = TextEditingController(text: info.allergyNotes);
+    _emergencyNoteController = TextEditingController(text: info.emergencyNote);
+  }
+
+  @override
+  void dispose() {
+    _bloodTypeController.dispose();
+    _allergiesController.dispose();
+    _emergencyNoteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final bloodType = _bloodTypeController.text.trim();
+    final allergies = _allergiesController.text.trim();
+    final emergencyNote = _emergencyNoteController.text.trim();
+
+    if (bloodType.isEmpty && allergies.isEmpty && emergencyNote.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Acil sağlık bilgisi girmek için en az bir alan doldurmalısınız',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await widget.appState.saveEmergencyHealthInfo(
+        bloodType: bloodType,
+        allergyNotes: allergies,
+        emergencyNote: emergencyNote,
+      );
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Acil sağlık bilgileri kaydedilemedi.'),
+        ),
+      );
+      setState(() {
+        _isSaving = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.deepNavy,
+      appBar: AppBar(
+        title: const Text('Acil Sağlık Bilgileri'),
+      ),
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: AppGradients.mainBackground),
+        child: SizedBox.expand(
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.card,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: Colors.white10),
+                      boxShadow: AppShadows.soft,
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Sağlık ekiplerinin ihtiyaç duyabileceği temel bilgileri ekleyin.',
+                            style: AppTextStyles.body.copyWith(
+                              color: Colors.white70,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          _EmergencyHealthFormField(
+                            controller: _bloodTypeController,
+                            label: 'Kan Grubu',
+                            hintText: 'Orn. A Rh+',
+                            textInputAction: TextInputAction.next,
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          _EmergencyHealthFormField(
+                            controller: _allergiesController,
+                            label: 'Alerjiler',
+                            hintText: 'Varsa belirtin',
+                            textInputAction: TextInputAction.next,
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          _EmergencyHealthFormField(
+                            controller: _emergencyNoteController,
+                            label: 'Acil Sağlık Notu',
+                            hintText: 'Önemli bir sağlık bilgisi ekleyin',
+                            maxLines: 4,
+                            textInputAction: TextInputAction.done,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isSaving ? null : _save,
+                              child: Text(
+                                _isSaving ? 'Kaydediliyor...' : 'Kaydet',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmergencyHealthFormField extends StatelessWidget {
+  const _EmergencyHealthFormField({
+    required this.controller,
+    required this.label,
+    required this.hintText,
+    required this.textInputAction,
+    this.maxLines = 1,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String hintText;
+  final TextInputAction textInputAction;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: TextInputType.text,
+      textInputAction: textInputAction,
+      autocorrect: true,
+      enableSuggestions: true,
+      style: AppTextStyles.body,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hintText,
+        labelStyle: AppTextStyles.caption.copyWith(color: Colors.white70),
+        hintStyle: AppTextStyles.caption.copyWith(color: Colors.white38),
+        filled: true,
+        fillColor: AppColors.cardMuted,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.aquaGlow),
         ),
       ),
     );
@@ -164,7 +523,7 @@ class _QuickStatsCard extends StatelessWidget {
           _StatChip(
             icon: Icons.campaign_rounded,
             value: '$reportCount',
-            label: 'Ihbar',
+            label: 'İhbar',
           ),
           const SizedBox(width: AppSpacing.sm),
           const _StatChip(
@@ -176,7 +535,7 @@ class _QuickStatsCard extends StatelessWidget {
           const _StatChip(
             icon: Icons.shield_rounded,
             value: 'Acil',
-            label: 'Hazir',
+            label: 'Hazır',
           ),
         ],
       ),
@@ -246,7 +605,7 @@ class _EmptyReportCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Text(
-        'Henuz gonderdigin bir bildirim yok. Harita ekranindan ilk ihbari olusturabilirsin.',
+        'Henüz gönderdiğin bir bildirim yok. Harita ekranından ilk ihbarı oluşturabilirsin.',
         style: AppTextStyles.body.copyWith(color: Colors.white70),
       ),
     );

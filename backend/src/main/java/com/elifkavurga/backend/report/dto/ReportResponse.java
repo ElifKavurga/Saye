@@ -24,8 +24,22 @@ public class ReportResponse {
     private Double longitude;
     @Schema(example = "2026-03-02T09:15:00Z")
     private Instant createdAt;
-    @Schema(example = "ACTIVE")
+    @Schema(example = "PENDING")
     private String status;
     @Schema(example = "0.0")
     private Double confidenceScore;
+    @Schema(example = "150.0")
+    private Double riskRadiusMeters;
+    @Schema(example = "MEDIUM")
+    private String riskLevel;
+    @Schema(example = "61.0")
+    private Double riskScore;
+    @Schema(example = "2")
+    private Integer clusterSize;
+    @Schema(example = "41.0085")
+    private Double riskCenterLatitude;
+    @Schema(example = "28.9782")
+    private Double riskCenterLongitude;
+    @Schema(example = "cluster-41.008500-28.978200")
+    private String riskCircleId;
 }

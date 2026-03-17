@@ -1,5 +1,9 @@
 {
     "java.configuration.updateBuildConfiguration": "interactive",
     "java.compile.nullAnalysis.mode": "automatic",
+<<<<<<< HEAD
     "cmake.sourceDirectory": "C:/Saye/frontend/linux"
+=======
+    "java.debug.settings.onBuildFailureProceed": true
+>>>>>>> c7a85a2b6e0d9dcfcb906667b403f63d49c0af36
 }

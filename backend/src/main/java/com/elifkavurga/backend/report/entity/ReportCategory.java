@@ -5,6 +5,5 @@ public enum ReportCategory {
     ANIMALS,
     SECURITY,
     TRAFFIC,
-    INFRASTRUCTURE,
-    HEALTH
+    INFRASTRUCTURE
 }

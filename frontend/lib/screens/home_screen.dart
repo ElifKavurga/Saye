@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../config/app_defaults.dart';
+import '../config/app_strings.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'alerts_feed_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     required this.appState,
@@ -19,8 +19,38 @@ class HomeScreen extends StatelessWidget {
   final VoidCallback onOpenProfile;
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _fetchLocationIfNeeded();
+  }
+
+  Future<void> _fetchLocationIfNeeded() async {
+    try {
+      await widget.appState.ensureMapDataLoaded();
+    } catch (e) {
+      debugPrint('Failed to prepare map data: $e');
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Harita verileri şimdi yüklenemiyor. Lütfen tekrar deneyin.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final risk = appState.riskLevel;
+    final risk = widget.appState.riskLevel;
     final riskLabel = _riskTitle(risk);
     final riskLevelLabel = _riskLevelLabel(risk);
     final riskColor = _riskColor(risk);
@@ -44,26 +74,21 @@ class HomeScreen extends StatelessWidget {
                     const _LogoStrip(),
                     const SizedBox(height: AppSpacing.md),
                     _TopBar(
-                      location: AppDefaults.campusLocation,
-                      onProfileTap: onOpenProfile,
+                      location: widget.appState.currentLocationName,
+                      onProfileTap: widget.onOpenProfile,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _RiskSection(
                       riskLabel: riskLabel,
                       riskLevelLabel: riskLevelLabel,
                       color: riskColor,
-                      onDebugCycle: appState.cycleRiskLevel,
+                      onDebugCycle: widget.appState.cycleRiskLevel,
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    _MapPreviewCard(onTap: onOpenMap),
-                    const SizedBox(height: AppSpacing.md),
-                    _BluetoothCard(
-                      color: riskColor,
-                      message: _bluetoothMessage(risk),
-                    ),
+                    _MapPreviewCard(onTap: widget.onOpenMap),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'BASILI TUT: YARDIM CAGIR',
+                      'BASILI TUT: YARDIM ÇAĞIR',
                       textAlign: TextAlign.center,
                       style: AppTextStyles.body.copyWith(
                         letterSpacing: 0.8,
@@ -77,14 +102,22 @@ class HomeScreen extends StatelessWidget {
                       child: GestureDetector(
                         onLongPress: () async {
                           try {
-                            await appState.activateEmergency();
+                            await widget.appState.activateEmergencyDynamic();
                           } catch (e) {
                             if (!context.mounted) {
                               return;
                             }
+                            final message = e is AppStateException
+                                ? e.message
+                                : e.toString();
+                            if (message.trim().isEmpty) {
+                              return;
+                            }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('SOS baslatilamadi: $e'),
+                                content: Text(
+                                  '${AppStrings.sosStartFailedPrefix}$message',
+                                ),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -128,14 +161,22 @@ class HomeScreen extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: () async {
                             try {
-                              await appState.activateEmergency();
+                              await widget.appState.activateEmergencyDynamic();
                             } catch (e) {
                               if (!context.mounted) {
                                 return;
                               }
+                              final message = e is AppStateException
+                                  ? e.message
+                                  : e.toString();
+                              if (message.trim().isEmpty) {
+                                return;
+                              }
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('SOS baslatilamadi: $e'),
+                                  content: Text(
+                                    '${AppStrings.sosStartFailedPrefix}$message',
+                                  ),
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );
@@ -146,7 +187,7 @@ class HomeScreen extends StatelessWidget {
                             side: const BorderSide(color: Color(0xFFFF6B75)),
                           ),
                           icon: const Icon(Icons.touch_app_rounded),
-                          label: const Text('Tek Tikla Acil Ac'),
+                          label: const Text('Tek Tıkla Acil Aç'),
                         ),
                       ),
                     ),
@@ -181,12 +222,12 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hizli Panel',
+                  'Hızlı Panel',
                   style: AppTextStyles.title.copyWith(fontSize: 22),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '${AppDefaults.campusLocation} konumundaki en guncel bildirimleri goruntule.',
+                  '${widget.appState.currentLocationName} konumundaki en güncel bildirimleri görüntüle.',
                   style: AppTextStyles.body.copyWith(color: Colors.white70),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -200,13 +241,14 @@ class HomeScreen extends StatelessWidget {
                     Icons.notifications_active_rounded,
                     color: Color(0xFF84F5BB),
                   ),
-                  title: const Text('Guncel bildirim ve ihbarlar'),
-                  subtitle: const Text('Konum tabanli canli akis'),
+                  title: const Text('Güncel bildirim ve ihbarlar'),
+                  subtitle: const Text('Konum tabanlı canlı akış'),
                   onTap: () {
                     Navigator.of(context).pop();
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => AlertsFeedScreen(appState: appState),
+                        builder: (_) =>
+                            AlertsFeedScreen(appState: widget.appState),
                       ),
                     );
                   },
@@ -222,21 +264,21 @@ class HomeScreen extends StatelessWidget {
   String _riskTitle(RiskLevel level) {
     switch (level) {
       case RiskLevel.low:
-        return 'GUVENLI BOLGE';
+        return AppStrings.safeZone;
       case RiskLevel.medium:
       case RiskLevel.high:
-        return 'RISKLI ALAN';
+        return AppStrings.riskyArea;
     }
   }
 
   String _riskLevelLabel(RiskLevel level) {
     switch (level) {
       case RiskLevel.low:
-        return 'Dusuk';
+        return AppStrings.lowRisk;
       case RiskLevel.medium:
         return 'Orta';
       case RiskLevel.high:
-        return 'Yuksek';
+        return AppStrings.highRisk;
     }
   }
 
@@ -251,14 +293,15 @@ class HomeScreen extends StatelessWidget {
     }
   }
 
+  // ignore: unused_element
   String _bluetoothMessage(RiskLevel level) {
     switch (level) {
       case RiskLevel.low:
-        return 'Aktif Tarama: Supheli cihaz yakinligi yok.';
+        return 'Aktif Tarama: Şüpheli cihaz yakınlığı yok.';
       case RiskLevel.medium:
-        return 'Aktif Tarama: Supheli cihaz yakinligi tespit edildi.';
+        return 'Aktif Tarama: Şüpheli cihaz yakınlığı tespit edildi.';
       case RiskLevel.high:
-        return 'Aktif Tarama: Supheli cihaz yakinligi var. Uzun sureli takip gorunuyor.';
+        return 'Aktif Tarama: Şüpheli cihaz yakınlığı var. Uzun süreli takip görünüyor.';
     }
   }
 }
@@ -276,7 +319,7 @@ class _LeftQuickTrigger extends StatelessWidget {
         width: 52,
         height: 106,
         decoration: const BoxDecoration(
-          color: Color(0xFF6B9E66),
+          color: Color(0xFF3B8B72),
           borderRadius: BorderRadius.only(
             topRight: Radius.circular(50),
             bottomRight: Radius.circular(50),
@@ -550,59 +593,6 @@ class _MapPreviewCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _BluetoothCard extends StatelessWidget {
-  const _BluetoothCard({required this.color, required this.message});
-
-  final Color color;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        gradient: LinearGradient(
-          colors: [const Color(0xFF1A4F8A), color.withValues(alpha: 0.52)],
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF0A2D55),
-              border: Border.all(color: Colors.white24),
-            ),
-            child: const Icon(Icons.radar_rounded, color: Color(0xFF26D0FF)),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Bluetooth Takip Analizi',
-                  style: AppTextStyles.title.copyWith(fontSize: 18),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  message,
-                  style: AppTextStyles.body.copyWith(
-                    color: Colors.white.withValues(alpha: 0.95),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

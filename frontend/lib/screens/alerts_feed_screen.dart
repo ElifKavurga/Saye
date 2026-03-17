@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../config/app_defaults.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
@@ -33,10 +32,10 @@ class AlertsFeedScreen extends StatelessWidget {
                   children: [
                     _Header(onBack: () => Navigator.of(context).pop()),
                     const SizedBox(height: AppSpacing.md),
-                    const _LocationCard(location: AppDefaults.campusLocation),
+                    _LocationCard(location: appState.currentLocationName),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'Guncel Ihbarlar',
+                      'Güncel İhbarlar',
                       style: AppTextStyles.title.copyWith(fontSize: 20),
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -55,7 +54,7 @@ class AlertsFeedScreen extends StatelessWidget {
                       ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Bolgesel Akis',
+                      'Bölgesel Akış',
                       style: AppTextStyles.title.copyWith(fontSize: 20),
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -106,7 +105,7 @@ class _Header extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              'GUNCEL BILDIRIMLER',
+              'GÜNCEL BİLDİRİMLER',
               textAlign: TextAlign.center,
               style: AppTextStyles.title.copyWith(
                 fontSize: 24,
@@ -145,7 +144,7 @@ class _LocationCard extends StatelessWidget {
             ),
           ),
           Text(
-            'Simdi',
+            'Şimdi',
             style: AppTextStyles.caption.copyWith(color: Colors.white70),
           ),
         ],
@@ -171,7 +170,7 @@ class _AlertTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final hh = createdAt.hour.toString().padLeft(2, '0');
     final mm = createdAt.minute.toString().padLeft(2, '0');
-    final noteText = note.isEmpty ? 'Aciklama eklenmedi.' : note;
+    final noteText = note.isEmpty ? 'Açıklama eklenmedi.' : note;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -274,7 +273,7 @@ class _EmptyStateCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Text(
-        'Bulundugun konum icin henuz yeni ihbar yok. Harita ekranindan ilk bildirimi sen olusturabilirsin.',
+        'Bulunduğun konum için henüz yeni ihbar yok. Harita ekranından ilk bildirimi sen oluşturabilirsin.',
         style: AppTextStyles.body.copyWith(color: Colors.white70),
       ),
     );
@@ -293,7 +292,7 @@ class _EmptyNearbyCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Text(
-        'Cevrede listelenecek ihbar bulunamadi.',
+        'Çevrede listelenecek ihbar bulunamadı.',
         style: AppTextStyles.body.copyWith(color: Colors.white70),
       ),
     );

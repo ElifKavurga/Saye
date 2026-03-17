@@ -32,7 +32,7 @@ Beklenen davranis:
 
 - `200 OK`
 - `data.id` doner
-- `data.status` ilk olusumda `ACTIVE` olur
+- `data.status` ilk olusumda `PENDING` olur
 
 ## 2. Acil Durum Baslat
 

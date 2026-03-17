@@ -2,6 +2,7 @@ package com.elifkavurga.backend.auth.controller;
 
 import com.elifkavurga.backend.auth.dto.AuthResponse;
 import com.elifkavurga.backend.auth.dto.LoginRequest;
+import com.elifkavurga.backend.auth.dto.RefreshTokenRequest;
 import com.elifkavurga.backend.auth.dto.RegisterRequest;
 import com.elifkavurga.backend.auth.service.AuthService;
 import com.elifkavurga.backend.common.ApiResponse;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping({"/auth", "/api/auth"})
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -46,6 +47,16 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.<AuthResponse>builder()
                 .success(true)
                 .message("Demo login completed")
+                .data(response)
+                .build());
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        AuthResponse response = authService.refresh(request.getRefreshToken());
+        return ResponseEntity.ok(ApiResponse.<AuthResponse>builder()
+                .success(true)
+                .message("Token refresh completed")
                 .data(response)
                 .build());
     }

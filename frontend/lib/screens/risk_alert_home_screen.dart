@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../config/app_defaults.dart';
+import '../config/app_strings.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'alerts_feed_screen.dart';
@@ -38,16 +38,17 @@ class RiskAlertHomeScreen extends StatelessWidget {
                   children: [
                     const _LogoStrip(),
                     const SizedBox(height: AppSpacing.sm),
-                    _LocationRow(onProfileTap: onOpenProfile),
+                    _LocationRow(
+                      location: appState.currentLocationName,
+                      onProfileTap: onOpenProfile,
+                    ),
                     const SizedBox(height: AppSpacing.md),
                     const _RiskCircle(),
                     const SizedBox(height: AppSpacing.md),
                     _MapCard(onTap: onOpenMap),
                     const SizedBox(height: AppSpacing.md),
-                    const _BluetoothAlertCard(),
-                    const SizedBox(height: AppSpacing.md),
                     Text(
-                      'BASILI TUT: YARDIM CAGIR',
+                      AppStrings.middleButtonHelp,
                       textAlign: TextAlign.center,
                       style: AppTextStyles.body.copyWith(color: Colors.white70),
                     ),
@@ -58,14 +59,22 @@ class RiskAlertHomeScreen extends StatelessWidget {
                       child: GestureDetector(
                         onTap: () async {
                           try {
-                            await appState.activateEmergency();
+                            await appState.activateEmergencyDynamic();
                           } catch (e) {
                             if (!context.mounted) {
                               return;
                             }
+                            final message = e is AppStateException
+                                ? e.message
+                                : e.toString();
+                            if (message.trim().isEmpty) {
+                              return;
+                            }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('SOS baslatilamadi: $e'),
+                                content: Text(
+                                  '${AppStrings.sosStartFailedPrefix}$message',
+                                ),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -73,14 +82,22 @@ class RiskAlertHomeScreen extends StatelessWidget {
                         },
                         onLongPress: () async {
                           try {
-                            await appState.activateEmergency();
+                            await appState.activateEmergencyDynamic();
                           } catch (e) {
                             if (!context.mounted) {
                               return;
                             }
+                            final message = e is AppStateException
+                                ? e.message
+                                : e.toString();
+                            if (message.trim().isEmpty) {
+                              return;
+                            }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('SOS baslatilamadi: $e'),
+                                content: Text(
+                                  '${AppStrings.sosStartFailedPrefix}$message',
+                                ),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -152,8 +169,8 @@ class RiskAlertHomeScreen extends StatelessWidget {
                 Icons.notifications_active_rounded,
                 color: Color(0xFF84F5BB),
               ),
-              title: const Text('Guncel bildirim ve ihbarlar'),
-              subtitle: const Text('Konum tabanli canli akis'),
+              title: const Text('Güncel bildirim ve ihbarlar'),
+              subtitle: const Text('Konum tabanlı canlı akış'),
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).push(
@@ -183,7 +200,7 @@ class _LeftQuickTrigger extends StatelessWidget {
         width: 52,
         height: 106,
         decoration: const BoxDecoration(
-          color: Color(0xFF6B9E66),
+          color: Color(0xFF3B8B72),
           borderRadius: BorderRadius.only(
             topRight: Radius.circular(50),
             bottomRight: Radius.circular(50),
@@ -249,8 +266,9 @@ class _LogoStrip extends StatelessWidget {
 }
 
 class _LocationRow extends StatelessWidget {
-  const _LocationRow({required this.onProfileTap});
+  const _LocationRow({required this.location, required this.onProfileTap});
 
+  final String location;
   final VoidCallback onProfileTap;
 
   @override
@@ -265,7 +283,7 @@ class _LocationRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Text(
-            AppDefaults.campusLocation,
+            location,
             style: AppTextStyles.title.copyWith(fontSize: 22),
           ),
         ),
@@ -316,7 +334,7 @@ class _RiskCircle extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'RISKLI ALAN',
+                AppStrings.riskyArea,
                 style: AppTextStyles.title.copyWith(
                   color: const Color(0xFFFF5D66),
                   fontSize: 23,
@@ -325,7 +343,7 @@ class _RiskCircle extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Risk Seviyesi: Yuksek',
+                'Risk Seviyesi: ${AppStrings.highRisk}',
                 style: AppTextStyles.body.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
@@ -365,6 +383,7 @@ class _MapCard extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _BluetoothAlertCard extends StatelessWidget {
   const _BluetoothAlertCard();
 
@@ -401,7 +420,7 @@ class _BluetoothAlertCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Aktif Tarama: Supheli cihaz yakinligi var. Uzun suredir takip gorunuyor.',
+                  'Aktif Tarama: Şüpheli cihaz yakınlığı var. Uzun süredir takip görünüyor.',
                   style: AppTextStyles.body.copyWith(
                     color: Colors.white.withValues(alpha: 0.95),
                   ),

@@ -1,18 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:frontend/app.dart';
+import 'package:frontend/screens/auth_screen.dart';
+import 'package:frontend/screens/splash_screen.dart';
 
 void main() {
   testWidgets('shows auth screen after splash', (WidgetTester tester) async {
     await tester.pumpWidget(const SayeApp());
 
-    expect(find.text('Giris1'), findsOneWidget);
+    expect(find.byType(SplashScreen), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 2800));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Giriş Yap'), findsWidgets);
-    expect(find.text('Kayıt Ol'), findsWidgets);
-    expect(find.text('Otomatik Giriş (Demo)'), findsOneWidget);
+    expect(find.byType(AuthScreen), findsOneWidget);
+    expect(find.text('Demo Giris'), findsOneWidget);
   });
 }

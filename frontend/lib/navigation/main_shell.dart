@@ -6,7 +6,6 @@ import '../screens/map_report_screen.dart';
 import '../screens/medium_risk_home_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/risk_alert_home_screen.dart';
-import '../screens/risk_decision_screen.dart';
 import '../screens/settings_screen.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
@@ -16,16 +15,34 @@ class MainShell extends StatelessWidget {
 
   final AppState appState;
 
+  static const _navItems = [
+    (
+      icon: Icons.home_rounded,
+      activeIcon: Icons.home_filled,
+      label: 'Ana Sayfa',
+    ),
+    (
+      icon: Icons.map_rounded,
+      activeIcon: Icons.map,
+      label: 'Bildirimler',
+    ),
+    (
+      icon: Icons.settings_rounded,
+      activeIcon: Icons.settings,
+      label: 'Ayarlar',
+    ),
+    (
+      icon: Icons.person_rounded,
+      activeIcon: Icons.person,
+      label: 'Profil',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final pages = [
       appState.emergencyActive
           ? EmergencyActiveScreen(appState: appState)
-          : appState.showRiskDecision
-          ? RiskDecisionScreen(
-              appState: appState,
-              onOpenProfile: () => appState.setIndex(3),
-            )
           : appState.riskLevel == RiskLevel.high
           ? RiskAlertHomeScreen(
               appState: appState,
@@ -44,13 +61,18 @@ class MainShell extends StatelessWidget {
               onOpenProfile: () => appState.setIndex(3),
             ),
       appState.selectedIndex == 1
-          ? MapReportScreen(appState: appState, onBack: () => appState.setIndex(0))
+          ? MapReportScreen(
+              appState: appState,
+              onBack: () => appState.setIndex(0),
+            )
           : const SizedBox.shrink(),
       SettingsScreen(appState: appState),
       ProfileScreen(appState: appState),
     ];
 
     return Scaffold(
+      backgroundColor: AppColors.deepNavy,
+      extendBody: true,
       body: Stack(
         children: [
           Container(
@@ -83,6 +105,9 @@ class MainShell extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.card.withValues(alpha: 0.95),
                     borderRadius: BorderRadius.circular(AppRadius.xl),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
                     boxShadow: AppShadows.soft,
                   ),
                   child: BottomNavigationBar(
@@ -94,28 +119,59 @@ class MainShell extends StatelessWidget {
                     selectedItemColor: AppColors.aquaGlow,
                     unselectedItemColor: AppColors.textSecondary,
                     showUnselectedLabels: true,
-                    items: const [
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.home_rounded),
-                        label: 'Home',
-                      ),
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.map_rounded),
-                        label: 'Map/Report',
-                      ),
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.settings_rounded),
-                        label: 'Settings',
-                      ),
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.person_rounded),
-                        label: 'Profile',
-                      ),
+                    selectedFontSize: 12,
+                    unselectedFontSize: 12,
+                    selectedLabelStyle: AppTextStyles.caption.copyWith(
+                      color: AppColors.aquaGlow,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    unselectedLabelStyle: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                    items: [
+                      for (var i = 0; i < _navItems.length; i++)
+                        BottomNavigationBarItem(
+                          icon: _NavIcon(
+                            icon: _navItems[i].icon,
+                            isSelected: i == appState.selectedIndex,
+                          ),
+                          activeIcon: _NavIcon(
+                            icon: _navItems[i].activeIcon,
+                            isSelected: true,
+                          ),
+                          label: _navItems[i].label,
+                        ),
                     ],
                   ),
                 ),
               ),
             ),
+    );
+  }
+}
+
+class _NavIcon extends StatelessWidget {
+  const _NavIcon({required this.icon, required this.isSelected});
+
+  final IconData icon;
+  final bool isSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? AppColors.aquaGlow.withValues(alpha: 0.14)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: Icon(icon),
     );
   }
 }

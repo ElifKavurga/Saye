@@ -11,12 +11,16 @@ import java.io.Serializable;
 @Setter
 @Schema(description = "Yeni durum bildirimi istegi")
 public class ReportRequest implements Serializable {
-    // user id optional
+    @NotNull
     @Schema(description = "Bildirimi gonderen kullanici id", example = "30")
     private Long userId;
 
     @NotNull
-    @Schema(description = "Bildirim kategorisi", example = "SUC", allowableValues = {"SUC", "TAKIP", "HAYVAN", "SAGLIK", "ARIZA", "TRAFIK"})
+    @Schema(
+            description = "Bildirim kategorisi",
+            example = "LIGHTING",
+            allowableValues = {"LIGHTING", "ANIMALS", "SECURITY", "TRAFFIC", "INFRASTRUCTURE"}
+    )
     private String category;
 
     @Schema(description = "Opsiyonel aciklama", example = "Parkta supheli bir durum var")

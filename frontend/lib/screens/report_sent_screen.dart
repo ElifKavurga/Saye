@@ -74,7 +74,7 @@ class ReportSentScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
-                        'Ihbar gonderildi',
+                        'İhbar gönderildi',
                         style: AppTextStyles.title.copyWith(
                           fontSize: 23,
                           fontWeight: FontWeight.w700,
@@ -82,7 +82,7 @@ class ReportSentScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        'Bildirim ekiplere basariyla iletildi.',
+                        'Bildirim ekiplere başarıyla iletildi.',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.body.copyWith(
                           color: Colors.white70,

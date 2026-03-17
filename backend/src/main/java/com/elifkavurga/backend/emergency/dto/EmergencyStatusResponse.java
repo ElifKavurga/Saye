@@ -24,6 +24,12 @@ public class EmergencyStatusResponse {
     private Double latitude;
     @Schema(example = "28.9784")
     private Double longitude;
+    @Schema(example = "MEDIUM")
+    private String currentRiskLevel;
+    @Schema(example = "Ayse Demir")
+    private String calledContactName;
+    @Schema(example = "905551112233")
+    private String calledPhoneNumber;
     @Schema(example = "true")
     private boolean active;
     @ArraySchema(schema = @Schema(example = "905551112233"))

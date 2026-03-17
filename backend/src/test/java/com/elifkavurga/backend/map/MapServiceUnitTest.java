@@ -2,9 +2,13 @@ package com.elifkavurga.backend.map;
 
 import com.elifkavurga.backend.map.dto.RiskResponse;
 import com.elifkavurga.backend.map.service.MapServiceImpl;
-import com.elifkavurga.backend.report.entity.Report;
-import com.elifkavurga.backend.report.entity.ReportCategory;
+import com.elifkavurga.backend.map.service.MapRiskProcessor;
+import com.elifkavurga.backend.map.service.RiskCircle;
+import com.elifkavurga.backend.map.service.RiskCircleBuilder;
+import com.elifkavurga.backend.map.service.RiskCluster;
+import com.elifkavurga.backend.map.service.RiskClusterService;
 import com.elifkavurga.backend.report.repository.ReportRepository;
+import com.elifkavurga.backend.report.repository.projection.NearbyReportProjection;
 import org.locationtech.jts.geom.Point;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,47 +33,95 @@ class MapServiceUnitTest {
     @BeforeEach
     void setup() {
         repo = Mockito.mock(ReportRepository.class);
-        // fix clock to a known instant
         fixedClock = Clock.fixed(Instant.parse("2026-03-02T00:00:00Z"), ZoneOffset.UTC);
-        service = new MapServiceImpl(repo, fixedClock);
+        MapRiskProcessor mapRiskProcessor = new MapRiskProcessor(new RiskClusterService(), new RiskCircleBuilder());
+        service = new MapServiceImpl(repo, mapRiskProcessor, fixedClock);
     }
 
     @Test
     void computeRiskDeterministic() {
-        // create reports such that we can compute known score
-        Report r1 = new Report();
-        r1.setCategory(ReportCategory.SECURITY);
-        r1.setCreatedAt(Instant.now(fixedClock));
-        // same location (0,0)
-        r1.setLatitude(0.0);
-        r1.setLongitude(0.0);
+        NearbyReportProjection r1 = nearbyReport("SECURITY", 0.0);
+        NearbyReportProjection r2 = nearbyReport("LIGHTING", 500.0);
 
-        Report r2 = new Report();
-        r2.setCategory(ReportCategory.LIGHTING);
-        r2.setCreatedAt(Instant.now(fixedClock));
-        // ~500m away on latitude
-        r2.setLatitude(0.0045); // approx 500m
-        r2.setLongitude(0.0);
-
-        // report outside radius
-        Report r3 = new Report();
-        r3.setCategory(ReportCategory.ANIMALS);
-        r3.setCreatedAt(Instant.now(fixedClock));
-        r3.setLatitude(0.02);
-        r3.setLongitude(0.0);
-
-        when(repo.findByLocationWithinRadius(any(Point.class), anyDouble()))
+        when(repo.findActiveNearbyReports(any(Point.class), anyDouble(), any(Instant.class)))
                 .thenReturn(List.of(r1, r2));
 
         RiskResponse first = service.computeRisk(0.0, 0.0);
         RiskResponse second = service.computeRisk(0.0, 0.0);
 
-        // deterministic: subsequent calls return same value
         assertThat(first).isEqualTo(second);
         assertThat(first.getScore()).isGreaterThan(0);
         assertThat(first.getLevel()).isIn("low", "medium", "high");
-        // based on weights/security+lighting this should be around 40-45 => medium
-        assertThat(first.getLevel()).isEqualTo("medium");
-        assertThat(first.getScore()).isBetween(39.0, 45.0);
+        assertThat(first.getLevel()).isEqualTo("high");
+        assertThat(first.getScore()).isEqualTo(80.0);
+    }
+
+    @Test
+    void infrastructureCircleUsesUpdatedRadius() {
+        RiskCircle circle = new RiskCircleBuilder().build(
+                new RiskCluster(
+                        "cluster-1",
+                        0.0,
+                        0.0,
+                        List.of(nearbyReport("INFRASTRUCTURE", 0.0))
+                )
+        );
+
+        assertThat(circle.radiusMeters()).isEqualTo(150.0);
+        assertThat(circle.riskLevel()).isEqualTo("MEDIUM");
+    }
+
+    private NearbyReportProjection nearbyReport(String category, double distanceMeters) {
+        return new NearbyReportProjection() {
+            @Override
+            public Long getId() {
+                return 1L;
+            }
+
+            @Override
+            public Long getUserId() {
+                return 10L;
+            }
+
+            @Override
+            public String getCategory() {
+                return category;
+            }
+
+            @Override
+            public String getDescription() {
+                return "report";
+            }
+
+            @Override
+            public Double getLatitude() {
+                return 0.0;
+            }
+
+            @Override
+            public Double getLongitude() {
+                return 0.0;
+            }
+
+            @Override
+            public Instant getCreatedAt() {
+                return Instant.now(fixedClock);
+            }
+
+            @Override
+            public String getStatus() {
+                return "PENDING";
+            }
+
+            @Override
+            public Double getConfidenceScore() {
+                return null;
+            }
+
+            @Override
+            public Double getDistanceMeters() {
+                return distanceMeters;
+            }
+        };
     }
 }

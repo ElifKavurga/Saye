@@ -6,9 +6,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../config/app_defaults.dart';
+import '../config/app_strings.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
-import 'report_sent_screen.dart';
 
 class MapReportScreen extends StatefulWidget {
   const MapReportScreen({
@@ -30,11 +30,10 @@ class _MapReportScreenState extends State<MapReportScreen> {
 
   static const Map<String, IconData> _categoryIcons = {
     'Trafik': Icons.traffic_rounded,
-    'Ariza': Icons.build_circle_rounded,
-    'Saglik': Icons.medical_information_rounded,
-    'Takip': Icons.remove_red_eye_rounded,
+    'Aydınlatma': Icons.lightbulb_rounded,
+    'Altyapı': Icons.construction_rounded,
     'Hayvan': Icons.pets_rounded,
-    'Suc': Icons.gpp_bad_rounded,
+    AppStrings.crimeCategory: Icons.gpp_bad_rounded,
   };
 
   @override
@@ -58,7 +57,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
     final longitude = widget.appState.currentLongitude;
     final hasLocation = latitude != null && longitude != null;
     final selectedPoint =
-        _selectedPoint ?? (hasLocation ? LatLng(latitude!, longitude!) : null);
+        _selectedPoint ?? (hasLocation ? LatLng(latitude, longitude) : null);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -86,7 +85,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
                     const SizedBox(width: AppSpacing.xs),
                     Expanded(
                       child: Text(
-                        AppDefaults.campusLocation,
+                        widget.appState.currentLocationName,
                         style: AppTextStyles.title.copyWith(fontSize: 22),
                       ),
                     ),
@@ -100,16 +99,18 @@ class _MapReportScreenState extends State<MapReportScreen> {
                 hasLocation && selectedPoint != null
                     ? _LiveMap(
                         reports: widget.appState.nearbyReports,
-                        centerLatitude: latitude!,
-                        centerLongitude: longitude!,
+                        centerLatitude: latitude,
+                        centerLongitude: longitude,
                         selectedLocation: selectedPoint,
                         isLoading: widget.appState.isMapDataLoading,
                         onTap: _handleMapTap,
                       )
                     : _MapLoadingView(),
+                const SizedBox(height: AppSpacing.sm),
+                const _RiskLegend(),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Anahtar Kelime Secerek Baska Kisileri Uyar!',
+                  'Anahtar Kelime Seçerek Başka Kişileri Uyar!',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.body.copyWith(
                     color: Colors.white70,
@@ -117,25 +118,38 @@ class _MapReportScreenState extends State<MapReportScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: AppDefaults.reportCategories
-                      .map(
-                        (category) => _CategoryChip(
-                          icon:
-                              _categoryIcons[category] ??
-                              Icons.warning_amber_rounded,
-                          label: category,
-                          isSelected: _selectedCategory == category,
-                          onTap: () {
-                            setState(() {
-                              _selectedCategory = category;
-                            });
-                          },
-                        ),
-                      )
-                      .toList(),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    const spacing = AppSpacing.sm;
+                    final itemWidth =
+                        (constraints.maxWidth - (spacing * 2)) / 3;
+
+                    return Wrap(
+                      spacing: spacing,
+                      runSpacing: spacing,
+                      alignment: WrapAlignment.center,
+                      children: AppDefaults.reportCategories
+                          .map(
+                            (category) => SizedBox(
+                              width: itemWidth,
+                              child: _CategoryChip(
+                                icon:
+                                    _categoryIcons[category] ??
+                                    Icons.warning_amber_rounded,
+                                label: category,
+                                isSelected: _selectedCategory == category,
+                                onTap: () {
+                                  if (!mounted) return;
+                                  setState(() {
+                                    _selectedCategory = category;
+                                  });
+                                },
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    );
+                  },
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(
@@ -162,13 +176,11 @@ class _MapReportScreenState extends State<MapReportScreen> {
   Future<void> _openReportSheet() async {
     final selectedPoint = _selectedPoint;
     if (selectedPoint == null) {
-      throw StateError('Konum secimi bulunamadi.');
+      throw StateError('Konum seçimi bulunamadı.');
     }
-    final noteController = TextEditingController();
     final parentContext = context;
     final formattedLocation = _formatLatLng(selectedPoint);
-
-    await showModalBottomSheet<void>(
+    final result = await showModalBottomSheet<_ReportSheetResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF10294A),
@@ -176,128 +188,75 @@ class _MapReportScreenState extends State<MapReportScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.md,
-            MediaQuery.of(context).viewInsets.bottom + AppSpacing.md,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Ihbar Gonder',
-                style: AppTextStyles.title.copyWith(fontSize: 22),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Kategori: ${_selectedCategory ?? '-'}',
-                style: AppTextStyles.body.copyWith(color: Colors.white70),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Konum: $formattedLocation',
-                style: AppTextStyles.body.copyWith(color: Colors.white70),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: noteController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'Kisa aciklama (opsiyonel)',
-                  fillColor: Color(0xFF1A3D66),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    try {
-                      await widget.appState.addLocalReport(
-                        category: _selectedCategory!,
-                        locationLabel: AppDefaults.selectedLocationLabel,
-                        latLng: formattedLocation,
-                        description: noteController.text.trim(),
-                        reportLatitude: selectedPoint.latitude,
-                        reportLongitude: selectedPoint.longitude,
-                      );
-                    } catch (e) {
-                      if (!parentContext.mounted) {
-                        return;
-                      }
-                      ScaffoldMessenger.of(parentContext).showSnackBar(
-                        SnackBar(
-                          content: Text('Ihbar gonderilemedi: $e'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                      return;
-                    }
-
-                    if (!parentContext.mounted) {
-                      return;
-                    }
-                    Navigator.of(parentContext).pop();
-                    if (!mounted) {
-                      return;
-                    }
-                    if (!parentContext.mounted) {
-                      return;
-                    }
-                    await Navigator.of(parentContext).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const ReportSentScreen(),
-                      ),
-                    );
-                    if (!mounted) {
-                      return;
-                    }
-                    setState(() {
-                      _selectedCategory = null;
-                    });
-                  },
-                  child: const Text('Gonder'),
-                ),
-              ),
-            ],
-          ),
+        return _ReportSheet(
+          category: _selectedCategory ?? '-',
+          formattedLocation: formattedLocation,
+          onSubmit: (description) async {
+            await widget.appState.addLocalReport(
+              category: _selectedCategory!,
+              locationLabel: widget.appState.currentLocationName,
+              latLng: formattedLocation,
+              description: description,
+              reportLatitude: selectedPoint.latitude,
+              reportLongitude: selectedPoint.longitude,
+            );
+          },
         );
       },
     );
 
-    noteController.dispose();
+    if (!mounted || !parentContext.mounted || result == null) {
+      return;
+    }
+    if (!result.submitted) {
+      return;
+    }
+
+    setState(() {
+      _selectedCategory = null;
+    });
+    ScaffoldMessenger.of(parentContext)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('İhbar başarıyla gönderildi ve harita güncellendi.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
   }
 
   Future<void> _syncLocationAndRisk() async {
     try {
-      await widget.appState.fetchRealLocation();
+      await widget.appState.ensureMapDataLoaded(force: true);
       if (!mounted) {
         return;
       }
       final latitude = widget.appState.currentLatitude;
       final longitude = widget.appState.currentLongitude;
       if (latitude != null && longitude != null) {
+        if (!mounted) return;
         setState(() {
           _selectedPoint = LatLng(latitude, longitude);
         });
       }
-    } catch (e) {
+    } catch (error) {
       if (!mounted) {
         return;
       }
+      final message = error is AppStateException
+          ? error.message
+          : error.toString();
+      if (message.trim().isEmpty) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          behavior: SnackBarBehavior.floating,
-        ),
+        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
       );
     }
   }
 
   void _handleMapTap(TapPosition _, LatLng point) {
+    if (!mounted) return;
     setState(() {
       _selectedPoint = point;
     });
@@ -394,6 +353,81 @@ class _MapLoadingView extends StatelessWidget {
   }
 }
 
+class _RiskLegend extends StatelessWidget {
+  const _RiskLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF183B61).withValues(alpha: 0.84),
+            const Color(0xFF102C4B).withValues(alpha: 0.72),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: const [
+          _LegendItem(color: Color(0xFF2E7D32), label: AppStrings.lowRisk),
+          SizedBox(width: AppSpacing.sm),
+          _LegendItem(color: Color(0xFFFF8F00), label: 'Orta'),
+          SizedBox(width: AppSpacing.sm),
+          _LegendItem(color: Color(0xFFC62828), label: AppStrings.highRisk),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Row(
+        children: [
+          Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTextStyles.caption.copyWith(
+                color: Colors.white.withValues(alpha: 0.84),
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.15,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _RiskSeverity { low, medium, high }
+
 class _LiveMap extends StatelessWidget {
   const _LiveMap({
     required this.reports,
@@ -414,10 +448,14 @@ class _LiveMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final centerPoint = LatLng(centerLatitude, centerLongitude);
+    final sortedReports = _sortReportsForDisplay(reports);
+    final riskCircles = _buildRiskCircles(sortedReports);
 
     return Container(
       height: 255,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.md)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
       clipBehavior: Clip.hardEdge,
       child: Stack(
         children: [
@@ -437,26 +475,57 @@ class _LiveMap extends StatelessWidget {
                   },
                 ),
               ),
+              CircleLayer(
+                circles: [
+                  for (final circle in riskCircles)
+                    CircleMarker(
+                      point: LatLng(
+                        circle.centerLatitude,
+                        circle.centerLongitude,
+                      ),
+                      radius: circle.radiusMeters,
+                      useRadiusInMeter: true,
+                      color: circle.strokeColor.withValues(alpha: 0.25),
+                      borderColor: circle.strokeColor,
+                      borderStrokeWidth: 2.0,
+                    ),
+                ],
+              ),
               MarkerLayer(
                 markers: [
                   for (final report in reports)
                     Marker(
-                      width: 38,
-                      height: 38,
+                      width: 28,
+                      height: 28,
                       point: LatLng(report.latitude, report.longitude),
                       child: Tooltip(
                         message:
                             '${_displayCategory(report.category)} - ${report.status.isEmpty ? 'Bildirildi' : report.status}',
                         child: Container(
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Color(0xFF151515),
+                            color: const Color(
+                              0xFF08111E,
+                            ).withValues(alpha: 0.94),
+                            border: Border.all(
+                              color: _colorForReportCategory(
+                                report.category,
+                              ).withValues(alpha: 0.18),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.24),
+                                blurRadius: 10,
+                                spreadRadius: 1,
+                              ),
+                            ],
                           ),
-                          alignment: Alignment.center,
-                          child: Icon(
-                            _iconForReportCategory(report.category),
-                            size: 20,
-                            color: _colorForReportCategory(report.category),
+                          child: Center(
+                            child: Icon(
+                              _iconForReportCategory(report.category),
+                              size: 13,
+                              color: _colorForReportCategory(report.category),
+                            ),
                           ),
                         ),
                       ),
@@ -467,11 +536,20 @@ class _LiveMap extends StatelessWidget {
                       height: 38,
                       point: selectedLocation,
                       child: Tooltip(
-                        message: 'Seçilen Konum',
+                        message: AppStrings.selectedMapLocation,
                         child: Container(
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Color(0xFF1C7DFF),
+                            color: const Color(0xFF1C7DFF),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF1C7DFF,
+                                ).withValues(alpha: 0.26),
+                                blurRadius: 18,
+                                spreadRadius: 2,
+                              ),
+                            ],
                           ),
                           alignment: Alignment.center,
                           child: const Icon(
@@ -483,13 +561,18 @@ class _LiveMap extends StatelessWidget {
                       ),
                     ),
                   Marker(
-                    width: 36,
-                    height: 36,
+                    width: 34,
+                    height: 34,
                     point: centerPoint,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1C7DFF).withValues(alpha: 0.2),
+                        color: const Color(0xFF1C7DFF).withValues(alpha: 0.16),
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(
+                            0xFF8FC4FF,
+                          ).withValues(alpha: 0.35),
+                        ),
                       ),
                       child: const Icon(
                         Icons.my_location_rounded,
@@ -519,6 +602,65 @@ class _LiveMap extends StatelessWidget {
         (a.longitude - b.longitude).abs() > 0.00001;
   }
 
+  List<_RiskCircleVisual> _buildRiskCircles(List<NearbyReport> reports) {
+    final circlesById = <String, _RiskCircleVisual>{};
+
+    for (final report in reports) {
+      final circleId = report.riskCircleId;
+      final radiusMeters = _effectiveRiskRadius(report);
+      final nextCircle = _RiskCircleVisual(
+        centerLatitude: report.riskCenterLatitude,
+        centerLongitude: report.riskCenterLongitude,
+        radiusMeters: radiusMeters,
+        riskScore: report.riskScore,
+        strokeColor: _colorForRiskLevel(report.riskLevel),
+      );
+
+      final existingCircle = circlesById[circleId];
+      if (existingCircle == null) {
+        circlesById[circleId] = nextCircle;
+        continue;
+      }
+
+      circlesById[circleId] = existingCircle.merge(nextCircle);
+    }
+
+    final circles = circlesById.values.toList(growable: false);
+    circles.sort((a, b) => b.riskScore.compareTo(a.riskScore));
+    return circles;
+  }
+
+  static List<NearbyReport> _sortReportsForDisplay(List<NearbyReport> reports) {
+    final ordered = List<NearbyReport>.from(reports);
+    ordered.sort((a, b) {
+      final aIsSecurity = _isSecurityReport(a);
+      final bIsSecurity = _isSecurityReport(b);
+      if (aIsSecurity != bIsSecurity) {
+        return aIsSecurity ? 1 : -1;
+      }
+
+      final severityCompare = _severityForReport(
+        a,
+      ).index.compareTo(_severityForReport(b).index);
+      if (severityCompare != 0) {
+        return severityCompare;
+      }
+
+      return _riskIntensity(a).compareTo(_riskIntensity(b));
+    });
+    return ordered;
+  }
+
+  static bool _isSecurityReport(NearbyReport report) {
+    switch (_normalizedCategory(report.category)) {
+      case 'suc':
+      case 'security':
+        return true;
+      default:
+        return false;
+    }
+  }
+
   static String _normalizedCategory(String category) {
     var normalized = category.trim().toLowerCase();
     normalized = normalized
@@ -528,30 +670,44 @@ class _LiveMap extends StatelessWidget {
         .replaceAll('ö', 'o')
         .replaceAll('ş', 's')
         .replaceAll('ü', 'u');
-    return normalized;
+    switch (normalized) {
+      case 'aydinlatma':
+      case 'saglik':
+      case 'health':
+      case 'lighting':
+        return 'lighting';
+      case 'altyapi':
+      case 'ariza':
+      case 'takip':
+      case 'tracking':
+      case 'infrastructure':
+        return 'infrastructure';
+      case 'suc':
+      case 'security':
+        return 'security';
+      case 'hayvan':
+      case 'animals':
+        return 'animals';
+      case 'trafik':
+      case 'traffic':
+        return 'traffic';
+      default:
+        return normalized;
+    }
   }
 
   static IconData _iconForReportCategory(String category) {
     switch (_normalizedCategory(category)) {
-      case 'trafik':
       case 'traffic':
         return Icons.traffic_rounded;
-      case 'saglik':
-      case 'health':
-        return Icons.medical_services_rounded;
-      case 'suc':
+      case 'lighting':
+        return Icons.lightbulb_rounded;
       case 'security':
         return Icons.gpp_bad_rounded;
-      case 'takip':
-        return Icons.remove_red_eye_rounded;
-      case 'hayvan':
       case 'animals':
         return Icons.pets_rounded;
-      case 'ariza':
       case 'infrastructure':
-        return Icons.build_rounded;
-      case 'lighting':
-        return Icons.lightbulb_outline_rounded;
+        return Icons.construction_rounded;
       default:
         return Icons.warning_amber_rounded;
     }
@@ -559,21 +715,14 @@ class _LiveMap extends StatelessWidget {
 
   static Color _colorForReportCategory(String category) {
     switch (_normalizedCategory(category)) {
-      case 'trafik':
       case 'traffic':
-      case 'ariza':
-      case 'infrastructure':
         return const Color(0xFFFF9800);
-      case 'saglik':
-      case 'health':
       case 'lighting':
-        return const Color(0xFFF44336);
-      case 'suc':
+        return const Color(0xFFFFD54F);
+      case 'infrastructure':
+        return const Color(0xFFFF7043);
       case 'security':
         return const Color(0xFFE91E63);
-      case 'takip':
-        return const Color(0xFF9C27B0);
-      case 'hayvan':
       case 'animals':
         return const Color(0xFF8BC34A);
       default:
@@ -581,27 +730,110 @@ class _LiveMap extends StatelessWidget {
     }
   }
 
+  static Color _colorForRiskLevel(String riskLevel) {
+    switch (riskLevel.trim().toUpperCase()) {
+      case 'HIGH':
+        return const Color(0xFFE53935);
+      case 'MEDIUM':
+        return const Color(0xFFFFA000);
+      case 'LOW':
+        return const Color(0xFF43A047);
+      default:
+        return const Color(0xFFFFA000);
+    }
+  }
+
+  static _RiskSeverity _severityForReport(NearbyReport report) {
+    final normalizedRiskLevel = report.riskLevel.trim().toUpperCase();
+    switch (normalizedRiskLevel) {
+      case 'HIGH':
+        return _RiskSeverity.high;
+      case 'MEDIUM':
+        return _RiskSeverity.medium;
+      case 'LOW':
+        return _RiskSeverity.low;
+    }
+
+    switch (_normalizedCategory(report.category)) {
+      case 'security':
+      case 'animals':
+        return _RiskSeverity.high;
+      case 'traffic':
+      case 'lighting':
+      case 'infrastructure':
+        return _RiskSeverity.medium;
+      default:
+        return _RiskSeverity.low;
+    }
+  }
+
+  static double _effectiveRiskRadius(NearbyReport report) {
+    final severity = _severityForReport(report);
+    final fallbackRadius = switch (severity) {
+      _RiskSeverity.high => 400.0,
+      _RiskSeverity.medium => 150.0,
+      _RiskSeverity.low => 150.0,
+    };
+    final baseRadius = report.riskRadiusMeters > 0
+        ? report.riskRadiusMeters
+        : fallbackRadius;
+    final createdAt = report.createdAt;
+    if (createdAt == null) {
+      return baseRadius;
+    }
+    final ageHours = DateTime.now().difference(createdAt).inMinutes / 60.0;
+    final minimumDecay = switch (severity) {
+      _RiskSeverity.high => 0.68,
+      _RiskSeverity.medium => 0.60,
+      _RiskSeverity.low => 0.55,
+    };
+    final decay = (1 - (ageHours / 24.0)).clamp(minimumDecay, 1.0);
+    return baseRadius * decay;
+  }
+
+  static double _riskIntensity(NearbyReport report) {
+    final severity = _severityForReport(report);
+    final baseIntensity = switch (severity) {
+      _RiskSeverity.high => 0.90,
+      _RiskSeverity.medium => 0.76,
+      _RiskSeverity.low => 0.62,
+    };
+    final createdAt = report.createdAt;
+    if (createdAt == null) {
+      return baseIntensity;
+    }
+    final ageHours = DateTime.now().difference(createdAt).inMinutes / 60.0;
+    final fadeWindowHours = switch (severity) {
+      _RiskSeverity.high => 30.0,
+      _RiskSeverity.medium => 22.0,
+      _RiskSeverity.low => 18.0,
+    };
+    final minimumIntensity = switch (severity) {
+      _RiskSeverity.high => 0.62,
+      _RiskSeverity.medium => 0.50,
+      _RiskSeverity.low => 0.42,
+    };
+    return (baseIntensity - (ageHours / fadeWindowHours)).clamp(
+      minimumIntensity,
+      1.0,
+    );
+  }
+
   static String _displayCategory(String category) {
     switch (_normalizedCategory(category)) {
       case 'trafik':
       case 'traffic':
         return 'Trafik';
-      case 'saglik':
-      case 'health':
-        return 'Saglik';
       case 'lighting':
-        return 'Lighting';
-      case 'suc':
+        return 'Aydınlatma';
       case 'security':
-        return 'Suc';
-      case 'takip':
-        return 'Takip';
+        return 'Suç';
       case 'hayvan':
       case 'animals':
         return 'Hayvan';
       case 'ariza':
       case 'infrastructure':
-        return 'Ariza';
+        return 'Altyapı';
       default:
         return category;
     }
@@ -623,45 +855,263 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gradientColors = isSelected
+        ? [
+            AppColors.aquaGlow.withValues(alpha: 0.98),
+            AppColors.oceanTeal.withValues(alpha: 0.96),
+          ]
+        : [
+            AppColors.aquaGlow.withValues(alpha: 0.78),
+            AppColors.oceanTeal.withValues(alpha: 0.88),
+          ];
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadius.md),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        constraints: const BoxConstraints(minWidth: 102),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? const LinearGradient(
-                  colors: [Color(0xFF5EAF6E), Color(0xFF3D7D49)],
-                )
-              : const LinearGradient(
-                  colors: [Color(0xFF477B52), Color(0xFF355E3C)],
-                ),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradientColors,
+          ),
           borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
-            color: isSelected ? const Color(0xFFD4FFE4) : Colors.transparent,
+            color: isSelected
+                ? Colors.white.withValues(alpha: 0.22)
+                : AppColors.aquaGlow.withValues(alpha: 0.18),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.aquaGlow.withValues(
+                alpha: isSelected ? 0.22 : 0.12,
+              ),
+              blurRadius: isSelected ? 18 : 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 17, color: Colors.white),
             const SizedBox(width: 7),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.body.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.body.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ReportSheetResult {
+  const _ReportSheetResult({required this.submitted});
+
+  final bool submitted;
+}
+
+class _ReportSheet extends StatefulWidget {
+  const _ReportSheet({
+    required this.category,
+    required this.formattedLocation,
+    required this.onSubmit,
+  });
+
+  final String category;
+  final String formattedLocation;
+  final Future<void> Function(String description) onSubmit;
+
+  @override
+  State<_ReportSheet> createState() => _ReportSheetState();
+}
+
+class _ReportSheetState extends State<_ReportSheet> {
+  late final TextEditingController _noteController;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  void _close({required bool submitted}) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (!mounted) {
+      return;
+    }
+    Navigator.of(context).pop(_ReportSheetResult(submitted: submitted));
+  }
+
+  Future<void> _submit() async {
+    if (_isSubmitting || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      await widget.onSubmit(_noteController.text.trim());
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isSubmitting = false;
+      });
+      final message = error is AppStateException
+          ? error.message
+          : error.toString();
+      if (message.trim().isEmpty) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('İhbar gönderilemedi: $message'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      return;
+    }
+
+    _close(submitted: true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return SafeArea(
+      top: false,
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          bottomInset + AppSpacing.md,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'İhbar Gönder',
+                style: AppTextStyles.title.copyWith(fontSize: 22),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Kategori: ${widget.category}',
+                style: AppTextStyles.body.copyWith(color: Colors.white70),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Konum: ${widget.formattedLocation}',
+                style: AppTextStyles.body.copyWith(color: Colors.white70),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: _noteController,
+                maxLines: 3,
+                minLines: 3,
+                enabled: !_isSubmitting,
+                keyboardType: TextInputType.text,
+                textInputAction: TextInputAction.done,
+                autocorrect: true,
+                enableSuggestions: true,
+                decoration: const InputDecoration(
+                  hintText: 'Kısa açıklama (opsiyonel)',
+                  fillColor: Color(0xFF1A3D66),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => _close(submitted: false),
+                      child: const Text('İptal'),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isSubmitting ? null : _submit,
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Gönder'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RiskCircleVisual {
+  const _RiskCircleVisual({
+    required this.centerLatitude,
+    required this.centerLongitude,
+    required this.radiusMeters,
+    required this.riskScore,
+    required this.strokeColor,
+  });
+
+  final double centerLatitude;
+  final double centerLongitude;
+  final double radiusMeters;
+  final double riskScore;
+  final Color strokeColor;
+
+  _RiskCircleVisual merge(_RiskCircleVisual other) {
+    return _RiskCircleVisual(
+      centerLatitude: centerLatitude,
+      centerLongitude: centerLongitude,
+      radiusMeters: radiusMeters > other.radiusMeters
+          ? radiusMeters
+          : other.radiusMeters,
+      riskScore: riskScore > other.riskScore ? riskScore : other.riskScore,
+      strokeColor: riskScore >= other.riskScore
+          ? strokeColor
+          : other.strokeColor,
     );
   }
 }

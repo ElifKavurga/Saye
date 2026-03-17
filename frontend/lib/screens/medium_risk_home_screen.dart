@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../config/app_defaults.dart';
+import '../config/app_strings.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
@@ -35,16 +35,17 @@ class MediumRiskHomeScreen extends StatelessWidget {
               children: [
                 const _LogoStrip(),
                 const SizedBox(height: AppSpacing.sm),
-                _LocationRow(onProfileTap: onOpenProfile),
+                _LocationRow(
+                  location: appState.currentLocationName,
+                  onProfileTap: onOpenProfile,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 const _RiskCircle(),
                 const SizedBox(height: AppSpacing.md),
                 _MapCard(onTap: onOpenMap),
                 const SizedBox(height: AppSpacing.md),
-                const _BluetoothWarningCard(),
-                const SizedBox(height: AppSpacing.md),
                 Text(
-                  'BASILI TUT: YARDIM CAGIR',
+                  AppStrings.middleButtonHelp,
                   textAlign: TextAlign.center,
                   style: AppTextStyles.body.copyWith(color: Colors.white70),
                 ),
@@ -55,14 +56,22 @@ class MediumRiskHomeScreen extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () async {
                       try {
-                        await appState.activateEmergency();
+                        await appState.activateEmergencyDynamic();
                       } catch (e) {
                         if (!context.mounted) {
                           return;
                         }
+                        final message = e is AppStateException
+                            ? e.message
+                            : e.toString();
+                        if (message.trim().isEmpty) {
+                          return;
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('SOS baslatilamadi: $e'),
+                            content: Text(
+                              '${AppStrings.sosStartFailedPrefix}$message',
+                            ),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -70,14 +79,22 @@ class MediumRiskHomeScreen extends StatelessWidget {
                     },
                     onLongPress: () async {
                       try {
-                        await appState.activateEmergency();
+                        await appState.activateEmergencyDynamic();
                       } catch (e) {
                         if (!context.mounted) {
                           return;
                         }
+                        final message = e is AppStateException
+                            ? e.message
+                            : e.toString();
+                        if (message.trim().isEmpty) {
+                          return;
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('SOS baslatilamadi: $e'),
+                            content: Text(
+                              '${AppStrings.sosStartFailedPrefix}$message',
+                            ),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -167,8 +184,9 @@ class _LogoStrip extends StatelessWidget {
 }
 
 class _LocationRow extends StatelessWidget {
-  const _LocationRow({required this.onProfileTap});
+  const _LocationRow({required this.location, required this.onProfileTap});
 
+  final String location;
   final VoidCallback onProfileTap;
 
   @override
@@ -183,7 +201,7 @@ class _LocationRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Text(
-            AppDefaults.campusLocation,
+            location,
             style: AppTextStyles.title.copyWith(fontSize: 22),
           ),
         ),
@@ -234,7 +252,7 @@ class _RiskCircle extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'RISKLI ALAN',
+                AppStrings.riskyArea,
                 style: AppTextStyles.title.copyWith(
                   color: const Color(0xFFFFB065),
                   fontSize: 23,
@@ -243,7 +261,7 @@ class _RiskCircle extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Risk Seviyesi: Orta',
+                'Risk Seviyesi: ${AppStrings.mediumRisk}',
                 style: AppTextStyles.body.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
@@ -283,6 +301,7 @@ class _MapCard extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _BluetoothWarningCard extends StatelessWidget {
   const _BluetoothWarningCard();
 
@@ -319,7 +338,7 @@ class _BluetoothWarningCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Aktif Tarama: Supheli cihaz yakinligi orta riskte. Dikkatli ol.',
+                  'Aktif Tarama: Şüpheli cihaz yakınlığı orta riskte. Dikkatli ol.',
                   style: AppTextStyles.body.copyWith(
                     color: Colors.white.withValues(alpha: 0.95),
                   ),

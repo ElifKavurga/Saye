@@ -76,9 +76,15 @@ class EmergencyActiveScreen extends StatelessWidget {
                         if (!context.mounted) {
                           return;
                         }
+                        final message = e is AppStateException
+                            ? e.message
+                            : e.toString();
+                        if (message.trim().isEmpty) {
+                          return;
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Acil durum kapatilamadi: $e'),
+                            content: Text('Acil durum kapatilamadi: $message'),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
