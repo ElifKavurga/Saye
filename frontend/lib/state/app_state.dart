@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config/app_defaults.dart';
@@ -272,9 +274,12 @@ class _EmergencyActivationPlan {
   final List<String> smsRecipients;
 }
 
-class AppState extends ChangeNotifier with WidgetsBindingObserver {
+class AppState extends ChangeNotifier {
   static const double _fallbackLatitude = 38.3552;
   static const double _fallbackLongitude = 38.3095;
+  static const MethodChannel _emergencyActionChannel = MethodChannel(
+    'com.example.frontend/emergency_actions',
+  );
 
   AppState({
     ApiService? apiService,
@@ -325,7 +330,6 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       onSessionExpired: _handleSessionExpired,
       onSessionTokensUpdated: _handleSessionTokensUpdated,
     );
-    WidgetsBinding.instance.addObserver(this);
   }
 
   final ApiService _apiService;
@@ -355,9 +359,6 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
   bool _isMapDataLoading = false;
   DateTime? _lastMapSyncAt;
   Future<void>? _mapDataLoadFuture;
-  List<String> _pendingEmergencySmsRecipients = const [];
-  String? _pendingEmergencySmsBody;
-  bool _isLaunchingPendingEmergencySms = false;
   bool _isLoading = false;
   bool _isSessionResetInProgress = false;
   int _loadingCounter = 0;
@@ -703,6 +704,12 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
                 longitude: longitude,
                 riskLevel: activationPlan.currentRiskLevel,
               );
+        final deviceSmsHandled = smsBody != null
+            ? await _sendEmergencySmsToContacts(
+                recipients: activationPlan.smsRecipients,
+                body: smsBody,
+              )
+            : false;
 
         Object? backendError;
         try {
@@ -714,6 +721,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
             calledPhoneNumber: activationPlan.callTarget,
             sharedTo: activationPlan.smsRecipients,
             currentRiskLevel: activationPlan.currentRiskLevel,
+            deviceSmsHandled: deviceSmsHandled,
           );
           _emergencyActive = true;
           _showRiskDecision = false;
@@ -723,25 +731,11 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
           backendError = error;
         }
 
-        if (smsBody == null) {
-          _clearPendingEmergencySms();
-        } else {
-          _schedulePendingEmergencySms(
-            recipients: activationPlan.smsRecipients,
-            body: smsBody,
-          );
-        }
-
         Object? launchError;
         try {
           await _launchPhoneCall(activationPlan.callTarget);
         } catch (error) {
           launchError = error;
-          if (_pendingEmergencySmsRecipients.isNotEmpty) {
-            try {
-              await _launchPendingEmergencySms();
-            } catch (_) {}
-          }
         }
 
         if (backendError != null) {
@@ -1155,7 +1149,6 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       _localReports.clear();
       _nearbyReports.clear();
       _emergencyContacts.clear();
-      _clearPendingEmergencySms();
       _setEmergencyHealthInfo(const EmergencyHealthInfo(), notify: false);
       _resetUserSettings(notify: false);
       _currentLatitude = null;
@@ -1563,6 +1556,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     required String calledPhoneNumber,
     List<String> sharedTo = const [],
     String currentRiskLevel = 'LOW',
+    bool deviceSmsHandled = false,
   }) async {
     final payload = <String, dynamic>{
       'userId': userId,
@@ -1572,6 +1566,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       'calledPhoneNumber': calledPhoneNumber,
       'sharedTo': sharedTo,
       'currentRiskLevel': currentRiskLevel,
+      'deviceSmsHandled': deviceSmsHandled,
     };
 
     try {
@@ -2032,6 +2027,32 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
         'Harita: $mapsUrl. Risk seviyesi: $riskLevel.';
   }
 
+  Future<bool> _sendEmergencySmsToContacts({
+    required List<String> recipients,
+    required String body,
+  }) async {
+    if (recipients.isEmpty || defaultTargetPlatform != TargetPlatform.android) {
+      return false;
+    }
+
+    final status = await Permission.sms.request();
+    if (!status.isGranted) {
+      debugPrint('SMS permission denied; backend fallback will be used.');
+      return false;
+    }
+
+    try {
+      await _emergencyActionChannel.invokeMethod<void>('sendBulkSms', {
+        'phoneNumbers': recipients,
+        'message': body,
+      });
+      return true;
+    } on PlatformException catch (error) {
+      debugPrint('Direct SMS failed, backend fallback will be used: $error');
+      return false;
+    }
+  }
+
   String _sanitizePhoneNumber(String value) {
     final compact = value.trim().replaceAll(RegExp(r'[^0-9+]'), '');
     if (compact.isEmpty) {
@@ -2052,6 +2073,24 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       );
     }
 
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final status = await Permission.phone.request();
+      if (!status.isGranted) {
+        throw const AppStateException(
+          'Dogrudan arama icin telefon izni verilmedi.',
+        );
+      }
+
+      try {
+        await _emergencyActionChannel.invokeMethod<void>('placeDirectCall', {
+          'phoneNumber': normalizedPhone,
+        });
+        return;
+      } on PlatformException catch (error) {
+        debugPrint('Direct call failed, falling back to dialer: $error');
+      }
+    }
+
     final launched = await launchUrl(
       Uri(scheme: 'tel', path: normalizedPhone),
       mode: LaunchMode.externalApplication,
@@ -2063,65 +2102,8 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  void _schedulePendingEmergencySms({
-    required List<String> recipients,
-    required String body,
-  }) {
-    _pendingEmergencySmsRecipients = List.unmodifiable(recipients);
-    _pendingEmergencySmsBody = body;
-  }
-
-  void _clearPendingEmergencySms() {
-    _pendingEmergencySmsRecipients = const [];
-    _pendingEmergencySmsBody = null;
-  }
-
-  Future<void> _launchPendingEmergencySms() async {
-    final recipients = List<String>.from(_pendingEmergencySmsRecipients);
-    final body = _pendingEmergencySmsBody;
-    if (recipients.isEmpty || body == null || _isLaunchingPendingEmergencySms) {
-      return;
-    }
-
-    _isLaunchingPendingEmergencySms = true;
-    _clearPendingEmergencySms();
-
-    try {
-      final recipientSeparator = defaultTargetPlatform == TargetPlatform.iOS
-          ? ','
-          : ';';
-      final launched = await launchUrl(
-        Uri(
-          scheme: 'sms',
-          path: recipients.join(recipientSeparator),
-          queryParameters: <String, String>{'body': body},
-        ),
-        mode: LaunchMode.externalApplication,
-      );
-      if (!launched) {
-        throw const AppStateException('SMS uygulamasi acilamadi.');
-      }
-    } finally {
-      _isLaunchingPendingEmergencySms = false;
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) {
-      return;
-    }
-    if (_pendingEmergencySmsRecipients.isEmpty ||
-        _pendingEmergencySmsBody == null) {
-      return;
-    }
-    unawaited(_launchPendingEmergencySms());
-  }
-
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _clearPendingEmergencySms();
     _locationStreamSubscription?.cancel();
     super.dispose();
   }

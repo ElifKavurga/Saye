@@ -35,4 +35,7 @@ public class EmergencyStartRequest {
 
     @ArraySchema(schema = @Schema(example = "905551112233"), arraySchema = @Schema(description = "Bildirim gonderilecek acil kontaklar"))
     private List<String> sharedTo;
+
+    @Schema(description = "SMS bildiriminin cihaz tarafinda zaten otomatik gonderilip gonderilmedigi", example = "true")
+    private Boolean deviceSmsHandled;
 }

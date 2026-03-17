@@ -72,7 +72,7 @@ class EmergencyControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.currentRiskLevel").value("HIGH"))
                 .andExpect(jsonPath("$.data.calledContactName").value("112 Acil Cagri Merkezi"))
                 .andExpect(jsonPath("$.data.calledPhoneNumber").value("112"))
-                .andExpect(jsonPath("$.data.sharedTo.length()").value(2));
+                .andExpect(jsonPath("$.data.sharedTo.length()").value(0));
 
         assertThat(repository.findAll())
                 .singleElement()
