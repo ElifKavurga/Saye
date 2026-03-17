@@ -48,7 +48,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final user = appState.currentUser;
-    final isBusy = appState.isUserSettingsBusy;
     final displayName = user?.username.isNotEmpty == true
         ? user!.username
         : AppDefaults.fallbackProfileName;
@@ -124,6 +123,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   backgroundColor: AppColors.aquaGlow
                                       .withValues(alpha: 0.16),
                                   foregroundColor: Colors.white,
+                                  shadowColor: Colors.transparent,
+                                  surfaceTintColor: Colors.transparent,
+                                  overlayColor: Colors.transparent,
+                                  elevation: 0,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: AppSpacing.md,
                                     vertical: AppSpacing.sm,
@@ -148,19 +151,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               'Yapılan ihbarlarda profil adın görünsün mü? Bu ayar açık olduğunda bildirim geçmişinde hesabın ilişkilendirilir.',
                           trailing: Switch.adaptive(
                             value: appState.isProfileVisibleInAlerts,
-                            onChanged: isBusy
-                                ? null
-                                : _handleProfileVisibilityChanged,
+                            onChanged: _handleProfileVisibilityChanged,
                           ),
                         ),
                       ),
-                      if (isBusy) ...[
-                        const SizedBox(height: AppSpacing.md),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                          child: LinearProgressIndicator(),
-                        ),
-                      ],
                       const SizedBox(height: AppSpacing.md),
                       Row(
                         children: [
@@ -330,6 +324,10 @@ class _SettingsHeroCard extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: Colors.white.withValues(alpha: 0.14),
               foregroundColor: Colors.white,
+              shadowColor: Colors.transparent,
+              surfaceTintColor: Colors.transparent,
+              overlayColor: Colors.transparent,
+              elevation: 0,
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
                 vertical: AppSpacing.sm,
@@ -546,8 +544,10 @@ class _SettingsActionCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        splashColor: AppColors.aquaGlow.withValues(alpha: 0.08),
-        highlightColor: AppColors.aquaGlow.withValues(alpha: 0.04),
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        focusColor: Colors.transparent,
         child: Container(
           padding: const EdgeInsets.symmetric(
             vertical: AppSpacing.md,

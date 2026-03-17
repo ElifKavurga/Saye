@@ -319,7 +319,7 @@ class _LeftQuickTrigger extends StatelessWidget {
         width: 52,
         height: 106,
         decoration: const BoxDecoration(
-          color: Color(0xFF6B9E66),
+          color: Color(0xFF3B8B72),
           borderRadius: BorderRadius.only(
             topRight: Radius.circular(50),
             bottomRight: Radius.circular(50),

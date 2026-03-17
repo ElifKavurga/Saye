@@ -118,26 +118,37 @@ class _MapReportScreenState extends State<MapReportScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: AppDefaults.reportCategories
-                      .map(
-                        (category) => _CategoryChip(
-                          icon:
-                              _categoryIcons[category] ??
-                              Icons.warning_amber_rounded,
-                          label: category,
-                          isSelected: _selectedCategory == category,
-                          onTap: () {
-                            if (!mounted) return;
-                            setState(() {
-                              _selectedCategory = category;
-                            });
-                          },
-                        ),
-                      )
-                      .toList(),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    const spacing = AppSpacing.sm;
+                    final itemWidth = (constraints.maxWidth - (spacing * 2)) / 3;
+
+                    return Wrap(
+                      spacing: spacing,
+                      runSpacing: spacing,
+                      alignment: WrapAlignment.center,
+                      children: AppDefaults.reportCategories
+                          .map(
+                            (category) => SizedBox(
+                              width: itemWidth,
+                              child: _CategoryChip(
+                                icon:
+                                    _categoryIcons[category] ??
+                                    Icons.warning_amber_rounded,
+                                label: category,
+                                isSelected: _selectedCategory == category,
+                                onTap: () {
+                                  if (!mounted) return;
+                                  setState(() {
+                                    _selectedCategory = category;
+                                  });
+                                },
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    );
+                  },
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(
@@ -847,7 +858,6 @@ class _CategoryChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadius.md),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        constraints: const BoxConstraints(minWidth: 102),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm,
@@ -866,16 +876,19 @@ class _CategoryChip extends StatelessWidget {
           ),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 17, color: Colors.white),
             const SizedBox(width: 7),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.body.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.body.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],

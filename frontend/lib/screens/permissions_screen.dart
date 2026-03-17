@@ -123,15 +123,6 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                               const _IntroCard(),
                               const SizedBox(height: AppSpacing.md),
                               _EmergencyContactsCard(appState: appState),
-                              if (appState.isUserSettingsBusy) ...[
-                                const SizedBox(height: AppSpacing.md),
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.xs,
-                                  ),
-                                  child: LinearProgressIndicator(),
-                                ),
-                              ],
                               const SizedBox(height: AppSpacing.md),
                               ...permissions.map(
                                 (permission) => Padding(
@@ -139,17 +130,16 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                                     bottom: AppSpacing.md,
                                   ),
                                   child: PermissionItemCard(
+                                    key: ValueKey(permission.id),
                                     icon: _iconForPermission(permission.id),
                                     title: permission.title,
                                     description: permission.description,
                                     switchValue: permission.enabled,
-                                    onChanged: appState.isUserSettingsBusy
-                                        ? null
-                                        : (value) => _handlePermissionChange(
-                                            context,
-                                            permission,
-                                            value,
-                                          ),
+                                    onChanged: (value) => _handlePermissionChange(
+                                      context,
+                                      permission,
+                                      value,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -308,6 +298,10 @@ class _EmergencyContactsCard extends StatelessWidget {
           );
         },
         borderRadius: BorderRadius.circular(AppRadius.md),
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        focusColor: Colors.transparent,
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
@@ -394,8 +388,10 @@ class PermissionItemCard extends StatelessWidget {
       child: InkWell(
         onTap: onChanged == null ? null : () => onChanged!(!switchValue),
         borderRadius: BorderRadius.circular(AppRadius.md),
-        splashColor: AppColors.aquaGlow.withValues(alpha: 0.08),
-        highlightColor: AppColors.aquaGlow.withValues(alpha: 0.04),
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        focusColor: Colors.transparent,
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
@@ -457,6 +453,7 @@ class PermissionItemCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               Switch.adaptive(
+                key: ValueKey(title),
                 value: switchValue,
                 onChanged: onChanged,
                 activeThumbColor: const Color(0xFF22D1CA),
