@@ -1,3 +1,5 @@
+import 'app_strings.dart';
+
 class SettingOption {
   const SettingOption({
     required this.id,
@@ -22,37 +24,37 @@ class SettingOption {
 }
 
 class AppDefaults {
-  static const String campusLocation = 'Kampus Yolu, Malatya';
-  static const String selectedLocationLabel = 'Secili konum';
+  static const String campusLocation = 'Kampüs Yolu, Malatya';
+  static const String selectedLocationLabel = AppStrings.selectedLocation;
   static const String selectedLatLng = '38.3552, 38.3095';
 
   static const String fallbackProfileName = 'Saye Operator';
   static const String fallbackProfileEmail = 'operator@sayende.app';
 
   static const List<String> reportCategories = [
-    'Trafik',
-    'Aydınlatma',
-    'Altyapı',
-    'Hayvan',
-    'Suc',
+    AppStrings.trafficCategory,
+    AppStrings.lightingCategory,
+    AppStrings.infrastructureCategory,
+    AppStrings.animalCategory,
+    AppStrings.crimeCategory,
   ];
 
   static const List<SettingOption> settings = [
     SettingOption(
       id: 'push',
       title: 'Push Bildirimleri',
-      subtitle: 'Anlik olaylari bildirim olarak al.',
+      subtitle: 'Anlık olayları bildirim olarak al.',
       enabled: true,
     ),
     SettingOption(
       id: 'location',
       title: 'Konum Erişimi',
-      subtitle: 'Yakin raporlari dogru listelemek icin kullanilir.',
+      subtitle: 'Yakın raporları doğru listelemek için kullanılır.',
       enabled: true,
     ),
     SettingOption(
       id: 'summary',
-      title: 'Gunluk Ozet',
+      title: 'Günlük Özet',
       subtitle: 'Her akşam performans özeti gönder.',
       enabled: false,
     ),

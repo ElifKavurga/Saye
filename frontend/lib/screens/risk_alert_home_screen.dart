@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../config/app_strings.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'alerts_feed_screen.dart';
@@ -47,7 +48,7 @@ class RiskAlertHomeScreen extends StatelessWidget {
                     _MapCard(onTap: onOpenMap),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'ORTADAKI BUTONA BAS: YARDIM CAGIR',
+                      AppStrings.middleButtonHelp,
                       textAlign: TextAlign.center,
                       style: AppTextStyles.body.copyWith(color: Colors.white70),
                     ),
@@ -71,7 +72,9 @@ class RiskAlertHomeScreen extends StatelessWidget {
                             }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('SOS baslatilamadi: $message'),
+                                content: Text(
+                                  '${AppStrings.sosStartFailedPrefix}$message',
+                                ),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -92,7 +95,9 @@ class RiskAlertHomeScreen extends StatelessWidget {
                             }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('SOS baslatilamadi: $message'),
+                                content: Text(
+                                  '${AppStrings.sosStartFailedPrefix}$message',
+                                ),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -164,8 +169,8 @@ class RiskAlertHomeScreen extends StatelessWidget {
                 Icons.notifications_active_rounded,
                 color: Color(0xFF84F5BB),
               ),
-              title: const Text('Guncel bildirim ve ihbarlar'),
-              subtitle: const Text('Konum tabanli canli akis'),
+              title: const Text('Güncel bildirim ve ihbarlar'),
+              subtitle: const Text('Konum tabanlı canlı akış'),
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).push(
@@ -329,7 +334,7 @@ class _RiskCircle extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'RISKLI ALAN',
+                AppStrings.riskyArea,
                 style: AppTextStyles.title.copyWith(
                   color: const Color(0xFFFF5D66),
                   fontSize: 23,
@@ -338,7 +343,7 @@ class _RiskCircle extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Risk Seviyesi: Yuksek',
+                'Risk Seviyesi: ${AppStrings.highRisk}',
                 style: AppTextStyles.body.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,

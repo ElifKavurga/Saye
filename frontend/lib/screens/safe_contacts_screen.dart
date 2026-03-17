@@ -203,6 +203,10 @@ class SafeContactsScreen extends StatelessWidget {
                     const SizedBox(height: AppSpacing.sm),
                     TextFormField(
                       controller: nameController,
+                      keyboardType: TextInputType.text,
+                      textInputAction: TextInputAction.next,
+                      autocorrect: true,
+                      enableSuggestions: true,
                       decoration: const InputDecoration(hintText: 'Kisi adi'),
                       validator: (value) {
                         if ((value ?? '').trim().isEmpty) {
@@ -215,6 +219,7 @@ class SafeContactsScreen extends StatelessWidget {
                     TextFormField(
                       controller: phoneController,
                       keyboardType: TextInputType.phone,
+                      textInputAction: TextInputAction.done,
                       decoration: const InputDecoration(hintText: 'Telefon'),
                       validator: (value) {
                         if ((value ?? '').trim().isEmpty) {

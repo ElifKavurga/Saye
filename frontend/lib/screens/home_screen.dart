@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../config/app_strings.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 import 'alerts_feed_screen.dart';
@@ -114,7 +115,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('SOS başlatılamadı: $message'),
+                                content: Text(
+                                  '${AppStrings.sosStartFailedPrefix}$message',
+                                ),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -171,7 +174,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               }
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('SOS başlatılamadı: $message'),
+                                  content: Text(
+                                    '${AppStrings.sosStartFailedPrefix}$message',
+                                  ),
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );
@@ -217,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hizli Panel',
+                  'Hızlı Panel',
                   style: AppTextStyles.title.copyWith(fontSize: 22),
                 ),
                 const SizedBox(height: AppSpacing.xs),
@@ -259,21 +264,21 @@ class _HomeScreenState extends State<HomeScreen> {
   String _riskTitle(RiskLevel level) {
     switch (level) {
       case RiskLevel.low:
-        return 'GÜVENLİ BÖLGE';
+        return AppStrings.safeZone;
       case RiskLevel.medium:
       case RiskLevel.high:
-        return 'RISKLI ALAN';
+        return AppStrings.riskyArea;
     }
   }
 
   String _riskLevelLabel(RiskLevel level) {
     switch (level) {
       case RiskLevel.low:
-        return 'Düşük';
+        return AppStrings.lowRisk;
       case RiskLevel.medium:
         return 'Orta';
       case RiskLevel.high:
-        return 'Yüksek';
+        return AppStrings.highRisk;
     }
   }
 

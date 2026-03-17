@@ -6,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../config/app_defaults.dart';
+import '../config/app_strings.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
@@ -32,7 +33,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
     'Aydınlatma': Icons.lightbulb_rounded,
     'Altyapı': Icons.construction_rounded,
     'Hayvan': Icons.pets_rounded,
-    'Suc': Icons.gpp_bad_rounded,
+    AppStrings.crimeCategory: Icons.gpp_bad_rounded,
   };
 
   @override
@@ -163,7 +164,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
   Future<void> _openReportSheet() async {
     final selectedPoint = _selectedPoint;
     if (selectedPoint == null) {
-      throw StateError('Konum secimi bulunamadi.');
+      throw StateError('Konum seçimi bulunamadı.');
     }
     final parentContext = context;
     final formattedLocation = _formatLatLng(selectedPoint);
@@ -206,7 +207,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         const SnackBar(
-          content: Text('Ihbar basariyla gonderildi ve harita guncellendi.'),
+          content: Text('İhbar başarıyla gönderildi ve harita güncellendi.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -368,11 +369,11 @@ class _RiskLegend extends StatelessWidget {
       ),
       child: Row(
         children: const [
-          _LegendItem(color: Color(0xFF2E7D32), label: 'Dusuk'),
+          _LegendItem(color: Color(0xFF2E7D32), label: AppStrings.lowRisk),
           SizedBox(width: AppSpacing.sm),
           _LegendItem(color: Color(0xFFFF8F00), label: 'Orta'),
           SizedBox(width: AppSpacing.sm),
-          _LegendItem(color: Color(0xFFC62828), label: 'Yuksek'),
+          _LegendItem(color: Color(0xFFC62828), label: AppStrings.highRisk),
         ],
       ),
     );
@@ -522,7 +523,7 @@ class _LiveMap extends StatelessWidget {
                       height: 38,
                       point: selectedLocation,
                       child: Tooltip(
-                        message: 'Seçilen Konum',
+                        message: AppStrings.selectedMapLocation,
                         child: Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -989,7 +990,7 @@ class _ReportSheetState extends State<_ReportSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Ihbar Gonder',
+                'İhbar Gönder',
                 style: AppTextStyles.title.copyWith(fontSize: 22),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -1008,7 +1009,10 @@ class _ReportSheetState extends State<_ReportSheet> {
                 maxLines: 3,
                 minLines: 3,
                 enabled: !_isSubmitting,
+                keyboardType: TextInputType.text,
                 textInputAction: TextInputAction.done,
+                autocorrect: true,
+                enableSuggestions: true,
                 decoration: const InputDecoration(
                   hintText: 'Kısa açıklama (opsiyonel)',
                   fillColor: Color(0xFF1A3D66),
@@ -1035,7 +1039,7 @@ class _ReportSheetState extends State<_ReportSheet> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Gonder'),
+                          : const Text('Gönder'),
                     ),
                   ),
                 ],

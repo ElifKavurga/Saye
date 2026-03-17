@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'navigation/main_shell.dart';
 import 'screens/auth_screen.dart';
@@ -47,6 +48,13 @@ class _SayeAppState extends State<SayeApp> {
     return MaterialApp(
       title: "SAYE'nde",
       debugShowCheckedModeBanner: false,
+      locale: const Locale('tr', 'TR'),
+      supportedLocales: const [Locale('tr', 'TR'), Locale('en', 'US')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: AppTheme.themeData,
       home: AnimatedBuilder(
         animation: _appState,

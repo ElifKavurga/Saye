@@ -410,7 +410,10 @@ class _EmergencyHealthFormField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
+      keyboardType: TextInputType.text,
       textInputAction: textInputAction,
+      autocorrect: true,
+      enableSuggestions: true,
       style: AppTextStyles.body,
       decoration: InputDecoration(
         labelText: label,
@@ -520,7 +523,7 @@ class _QuickStatsCard extends StatelessWidget {
           _StatChip(
             icon: Icons.campaign_rounded,
             value: '$reportCount',
-            label: 'Ihbar',
+            label: 'İhbar',
           ),
           const SizedBox(width: AppSpacing.sm),
           const _StatChip(

@@ -161,6 +161,7 @@ class _AuthScreenState extends State<AuthScreen> {
             label: 'E-Mail',
             controller: _loginEmail,
             keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
             validator: _validateEmail,
           ),
           const SizedBox(height: AppSpacing.md),
@@ -168,6 +169,7 @@ class _AuthScreenState extends State<AuthScreen> {
             label: '\u015eifre',
             controller: _loginPassword,
             obscureText: true,
+            textInputAction: TextInputAction.done,
             validator: _validatePassword,
           ),
           const SizedBox(height: AppSpacing.xl),
@@ -213,12 +215,15 @@ class _AuthScreenState extends State<AuthScreen> {
             label: 'E-Mail',
             controller: _registerEmail,
             keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
             validator: _validateEmail,
           ),
           const SizedBox(height: AppSpacing.md),
           _LabeledInput(
             label: 'Kullan\u0131c\u0131 Ad\u0131',
             controller: _registerUsername,
+            keyboardType: TextInputType.text,
+            textInputAction: TextInputAction.next,
             validator: _validateRequired,
           ),
           const SizedBox(height: AppSpacing.md),
@@ -226,6 +231,7 @@ class _AuthScreenState extends State<AuthScreen> {
             label: '\u015eifre',
             controller: _registerPassword,
             obscureText: true,
+            textInputAction: TextInputAction.next,
             validator: _validatePassword,
           ),
           const SizedBox(height: AppSpacing.md),
@@ -233,6 +239,7 @@ class _AuthScreenState extends State<AuthScreen> {
             label: 'Telefon',
             controller: _registerPhone,
             keyboardType: TextInputType.phone,
+            textInputAction: TextInputAction.done,
             validator: _validateRequired,
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -391,6 +398,7 @@ class _LabeledInput extends StatelessWidget {
     required this.label,
     required this.controller,
     required this.validator,
+    required this.textInputAction,
     this.keyboardType,
     this.obscureText = false,
   });
@@ -398,6 +406,7 @@ class _LabeledInput extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final String? Function(String?) validator;
+  final TextInputAction textInputAction;
   final TextInputType? keyboardType;
   final bool obscureText;
 
@@ -418,8 +427,11 @@ class _LabeledInput extends StatelessWidget {
         TextFormField(
           controller: controller,
           validator: validator,
-          keyboardType: keyboardType,
+          keyboardType: keyboardType ?? TextInputType.text,
+          textInputAction: textInputAction,
           obscureText: obscureText,
+          autocorrect: !obscureText,
+          enableSuggestions: !obscureText,
           style: AppTextStyles.body.copyWith(color: const Color(0xFF2A3640)),
           decoration: InputDecoration(
             filled: true,

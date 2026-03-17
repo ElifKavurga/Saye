@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../config/app_strings.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
@@ -36,14 +37,14 @@ class RiskDecisionScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
                 const _RiskCircle(),
                 const SizedBox(height: AppSpacing.md),
-                _InfoCard(
-                  title: 'ACIL DURUM AKTIF',
+                const _InfoCard(
+                  title: 'ACİL DURUM AKTİF',
                   text: 'Sana en yakın güvenli bölge rotası oluşturuluyor...',
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoCard(
+                const _InfoCard(
                   text: 'Acil durum kişileri ile bilgilerin paylaşıldı!',
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.check_box_rounded,
                     color: Color(0xFF8CF0A6),
                   ),
@@ -57,7 +58,7 @@ class RiskDecisionScreen extends StatelessWidget {
                     border: Border.all(color: Colors.white24),
                   ),
                   child: Text(
-                    'Yuksek risk alanina gecmek ister misin?',
+                    'Yüksek risk alanına geçmek ister misin?',
                     textAlign: TextAlign.center,
                     style: AppTextStyles.body.copyWith(
                       color: Colors.white.withValues(alpha: 0.95),
@@ -242,7 +243,7 @@ class _RiskCircle extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'RISKLI ALAN',
+                AppStrings.riskyArea,
                 style: AppTextStyles.title.copyWith(
                   color: const Color(0xFFFFB065),
                   fontSize: 23,
@@ -251,7 +252,7 @@ class _RiskCircle extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Risk Seviyesi: Orta',
+                'Risk Seviyesi: ${AppStrings.mediumRisk}',
                 style: AppTextStyles.body.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,

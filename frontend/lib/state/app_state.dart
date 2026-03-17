@@ -488,7 +488,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
         await _applyAuthenticatedSession(response);
       } catch (e) {
         throw AppStateException(
-          _toUserMessage(e, fallback: 'Demo oturumu baslatilamadi.'),
+          _toUserMessage(e, fallback: 'Demo oturumu başlatılamadı.'),
         );
       }
     });
@@ -739,7 +739,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
           return;
         }
         throw AppStateException(
-          _toUserMessage(e, fallback: 'SOS baslatilamadi. Lutfen tekrar dene.'),
+          _toUserMessage(e, fallback: 'SOS başlatılamadı. Lütfen tekrar dene.'),
         );
       }
     });
@@ -774,7 +774,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
           reportLongitude ?? _currentLongitude ?? _parseLongitude(latLng);
 
       if (latitude == null || longitude == null) {
-        throw ApiException('Rapor icin gecerli bir konum bulunamadi.');
+        throw ApiException('Rapor için geçerli bir konum bulunamadı.');
       }
 
       final backendCategory = _toBackendCategory(category);
@@ -846,7 +846,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       throw AppStateException(
         _toUserMessage(
           e,
-          fallback: 'Ayarlar yuklenemedi. Lutfen tekrar deneyin.',
+          fallback: 'Ayarlar yüklenemedi. Lütfen tekrar deneyin.',
         ),
       );
     } finally {
@@ -865,7 +865,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     }
     await _saveUserSettings(
       _userSettings.copyWith(profileVisible: visible),
-      fallback: 'Profil gorunurlugu guncellenemedi. Lutfen tekrar deneyin.',
+      fallback: 'Profil görünürlüğü güncellenemedi. Lütfen tekrar deneyin.',
     );
   }
 
@@ -913,7 +913,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
               ? enabled
               : _userSettings.quickUnlockAccessEnabled,
         ),
-        fallback: 'Izin ayari guncellenemedi. Lutfen tekrar deneyin.',
+        fallback: 'İzin ayarı güncellenemedi. Lütfen tekrar deneyin.',
       );
       return;
     }
@@ -933,7 +933,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
         throw AppStateException(
           _toUserMessage(
             e,
-            fallback: 'Acil durum kisileri yuklenemedi. Lutfen tekrar deneyin.',
+            fallback: 'Acil durum kişileri yüklenemedi. Lütfen tekrar deneyin.',
           ),
         );
       }
@@ -962,7 +962,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
         throw AppStateException(
           _toUserMessage(
             e,
-            fallback: 'Acil durum kisisi eklenemedi. Lutfen tekrar deneyin.',
+            fallback: 'Acil durum kişisi eklenemedi. Lütfen tekrar deneyin.',
           ),
         );
       }
@@ -986,7 +986,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
         throw AppStateException(
           _toUserMessage(
             e,
-            fallback: 'Acil durum kisisi silinemedi. Lutfen tekrar deneyin.',
+            fallback: 'Acil durum kişisi silinemedi. Lütfen tekrar deneyin.',
           ),
         );
       }
@@ -1026,7 +1026,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
           _toUserMessage(
             e,
             fallback:
-                'Birincil acil durum kisisi guncellenemedi. Lutfen tekrar deneyin.',
+                'Birincil acil durum kişisi güncellenemedi. Lütfen tekrar deneyin.',
           ),
         );
       }
@@ -1468,8 +1468,11 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     const mapping = <String, String>{
       'Trafik': 'TRAFFIC',
       'Aydinlatma': 'LIGHTING',
+      'Aydınlatma': 'LIGHTING',
       'Altyapi': 'INFRASTRUCTURE',
+      'Altyapı': 'INFRASTRUCTURE',
       'Suc': 'SECURITY',
+      'Suç': 'SECURITY',
       'Takip': 'INFRASTRUCTURE',
       'Hayvan': 'ANIMALS',
       'Ariza': 'INFRASTRUCTURE',
@@ -1526,7 +1529,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       if (error.statusCode == 400) {
         return error.message.isNotEmpty
             ? error.message
-            : 'Gonderilen bilgiler gecersiz.';
+            : 'Gönderilen bilgiler geçersiz.';
       }
       if (error.statusCode == 401 || error.statusCode == 403) {
         return 'Bu işlem için oturumun geçersiz. Lütfen tekrar giriş yap.';
@@ -1826,6 +1829,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       case 'TAKIP':
       case 'TRACKING':
         return 'INFRASTRUCTURE';
+      case 'SUÇ':
       case 'SUC':
       case 'SECURITY':
         return 'SECURITY';
@@ -1908,7 +1912,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     final normalizedPhone = _sanitizePhoneNumber(phoneNumber);
     if (normalizedPhone.isEmpty) {
       throw const AppStateException(
-        'Arama baslatmak icin gecerli bir telefon numarasi bulunamadi.',
+        'Arama başlatmak için geçerli bir telefon numarası bulunamadı.',
       );
     }
 
@@ -1918,7 +1922,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     );
     if (!launched) {
       throw AppStateException(
-        '$normalizedPhone numarasina yonlendirme baslatilamadi.',
+        '$normalizedPhone numarasına yönlendirme başlatılamadı.',
       );
     }
   }
