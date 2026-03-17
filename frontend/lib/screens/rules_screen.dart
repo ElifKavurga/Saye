@@ -6,6 +6,34 @@ import '../theme/design_system.dart';
 class RulesScreen extends StatelessWidget {
   const RulesScreen({super.key});
 
+  static const _rules = [
+    (
+      title: 'Dogru ve gerekli bildirim gonderin',
+      description:
+          'Gereksiz mesguliyet olusturan veya asilsiz ihbarlarin tekrari durumunda hesap gecici olarak kisitlanabilir.',
+    ),
+    (
+      title: 'Sahte ihbarlar yaptirima tabidir',
+      description:
+          'Ayni gun icinde uc kez sahte ihbar tespit edilmesi halinde sistem tarafindan gecici ban uygulanabilir.',
+    ),
+    (
+      title: 'Topluluk diline ozen gosterin',
+      description:
+          'Tehdit, hakaret ve kotu niyetli icerikler otomatik olarak filtrelenir ve moderasyona gonderilir.',
+    ),
+    (
+      title: 'Veriler guvenlik amaciyla kullanilir',
+      description:
+          'Konum ve izin bilgileri yalnizca guvenlik surecleri icin kullanilir, ucuncu taraflarla paylasilmaz.',
+    ),
+    (
+      title: 'Spam bildirim puaninizi etkiler',
+      description:
+          'Acil durum disi tekrar eden spam bildirimler, topluluk guvenligi puaninizin dusmesine neden olabilir.',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,50 +59,19 @@ class RulesScreen extends StatelessWidget {
                         children: [
                           _TopHeader(onBack: () => Navigator.of(context).pop()),
                           const SizedBox(height: AppSpacing.lg),
-                          Container(
-                            padding: const EdgeInsets.all(AppSpacing.md),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [Color(0xFF8EA599), Color(0xFF467447)],
+                          const _IntroCard(),
+                          const SizedBox(height: AppSpacing.md),
+                          ...List.generate(
+                            _rules.length,
+                            (index) => Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppSpacing.sm,
                               ),
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                              boxShadow: AppShadows.soft,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Center(
-                                  child: Text(
-                                    'KURALLAR',
-                                    style: GoogleFonts.spaceGrotesk(
-                                      color: Colors.white,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                                const Divider(
-                                  color: Colors.white70,
-                                  height: 22,
-                                ),
-                                _ruleItem(
-                                  'Gereksiz mesgul veya asilsiz ihbar tekrarinda hesap gecici olarak kisitlanir.',
-                                ),
-                                _ruleItem(
-                                  'Ayni gun icinde 3 kez sahte ihbar tespit edilirse sistem tarafindan ban uygulanabilir.',
-                                ),
-                                _ruleItem(
-                                  'Tehdit, hakaret ve kotu niyetli icerikler otomatik filtrelenir ve moderasyona dusurulur.',
-                                ),
-                                _ruleItem(
-                                  'Konum ve izin bilgileri sadece güvenlik amaçlı kullanılır, üçüncü tarafla paylaşılmaz.',
-                                ),
-                                _ruleItem(
-                                  'Acil durum dışı spam bildirimler, topluluk güvenliği için puan düşüşüne neden olur.',
-                                ),
-                              ],
+                              child: _RuleCard(
+                                index: index + 1,
+                                title: _rules[index].title,
+                                description: _rules[index].description,
+                              ),
                             ),
                           ),
                         ],
@@ -86,36 +83,6 @@ class RulesScreen extends StatelessWidget {
             },
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _ruleItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 4),
-            child: Icon(
-              Icons.fiber_manual_record_rounded,
-              size: 10,
-              color: Colors.white70,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: AppTextStyles.body.copyWith(
-                color: Colors.white.withValues(alpha: 0.92),
-                fontSize: 14,
-                height: 1.45,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -136,6 +103,7 @@ class _TopHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF284872).withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Row(
         children: [
@@ -149,16 +117,143 @@ class _TopHeader extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              'AYARLAR / KURALLAR',
+              'Ayarlar / Kurallar',
               textAlign: TextAlign.center,
               style: GoogleFonts.spaceGrotesk(
                 color: Colors.white,
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
           const SizedBox(width: 42),
+        ],
+      ),
+    );
+  }
+}
+
+class _IntroCard extends StatelessWidget {
+  const _IntroCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF133A52), Color(0xFF3B8B72)],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            child: Text(
+              'Topluluk Guvenligi',
+              style: AppTextStyles.caption.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Kurallar',
+            style: GoogleFonts.spaceGrotesk(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Bu ilkeler, uygulamanin herkes icin guvenli, hizli ve faydali kalmasina yardimci olur.',
+            style: AppTextStyles.body.copyWith(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 14,
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RuleCard extends StatelessWidget {
+  const _RuleCard({
+    required this.index,
+    required this.title,
+    required this.description,
+  });
+
+  final int index;
+  final String title;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.card.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.aquaGlow.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Text(
+              '$index',
+              style: GoogleFonts.spaceGrotesk(
+                color: AppColors.aquaGlow,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTextStyles.title.copyWith(fontSize: 16),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  description,
+                  style: AppTextStyles.body.copyWith(
+                    color: Colors.white.withValues(alpha: 0.84),
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
