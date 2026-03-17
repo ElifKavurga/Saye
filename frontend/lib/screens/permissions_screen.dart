@@ -132,7 +132,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                             children: [
                               Center(
                                 child: Text(
-                                  'Izinler',
+                                  'İzinler',
                                   style: AppTextStyles.title.copyWith(
                                     fontSize: 36,
                                   ),

@@ -39,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Harita verileri simdi yuklenemiyor. Lutfen tekrar deneyin.',
+            'Harita verileri şimdi yüklenemiyor. Lütfen tekrar deneyin.',
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _MapPreviewCard(onTap: widget.onOpenMap),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'BASILI TUT: YARDIM CAGIR',
+                      'BASILI TUT: YARDIM ÇAĞIR',
                       textAlign: TextAlign.center,
                       style: AppTextStyles.body.copyWith(
                         letterSpacing: 0.8,
@@ -114,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('SOS baslatilamadi: $message'),
+                                content: Text('SOS başlatılamadı: $message'),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -171,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               }
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('SOS baslatilamadi: $message'),
+                                  content: Text('SOS başlatılamadı: $message'),
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );
@@ -236,8 +236,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icons.notifications_active_rounded,
                     color: Color(0xFF84F5BB),
                   ),
-                  title: const Text('Guncel bildirim ve ihbarlar'),
-                  subtitle: const Text('Konum tabanli canli akis'),
+                  title: const Text('Güncel bildirim ve ihbarlar'),
+                  subtitle: const Text('Konum tabanlı canlı akış'),
                   onTap: () {
                     Navigator.of(context).pop();
                     Navigator.of(context).push(
@@ -259,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _riskTitle(RiskLevel level) {
     switch (level) {
       case RiskLevel.low:
-        return 'GUVENLI BOLGE';
+        return 'GÜVENLİ BÖLGE';
       case RiskLevel.medium:
       case RiskLevel.high:
         return 'RISKLI ALAN';
@@ -269,11 +269,11 @@ class _HomeScreenState extends State<HomeScreen> {
   String _riskLevelLabel(RiskLevel level) {
     switch (level) {
       case RiskLevel.low:
-        return 'Dusuk';
+        return 'Düşük';
       case RiskLevel.medium:
         return 'Orta';
       case RiskLevel.high:
-        return 'Yuksek';
+        return 'Yüksek';
     }
   }
 

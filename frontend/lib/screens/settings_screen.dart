@@ -71,7 +71,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: LinearProgressIndicator(),
                   ),
                 Text(
-                  'Hesap, gizlilik ve guvenlik ayarlarini buradan yonetebilirsin.',
+                  'Hesap, gizlilik ve güvenlik ayarlarını buradan yönetebilirsin.',
                   style: AppTextStyles.body.copyWith(
                     color: Colors.white70,
                     fontSize: 14,
@@ -80,10 +80,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _InfoCard(
-                  title: 'Hesabini guvene almamiza yardimci ol!',
+                  title: 'Hesabını güvene almamıza yardımcı ol!',
                   body:
-                      'Bilgilerini gozden gecirmeni ve hesabina ilave giris korumasi eklemeni tavsiye ediyoruz. Dogru bilgiler, guvenlik sorunu durumunda iletisime gecmemize yardimci olur.',
-                  footerLabel: 'Acil Durum Ilk Cagri Kisileri',
+                      'Bilgilerini gözden geçirmeni ve hesabına ilave giriş koruması eklemeni tavsiye ediyoruz. Doğru bilgiler, güvenlik sorunu durumunda iletişime geçmemize yardımcı olur.',
+                  footerLabel: 'Acil Durum İlk Çağrı Kişileri',
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
@@ -97,21 +97,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: 'Hesap Bilgileri',
                   body:
                       'Ad: ${user?.username.isNotEmpty == true ? user!.username : AppDefaults.fallbackProfileName}\nE-posta: ${user?.email.isNotEmpty == true ? user!.email : AppDefaults.fallbackProfileEmail}\nTelefon: ${user?.phone.isNotEmpty == true ? user!.phone : '-'}',
-                  footerLabel: 'Profil ekranina git',
+                  footerLabel: 'Profil ekranına git',
                   onTap: () => appState.setIndex(3),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _InfoCard(
-                  title: 'Profil Gorunurlugu',
+                  title: 'Profil Görünürlüğü',
                   body:
-                      'Yapilan ihbarlarda profil adin gorunsun mu? Bu ayar acik oldugunda bildirim gecmisinde hesabin iliskilendirilir.',
+                      'Yapılan ihbarlarda profil adın görünsün mü? Bu ayar açık olduğunda bildirim geçmişinde hesabın ilişkilendirilir.',
                   trailing: Switch.adaptive(
                     value: appState.isProfileVisibleInAlerts,
                     onChanged: isBusy ? null : _handleProfileVisibilityChanged,
                   ),
                   footerLabel: appState.isProfileVisibleInAlerts
                       ? 'Aktif'
-                      : 'Kapali',
+                      : 'Kapalı',
                   onTap: () {},
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -135,7 +135,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Expanded(
                       child: _MiniActionCard(
                         icon: Icons.verified_user_rounded,
-                        label: 'Izinler',
+                        label: 'İzinler',
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute<void>(

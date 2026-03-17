@@ -129,6 +129,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
                           label: category,
                           isSelected: _selectedCategory == category,
                           onTap: () {
+                            if (!mounted) return;
                             setState(() {
                               _selectedCategory = category;
                             });
@@ -164,12 +165,9 @@ class _MapReportScreenState extends State<MapReportScreen> {
     if (selectedPoint == null) {
       throw StateError('Konum secimi bulunamadi.');
     }
-    final noteController = TextEditingController();
     final parentContext = context;
     final formattedLocation = _formatLatLng(selectedPoint);
-    bool isSubmitting = false;
-
-    await showModalBottomSheet<void>(
+    final result = await showModalBottomSheet<_ReportSheetResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF10294A),
@@ -177,128 +175,42 @@ class _MapReportScreenState extends State<MapReportScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) => Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              MediaQuery.of(context).viewInsets.bottom + AppSpacing.md,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Ihbar Gonder',
-                  style: AppTextStyles.title.copyWith(fontSize: 22),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Kategori: ${_selectedCategory ?? '-'}',
-                  style: AppTextStyles.body.copyWith(color: Colors.white70),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Konum: $formattedLocation',
-                  style: AppTextStyles.body.copyWith(color: Colors.white70),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextField(
-                  controller: noteController,
-                  maxLines: 3,
-                  enabled: !isSubmitting,
-                  decoration: const InputDecoration(
-                    hintText: 'Kısa açıklama (opsiyonel)',
-                    fillColor: Color(0xFF1A3D66),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: isSubmitting
-                        ? null
-                        : () async {
-                            setModalState(() {
-                              isSubmitting = true;
-                            });
-                            try {
-                              await widget.appState.addLocalReport(
-                                category: _selectedCategory!,
-                                locationLabel:
-                                    widget.appState.currentLocationName,
-                                latLng: formattedLocation,
-                                description: noteController.text.trim(),
-                                reportLatitude: selectedPoint.latitude,
-                                reportLongitude: selectedPoint.longitude,
-                              );
-                            } catch (error) {
-                              if (context.mounted) {
-                                setModalState(() {
-                                  isSubmitting = false;
-                                });
-                              }
-                              if (!parentContext.mounted) {
-                                return;
-                              }
-                              final message = error is AppStateException
-                                  ? error.message
-                                  : error.toString();
-                              if (message.trim().isEmpty) {
-                                return;
-                              }
-                              final e = message;
-                              ScaffoldMessenger.of(parentContext)
-                                ..hideCurrentSnackBar()
-                                ..showSnackBar(
-                                  SnackBar(
-                                    content: Text('İhbar gönderilemedi: $e'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              return;
-                            }
-
-                            if (context.mounted) {
-                              Navigator.of(context).pop();
-                            }
-                            if (!mounted || !parentContext.mounted) {
-                              return;
-                            }
-                            setState(() {
-                              _selectedCategory = null;
-                            });
-                            ScaffoldMessenger.of(parentContext)
-                              ..hideCurrentSnackBar()
-                              ..showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Ihbar basariyla gonderildi ve harita guncellendi.',
-                                  ),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                          },
-                    child: isSubmitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Gonder'),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        return _ReportSheet(
+          category: _selectedCategory ?? '-',
+          formattedLocation: formattedLocation,
+          onSubmit: (description) async {
+            await widget.appState.addLocalReport(
+              category: _selectedCategory!,
+              locationLabel: widget.appState.currentLocationName,
+              latLng: formattedLocation,
+              description: description,
+              reportLatitude: selectedPoint.latitude,
+              reportLongitude: selectedPoint.longitude,
+            );
+          },
         );
       },
     );
 
-    noteController.dispose();
-  }
+    if (!mounted || !parentContext.mounted || result == null) {
+      return;
+    }
+    if (!result.submitted) {
+      return;
+    }
 
+    setState(() {
+      _selectedCategory = null;
+    });
+    ScaffoldMessenger.of(parentContext)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Ihbar basariyla gonderildi ve harita guncellendi.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
   Future<void> _syncLocationAndRisk() async {
     try {
       await widget.appState.ensureMapDataLoaded(force: true);
@@ -308,6 +220,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
       final latitude = widget.appState.currentLatitude;
       final longitude = widget.appState.currentLongitude;
       if (latitude != null && longitude != null) {
+        if (!mounted) return;
         setState(() {
           _selectedPoint = LatLng(latitude, longitude);
         });
@@ -329,6 +242,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
   }
 
   void _handleMapTap(TapPosition _, LatLng point) {
+    if (!mounted) return;
     setState(() {
       _selectedPoint = point;
     });
@@ -964,6 +878,170 @@ class _CategoryChip extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportSheetResult {
+  const _ReportSheetResult({required this.submitted});
+
+  final bool submitted;
+}
+
+class _ReportSheet extends StatefulWidget {
+  const _ReportSheet({
+    required this.category,
+    required this.formattedLocation,
+    required this.onSubmit,
+  });
+
+  final String category;
+  final String formattedLocation;
+  final Future<void> Function(String description) onSubmit;
+
+  @override
+  State<_ReportSheet> createState() => _ReportSheetState();
+}
+
+class _ReportSheetState extends State<_ReportSheet> {
+  late final TextEditingController _noteController;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  void _close({required bool submitted}) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (!mounted) {
+      return;
+    }
+    Navigator.of(context).pop(_ReportSheetResult(submitted: submitted));
+  }
+
+  Future<void> _submit() async {
+    if (_isSubmitting || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      await widget.onSubmit(_noteController.text.trim());
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isSubmitting = false;
+      });
+      final message = error is AppStateException
+          ? error.message
+          : error.toString();
+      if (message.trim().isEmpty) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('İhbar gönderilemedi: $message'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      return;
+    }
+
+    _close(submitted: true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return SafeArea(
+      top: false,
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          bottomInset + AppSpacing.md,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Ihbar Gonder',
+                style: AppTextStyles.title.copyWith(fontSize: 22),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Kategori: ${widget.category}',
+                style: AppTextStyles.body.copyWith(color: Colors.white70),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Konum: ${widget.formattedLocation}',
+                style: AppTextStyles.body.copyWith(color: Colors.white70),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: _noteController,
+                maxLines: 3,
+                minLines: 3,
+                enabled: !_isSubmitting,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(
+                  hintText: 'Kısa açıklama (opsiyonel)',
+                  fillColor: Color(0xFF1A3D66),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => _close(submitted: false),
+                      child: const Text('İptal'),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isSubmitting ? null : _submit,
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Gonder'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
