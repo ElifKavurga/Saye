@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @Repository
 public interface ReportRepository extends JpaRepository<Report, Long> {
-    java.util.List<Report> findAllByUserIdOrderByCreatedAtDesc(Long userId);
+    java.util.List<Report> findAllByUser_IdOrderByCreatedAtDesc(Long userId);
 
     @Query(value = """
             SELECT

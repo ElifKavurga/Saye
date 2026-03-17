@@ -2,7 +2,19 @@ package com.elifkavurga.backend.report.entity;
 
 import com.elifkavurga.backend.common.entity.BaseEntity;
 import com.elifkavurga.backend.user.entity.User;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 import org.locationtech.jts.geom.Point;
@@ -16,12 +28,8 @@ public class Report extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // user may be anonymous
-    @Column(name = "user_id")
-    private Long userId;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Enumerated(EnumType.STRING)
@@ -38,7 +46,6 @@ public class Report extends BaseEntity {
     @Column(nullable = false)
     private ReportStatus status = ReportStatus.PENDING;
 
-    // score assigned after verification
     private Double confidenceScore;
 
     @Transient
@@ -53,7 +60,9 @@ public class Report extends BaseEntity {
 
     @Transient
     public void setLatitude(Double lat) {
-        if (lat == null) return;
+        if (lat == null) {
+            return;
+        }
         double lon = this.location != null ? this.location.getX() : 0.0;
         org.locationtech.jts.geom.GeometryFactory gf = new org.locationtech.jts.geom.GeometryFactory(
                 new org.locationtech.jts.geom.PrecisionModel(), 4326);
@@ -62,7 +71,9 @@ public class Report extends BaseEntity {
 
     @Transient
     public void setLongitude(Double lon) {
-        if (lon == null) return;
+        if (lon == null) {
+            return;
+        }
         double lat = this.location != null ? this.location.getY() : 0.0;
         org.locationtech.jts.geom.GeometryFactory gf = new org.locationtech.jts.geom.GeometryFactory(
                 new org.locationtech.jts.geom.PrecisionModel(), 4326);

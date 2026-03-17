@@ -11,7 +11,7 @@ import java.io.Serializable;
 @Setter
 @Schema(description = "Yeni durum bildirimi istegi")
 public class ReportRequest implements Serializable {
-    // user id optional
+    @NotNull
     @Schema(description = "Bildirimi gonderen kullanici id", example = "30")
     private Long userId;
 

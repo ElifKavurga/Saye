@@ -1,17 +1,15 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config/app_defaults.dart';
 import '../services/api_service.dart';
 import '../services/emergency_contacts_service.dart';
+import '../services/health_profile_service.dart';
 import '../services/user_settings_service.dart';
 
 class SessionUser {
@@ -106,6 +104,22 @@ class EmergencyHealthInfo {
       allergyNotes: allergyNotes ?? this.allergyNotes,
       emergencyNote: emergencyNote ?? this.emergencyNote,
     );
+  }
+
+  factory EmergencyHealthInfo.fromJson(Map<String, dynamic> json) {
+    return EmergencyHealthInfo(
+      bloodType: json['bloodType']?.toString().trim() ?? '',
+      allergyNotes: json['allergyNotes']?.toString().trim() ?? '',
+      emergencyNote: json['emergencyNote']?.toString().trim() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toRequestJson() {
+    return <String, dynamic>{
+      'bloodType': bloodType.trim(),
+      'allergyNotes': allergyNotes.trim(),
+      'emergencyNote': emergencyNote.trim(),
+    };
   }
 }
 
@@ -265,6 +279,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
   AppState({
     ApiService? apiService,
     EmergencyContactsService? emergencyContactsService,
+    HealthProfileService? healthProfileService,
     UserSettingsService? userSettingsService,
   }) : _apiService = apiService ?? ApiService(),
        _settings = List<SettingOption>.from(AppDefaults.settings),
@@ -302,6 +317,8 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     _emergencyContactsService =
         emergencyContactsService ??
         EmergencyContactsService(apiService: _apiService);
+    _healthProfileService =
+        healthProfileService ?? HealthProfileService(apiService: _apiService);
     _userSettingsService =
         userSettingsService ?? UserSettingsService(apiService: _apiService);
     _apiService.setSessionHandlers(
@@ -309,12 +326,11 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       onSessionTokensUpdated: _handleSessionTokensUpdated,
     );
     WidgetsBinding.instance.addObserver(this);
-    _loadEmergencyHealthInfo();
   }
 
-  static const String _emergencyHealthInfoKey = 'emergency_health_info';
   final ApiService _apiService;
   late final EmergencyContactsService _emergencyContactsService;
+  late final HealthProfileService _healthProfileService;
   late final UserSettingsService _userSettingsService;
 
   int _selectedIndex = 0;
@@ -875,20 +891,37 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     String? emergencyNote,
   }) async {
     final previous = _emergencyHealthInfo;
-    _emergencyHealthInfo = _emergencyHealthInfo.copyWith(
+    final next = _emergencyHealthInfo.copyWith(
       bloodType: bloodType?.trim() ?? '',
       allergyNotes: allergyNotes?.trim() ?? '',
       emergencyNote: emergencyNote?.trim() ?? '',
     );
+    _emergencyHealthInfo = next;
+    notifyListeners();
 
     try {
-      await _persistEmergencyHealthInfo();
-    } catch (_) {
+      final userId = _requireCurrentUserId();
+      final rawProfile = await _healthProfileService.updateProfile(
+        userId: userId,
+        body: next.toRequestJson(),
+      );
+      _emergencyHealthInfo = EmergencyHealthInfo.fromJson(rawProfile);
+    } catch (e) {
       _emergencyHealthInfo = previous;
-      rethrow;
-    } finally {
       notifyListeners();
+      if (_isSessionExpiredError(e)) {
+        return;
+      }
+      throw AppStateException(
+        _toUserMessage(
+          e,
+          fallback:
+              'Acil saglik bilgileri kaydedilemedi. Lutfen tekrar deneyin.',
+        ),
+      );
     }
+
+    notifyListeners();
   }
 
   Future<void> updatePermission(String id, bool enabled) async {
@@ -1123,6 +1156,7 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       _nearbyReports.clear();
       _emergencyContacts.clear();
       _clearPendingEmergencySms();
+      _setEmergencyHealthInfo(const EmergencyHealthInfo(), notify: false);
       _resetUserSettings(notify: false);
       _currentLatitude = null;
       _currentLongitude = null;
@@ -1150,10 +1184,24 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     try {
+      await _loadEmergencyHealthInfoForCurrentUser(notify: notify);
+    } catch (e) {
+      debugPrint('Failed to load emergency health info: $e');
+      _setEmergencyHealthInfo(const EmergencyHealthInfo(), notify: notify);
+    }
+
+    try {
       await _loadUserSettingsForCurrentUser(force: true, notify: notify);
     } catch (e) {
       debugPrint('Failed to load user settings: $e');
       _resetUserSettings(notify: notify);
+    }
+
+    try {
+      await _loadMyReportsForCurrentUser(notify: notify);
+    } catch (e) {
+      debugPrint('Failed to load my reports: $e');
+      _setLocalReports(const [], notify: notify);
     }
   }
 
@@ -1281,6 +1329,70 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
+  Future<void> _loadEmergencyHealthInfoForCurrentUser({
+    bool notify = true,
+  }) async {
+    final userId = _currentUser?.id;
+    if (userId == null) {
+      _setEmergencyHealthInfo(const EmergencyHealthInfo(), notify: notify);
+      return;
+    }
+
+    final rawProfile = await _healthProfileService.fetchProfile(userId: userId);
+    _setEmergencyHealthInfo(
+      EmergencyHealthInfo.fromJson(rawProfile),
+      notify: notify,
+    );
+  }
+
+  Future<void> _loadMyReportsForCurrentUser({bool notify = true}) async {
+    final userId = _currentUser?.id;
+    if (userId == null) {
+      _setLocalReports(const [], notify: notify);
+      return;
+    }
+
+    List<dynamic> rawList;
+    try {
+      rawList = await _fetchReportList('/api/reports/mine?userId=$userId');
+    } on ApiException catch (e) {
+      if (e.statusCode != 404) {
+        rethrow;
+      }
+      rawList = await _fetchReportList('/reports/mine?userId=$userId');
+    }
+
+    final reports = rawList
+        .whereType<Map>()
+        .map(
+          (item) => _toLocalReportNotification(Map<String, dynamic>.from(item)),
+        )
+        .toList(growable: false);
+
+    _setLocalReports(reports, notify: notify);
+  }
+
+  Future<List<dynamic>> _fetchReportList(String endpoint) async {
+    try {
+      return await _apiService.getList(endpoint);
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) {
+        rethrow;
+      }
+      final response = await _apiService.getAny(endpoint);
+      if (response is List<dynamic>) {
+        return response;
+      }
+      if (response is Map) {
+        final data = response['data'];
+        if (data is List<dynamic>) {
+          return data;
+        }
+      }
+      throw ApiException('Report list response is not a valid list.');
+    }
+  }
+
   void _setEmergencyContacts(
     List<EmergencyContact> contacts, {
     bool notify = true,
@@ -1288,6 +1400,25 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     _emergencyContacts
       ..clear()
       ..addAll(contacts);
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  void _setEmergencyHealthInfo(EmergencyHealthInfo info, {bool notify = true}) {
+    _emergencyHealthInfo = info;
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  void _setLocalReports(
+    List<LocalReportNotification> reports, {
+    bool notify = true,
+  }) {
+    _localReports
+      ..clear()
+      ..addAll(reports);
     if (notify) {
       notifyListeners();
     }
@@ -1405,7 +1536,9 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     required double latitude,
     required double longitude,
   }) async {
+    final userId = _requireCurrentUserId();
     final payload = <String, dynamic>{
+      'userId': userId,
       'category': category,
       'description': description,
       'latitude': latitude,
@@ -1510,6 +1643,43 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       return null;
     }
     return double.tryParse(parts[1].trim());
+  }
+
+  LocalReportNotification _toLocalReportNotification(
+    Map<String, dynamic> item,
+  ) {
+    final latitude = (item['latitude'] as num?)?.toDouble();
+    final longitude = (item['longitude'] as num?)?.toDouble();
+    final coordinateLabel = latitude != null && longitude != null
+        ? _formatCoordinateLabel(latitude, longitude)
+        : 'Konum bilgisi yok';
+
+    return LocalReportNotification(
+      category: _toLocalReportCategory(item['category']?.toString() ?? ''),
+      locationLabel: coordinateLabel,
+      latLng: coordinateLabel,
+      description: item['description']?.toString() ?? '',
+      createdAt:
+          DateTime.tryParse(item['createdAt']?.toString() ?? '')?.toLocal() ??
+          DateTime.now(),
+    );
+  }
+
+  String _toLocalReportCategory(String category) {
+    switch (_normalizeRiskCategory(category)) {
+      case 'TRAFFIC':
+        return 'Trafik';
+      case 'LIGHTING':
+        return 'Aydinlatma';
+      case 'SECURITY':
+        return 'Suc';
+      case 'ANIMALS':
+        return 'Hayvan';
+      case 'INFRASTRUCTURE':
+        return 'Altyapi';
+      default:
+        return category;
+    }
   }
 
   String _toUserMessage(Object error, {required String fallback}) {
@@ -1642,40 +1812,6 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       _isLoading = _loadingCounter > 0;
       notifyListeners();
     }
-  }
-
-  Future<void> _loadEmergencyHealthInfo() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_emergencyHealthInfoKey);
-    if (raw == null || raw.isEmpty) {
-      return;
-    }
-
-    try {
-      final data = jsonDecode(raw);
-      if (data is! Map<String, dynamic>) {
-        return;
-      }
-
-      _emergencyHealthInfo = EmergencyHealthInfo(
-        bloodType: data['bloodType']?.toString().trim() ?? '',
-        allergyNotes: data['allergyNotes']?.toString().trim() ?? '',
-        emergencyNote: data['emergencyNote']?.toString().trim() ?? '',
-      );
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Failed to load emergency health info: $e');
-    }
-  }
-
-  Future<void> _persistEmergencyHealthInfo() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = <String, String>{
-      'bloodType': _emergencyHealthInfo.bloodType,
-      'allergyNotes': _emergencyHealthInfo.allergyNotes,
-      'emergencyNote': _emergencyHealthInfo.emergencyNote,
-    };
-    await prefs.setString(_emergencyHealthInfoKey, jsonEncode(data));
   }
 
   void _startLocationStream({double radiusMeters = 1000}) {

@@ -1,7 +1,6 @@
 package com.elifkavurga.backend.usersettings;
 
 import com.elifkavurga.backend.user.entity.User;
-import com.elifkavurga.backend.user.entity.UserRole;
 import com.elifkavurga.backend.user.repository.UserRepository;
 import com.elifkavurga.backend.usersettings.repository.UserSettingsRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -92,15 +91,11 @@ class UserSettingsControllerIntegrationTest {
 
     private User buildUser(String usernamePrefix) {
         User user = new User();
+        String uniqueUsername = usernamePrefix + "-" + System.nanoTime();
         user.setEmail(usernamePrefix + "+" + System.nanoTime() + "@test.local");
         user.setPassword("test");
-        user.setPasswordHash("test");
-        user.setFirstName("Test");
-        user.setLastName("User");
-        user.setUsername(usernamePrefix);
-        user.setRole(UserRole.USER);
+        user.setUsername(uniqueUsername);
         user.setPhone("05550000000");
-        user.setIsActive(true);
         return user;
     }
 }

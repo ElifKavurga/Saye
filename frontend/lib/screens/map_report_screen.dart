@@ -121,7 +121,8 @@ class _MapReportScreenState extends State<MapReportScreen> {
                 LayoutBuilder(
                   builder: (context, constraints) {
                     const spacing = AppSpacing.sm;
-                    final itemWidth = (constraints.maxWidth - (spacing * 2)) / 3;
+                    final itemWidth =
+                        (constraints.maxWidth - (spacing * 2)) / 3;
 
                     return Wrap(
                       spacing: spacing,
@@ -223,6 +224,7 @@ class _MapReportScreenState extends State<MapReportScreen> {
         ),
       );
   }
+
   Future<void> _syncLocationAndRisk() async {
     try {
       await widget.appState.ensureMapDataLoaded(force: true);
@@ -853,6 +855,16 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gradientColors = isSelected
+        ? [
+            AppColors.aquaGlow.withValues(alpha: 0.98),
+            AppColors.oceanTeal.withValues(alpha: 0.96),
+          ]
+        : [
+            AppColors.aquaGlow.withValues(alpha: 0.78),
+            AppColors.oceanTeal.withValues(alpha: 0.88),
+          ];
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadius.md),
@@ -863,17 +875,26 @@ class _CategoryChip extends StatelessWidget {
           vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? const LinearGradient(
-                  colors: [Color(0xFF5EAF6E), Color(0xFF3D7D49)],
-                )
-              : const LinearGradient(
-                  colors: [Color(0xFF477B52), Color(0xFF355E3C)],
-                ),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradientColors,
+          ),
           borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
-            color: isSelected ? const Color(0xFFD4FFE4) : Colors.transparent,
+            color: isSelected
+                ? Colors.white.withValues(alpha: 0.22)
+                : AppColors.aquaGlow.withValues(alpha: 0.18),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.aquaGlow.withValues(
+                alpha: isSelected ? 0.22 : 0.12,
+              ),
+              blurRadius: isSelected ? 18 : 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

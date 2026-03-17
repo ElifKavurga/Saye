@@ -5,7 +5,6 @@ import com.elifkavurga.backend.report.entity.ReportCategory;
 import com.elifkavurga.backend.report.entity.ReportStatus;
 import com.elifkavurga.backend.report.repository.ReportRepository;
 import com.elifkavurga.backend.user.entity.User;
-import com.elifkavurga.backend.user.entity.UserRole;
 import com.elifkavurga.backend.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,7 +53,7 @@ class ReportControllerIntegrationTest {
         outsiderUserId = createUser("report-outsider");
 
         Report mine = new Report();
-        mine.setUserId(ownerUserId);
+        mine.setUser(userRepository.findById(ownerUserId).orElseThrow());
         mine.setCategory(ReportCategory.SECURITY);
         mine.setDescription("Benim kaydim");
         mine.setLatitude(41.0);
@@ -63,7 +62,7 @@ class ReportControllerIntegrationTest {
         reportRepository.save(mine);
 
         Report another = new Report();
-        another.setUserId(anotherUserId);
+        another.setUser(userRepository.findById(anotherUserId).orElseThrow());
         another.setCategory(ReportCategory.TRAFFIC);
         another.setDescription("Baska kullanici");
         another.setLatitude(41.1);
@@ -103,7 +102,7 @@ class ReportControllerIntegrationTest {
 
     @Test
     void ownerCanResolveOwnReport() throws Exception {
-        Long reportId = reportRepository.findAllByUserIdOrderByCreatedAtDesc(ownerUserId).get(0).getId();
+        Long reportId = reportRepository.findAllByUser_IdOrderByCreatedAtDesc(ownerUserId).get(0).getId();
 
         mvc.perform(patch("/api/reports/{id}/status", reportId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -119,7 +118,7 @@ class ReportControllerIntegrationTest {
 
     @Test
     void anotherUserCannotUpdateStatus() throws Exception {
-        Long reportId = reportRepository.findAllByUserIdOrderByCreatedAtDesc(ownerUserId).get(0).getId();
+        Long reportId = reportRepository.findAllByUser_IdOrderByCreatedAtDesc(ownerUserId).get(0).getId();
 
         mvc.perform(patch("/api/reports/{id}/status", reportId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -135,7 +134,7 @@ class ReportControllerIntegrationTest {
 
     @Test
     void adminCanUpdateAnyReport() throws Exception {
-        Long reportId = reportRepository.findAllByUserIdOrderByCreatedAtDesc(anotherUserId).get(0).getId();
+        Long reportId = reportRepository.findAllByUser_IdOrderByCreatedAtDesc(anotherUserId).get(0).getId();
 
         mvc.perform(patch("/api/reports/{id}/status", reportId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -151,14 +150,10 @@ class ReportControllerIntegrationTest {
 
     private Long createUser(String label) {
         User user = new User();
+        String uniqueUsername = label + "-" + System.nanoTime();
         user.setEmail(label + "+" + System.nanoTime() + "@test.local");
         user.setPassword("test");
-        user.setPasswordHash("test");
-        user.setFirstName(label);
-        user.setLastName("tester");
-        user.setUsername(label);
-        user.setRole(UserRole.USER);
-        user.setIsActive(true);
+        user.setUsername(uniqueUsername);
         return userRepository.save(user).getId();
     }
 }

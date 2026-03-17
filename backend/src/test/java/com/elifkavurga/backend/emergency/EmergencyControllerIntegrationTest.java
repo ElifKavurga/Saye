@@ -3,7 +3,6 @@ package com.elifkavurga.backend.emergency;
 import com.elifkavurga.backend.emergency.repository.EmergencyEventRepository;
 import com.elifkavurga.backend.notification.repository.NotificationLogRepository;
 import com.elifkavurga.backend.user.entity.User;
-import com.elifkavurga.backend.user.entity.UserRole;
 import com.elifkavurga.backend.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,12 +47,7 @@ class EmergencyControllerIntegrationTest {
         User user = new User();
         user.setEmail("emergency+" + System.nanoTime() + "@test.local");
         user.setPassword("test");
-        user.setPasswordHash("test");
-        user.setFirstName("Emergency");
-        user.setLastName("Tester");
-        user.setUsername("emergency-tester");
-        user.setRole(UserRole.USER);
-        user.setIsActive(true);
+        user.setUsername("emergency-tester-" + System.nanoTime());
         testUserId = userRepository.save(user).getId();
     }
 

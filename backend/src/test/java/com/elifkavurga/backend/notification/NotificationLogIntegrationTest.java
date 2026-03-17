@@ -4,7 +4,6 @@ import com.elifkavurga.backend.emergency.repository.EmergencyEventRepository;
 import com.elifkavurga.backend.notification.repository.NotificationLogRepository;
 import com.elifkavurga.backend.report.repository.ReportRepository;
 import com.elifkavurga.backend.user.entity.User;
-import com.elifkavurga.backend.user.entity.UserRole;
 import com.elifkavurga.backend.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,12 +52,7 @@ class NotificationLogIntegrationTest {
         User user = new User();
         user.setEmail("notification@test.local");
         user.setPassword("test");
-        user.setPasswordHash("test");
-        user.setFirstName("Notification");
-        user.setLastName("Tester");
-        user.setUsername("notification-tester");
-        user.setRole(UserRole.USER);
-        user.setIsActive(true);
+        user.setUsername("notification-tester-" + System.nanoTime());
         testUserId = userRepository.save(user).getId();
     }
 

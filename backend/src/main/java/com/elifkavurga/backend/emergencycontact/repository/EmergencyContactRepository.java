@@ -12,22 +12,22 @@ import java.util.Optional;
 
 public interface EmergencyContactRepository extends JpaRepository<EmergencyContact, Long> {
 
-    List<EmergencyContact> findAllByUserIdOrderByIsPrimaryDescCreatedAtAsc(Long userId);
+    List<EmergencyContact> findAllByUser_IdOrderByIsPrimaryDescCreatedAtAsc(Long userId);
 
-    Optional<EmergencyContact> findByIdAndUserId(Long id, Long userId);
+    Optional<EmergencyContact> findByIdAndUser_Id(Long id, Long userId);
 
-    Optional<EmergencyContact> findFirstByUserIdAndIdNotOrderByCreatedAtAsc(Long userId, Long excludedId);
+    Optional<EmergencyContact> findFirstByUser_IdAndIdNotOrderByCreatedAtAsc(Long userId, Long excludedId);
 
-    Optional<EmergencyContact> findFirstByUserIdOrderByCreatedAtAsc(Long userId);
+    Optional<EmergencyContact> findFirstByUser_IdOrderByCreatedAtAsc(Long userId);
 
-    long countByUserId(Long userId);
+    long countByUser_Id(Long userId);
 
     @Modifying
     @Transactional
     @Query("""
             update EmergencyContact contact
             set contact.isPrimary = false
-            where contact.userId = :userId
+            where contact.user.id = :userId
               and contact.id <> :contactId
               and contact.isPrimary = true
             """)
