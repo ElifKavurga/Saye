@@ -16,6 +16,7 @@ import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -40,9 +41,15 @@ public class ReportServiceImpl implements ReportService {
             Optional<Report> existing = repository.findActiveReportByCategoryNear(point, 50.0, category.name());
             if (existing.isPresent()) {
                 Report report = existing.get();
-                report.setUpdatedAt(Instant.now());
-                report = repository.save(report);
-                return toResponse(report);
+                // TODO: device/ip identity is not available, same-user + same-category + 10-minute merge is applied here.
+                boolean sameUser = report.getUser() != null && report.getUser().getId().equals(request.getUserId());
+                Instant firstSeen = report.getCreatedAt() == null ? Instant.EPOCH : report.getCreatedAt();
+                boolean within10Minutes = Duration.between(firstSeen, Instant.now()).toMinutes() <= 10;
+                if (sameUser && within10Minutes) {
+                    report.setUpdatedAt(Instant.now());
+                    report = repository.save(report);
+                    return toResponse(report);
+                }
             }
         }
 
@@ -115,3 +122,5 @@ public class ReportServiceImpl implements ReportService {
                 .build();
     }
 }
+
+

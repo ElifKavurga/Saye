@@ -2,9 +2,11 @@ package com.elifkavurga.backend.report.entity;
 
 import com.elifkavurga.backend.common.entity.BaseEntity;
 import com.elifkavurga.backend.user.entity.User;
+import com.elifkavurga.backend.security.AesStringAttributeConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -36,6 +38,7 @@ public class Report extends BaseEntity {
     @Column(nullable = false)
     private ReportCategory category;
 
+    @Convert(converter = AesStringAttributeConverter.class)
     @Column(columnDefinition = "text")
     private String description;
 

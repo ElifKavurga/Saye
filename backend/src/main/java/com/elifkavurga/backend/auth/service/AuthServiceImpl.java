@@ -10,6 +10,7 @@ import com.elifkavurga.backend.user.entity.User;
 import com.elifkavurga.backend.user.repository.UserRepository;
 import com.elifkavurga.backend.user.service.CurrentUserResolver;
 import com.elifkavurga.backend.userhealthprofile.entity.UserHealthProfile;
+import com.elifkavurga.backend.security.EmailHashService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,13 +25,15 @@ public class AuthServiceImpl implements AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final TokenService tokenService;
     private final CurrentUserResolver currentUserResolver;
+    private final EmailHashService emailHashService;
 
     @Override
     public AuthResponse register(RegisterRequest registerRequest) {
-        String email = registerRequest.getEmail().trim();
+        String email = normalizeNullable(registerRequest.getEmail());
         String username = registerRequest.getUsername().trim();
+        String emailHash = emailHashService.hashEmail(email);
 
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.existsByEmailHash(emailHash)) {
             throw new BadRequestException("Email already exists");
         }
         if (userRepository.existsByUsername(username)) {
@@ -39,6 +42,7 @@ public class AuthServiceImpl implements AuthService {
 
         User user = new User();
         user.setEmail(email);
+        user.setEmailHash(emailHash);
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setPhone(normalizeNullable(registerRequest.getPhone()));
@@ -50,7 +54,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequest loginRequest) {
-        User user = userRepository.findByEmail(loginRequest.getEmail())
+        User user = userRepository.findByEmailHash(emailHashService.hashEmail(loginRequest.getEmail()))
                 .orElseThrow(() -> new BadRequestException("Invalid credentials"));
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {

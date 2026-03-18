@@ -7,6 +7,7 @@ import com.elifkavurga.backend.user.dto.UserResponse;
 import com.elifkavurga.backend.user.entity.User;
 import com.elifkavurga.backend.user.repository.UserRepository;
 import com.elifkavurga.backend.userhealthprofile.entity.UserHealthProfile;
+import com.elifkavurga.backend.security.EmailHashService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,14 +23,16 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CurrentUserResolver currentUserResolver;
+    private final EmailHashService emailHashService;
 
     @Override
     @Transactional
     public UserResponse create(CreateUserRequest request) {
-        String email = request.getEmail().trim();
+        String email = normalizeNullable(request.getEmail());
         String username = request.getUsername().trim();
+        String emailHash = emailHashService.hashEmail(email);
 
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.existsByEmailHash(emailHash)) {
             throw new BadRequestException("Email already exists");
         }
         if (userRepository.existsByUsername(username)) {
@@ -38,6 +41,7 @@ public class UserServiceImpl implements UserService {
 
         User user = new User();
         user.setEmail(email);
+        user.setEmailHash(emailHash);
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhone(normalizeNullable(request.getPhone()));

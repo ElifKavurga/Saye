@@ -1,16 +1,22 @@
 package com.elifkavurga.backend.map.service;
 
 import com.elifkavurga.backend.map.dto.RiskResponse;
+import com.elifkavurga.backend.map.risk.RiskLevel;
 import com.elifkavurga.backend.report.dto.ReportResponse;
 import com.elifkavurga.backend.report.repository.projection.NearbyReportProjection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class MapRiskProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(MapRiskProcessor.class);
 
     private final RiskClusterService riskClusterService;
     private final RiskCircleBuilder riskCircleBuilder;
@@ -21,9 +27,20 @@ public class MapRiskProcessor {
     }
 
     public List<ReportResponse> buildRiskReports(List<NearbyReportProjection> reports) {
+        log.info(
+                "Starting report risk enrichment. incomingReports={}",
+                reports == null ? 0 : reports.size()
+        );
         List<ReportResponse> responses = new ArrayList<>();
         for (RiskCluster cluster : riskClusterService.clusterReports(reports)) {
             RiskCircle riskCircle = riskCircleBuilder.build(cluster);
+            log.debug(
+                    "Cluster scored. id={} clusterSize={} riskScore={} riskLevel={}",
+                    riskCircle.id(),
+                    riskCircle.clusterSize(),
+                    riskCircle.riskScore(),
+                    riskCircle.riskLevel()
+            );
             for (NearbyReportProjection report : cluster.reports()) {
                 responses.add(toResponse(report, riskCircle));
             }
@@ -36,23 +53,31 @@ public class MapRiskProcessor {
     }
 
     public RiskResponse computeOverallRisk(List<NearbyReportProjection> reports) {
-        double score = riskClusterService.clusterReports(reports).stream()
+        List<RiskCircle> circles = riskClusterService.clusterReports(reports).stream()
                 .map(riskCircleBuilder::build)
-                .mapToDouble(RiskCircle::riskScore)
-                .sum();
-        score = Math.min(100.0, score);
+                .collect(Collectors.toList());
 
-        String level;
-        if (score >= 70.0) {
-            level = "high";
-        } else if (score >= 35.0) {
-            level = "medium";
-        } else {
-            level = "low";
-        }
+        double score = circles.stream().mapToDouble(RiskCircle::riskScore).sum();
+        score = Math.min(100.0, score);
+        RiskLevel level = RiskLevel.fromScore(score);
+
+        log.info(
+                "Computed overall risk. score={} level={} circles={}",
+                score,
+                level,
+                circles.size()
+        );
+
+        circles.forEach(circle -> log.debug(
+                "Component circle {} => score={} level={} clusterSize={}",
+                circle.id(),
+                circle.riskScore(),
+                circle.riskLevel(),
+                circle.clusterSize()
+        ));
 
         return RiskResponse.builder()
-                .level(level)
+                .level(level.name())
                 .score(score)
                 .build();
     }

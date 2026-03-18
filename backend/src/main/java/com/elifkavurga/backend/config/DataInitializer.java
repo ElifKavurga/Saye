@@ -6,6 +6,7 @@ import com.elifkavurga.backend.report.entity.ReportStatus;
 import com.elifkavurga.backend.report.repository.ReportRepository;
 import com.elifkavurga.backend.user.entity.User;
 import com.elifkavurga.backend.user.repository.UserRepository;
+import com.elifkavurga.backend.security.EmailHashService;
 import com.elifkavurga.backend.userhealthprofile.entity.UserHealthProfile;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Coordinate;
@@ -31,6 +32,7 @@ public class DataInitializer implements CommandLineRunner {
     private final ReportRepository reportRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JdbcTemplate jdbcTemplate;
+    private final EmailHashService emailHashService;
 
     @Override
     @Transactional
@@ -42,6 +44,7 @@ public class DataInitializer implements CommandLineRunner {
         if (userRepository.count() == 0) {
             User admin = new User();
             admin.setEmail("admin@saye.local");
+            admin.setEmailHash(emailHashService.hashEmail("admin@saye.local"));
             admin.setPassword(passwordEncoder.encode("Admin123!"));
             admin.setUsername("admin");
             admin.setPhone("5550000000");
@@ -49,6 +52,7 @@ public class DataInitializer implements CommandLineRunner {
 
             User user = new User();
             user.setEmail("user@saye.local");
+            user.setEmailHash(emailHashService.hashEmail("user@saye.local"));
             user.setPassword(passwordEncoder.encode("User123!"));
             user.setUsername("test-user");
             user.setPhone("5551112233");
@@ -62,7 +66,7 @@ public class DataInitializer implements CommandLineRunner {
             if (!seededUsers.isEmpty()) {
                 defaultUser = seededUsers.get(1);
             } else {
-                defaultUser = userRepository.findByEmail("user@saye.local")
+                defaultUser = userRepository.findByEmailHash(emailHashService.hashEmail("user@saye.local"))
                         .or(() -> userRepository.findAll().stream().findFirst())
                         .orElse(null);
             }

@@ -6,6 +6,7 @@ import com.elifkavurga.backend.config.AppSecurityProperties;
 import com.elifkavurga.backend.user.entity.User;
 import com.elifkavurga.backend.user.repository.UserRepository;
 import com.elifkavurga.backend.userhealthprofile.entity.UserHealthProfile;
+import com.elifkavurga.backend.security.EmailHashService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,7 @@ public class CurrentUserResolver {
     private final UserRepository userRepository;
     private final AppSecurityProperties appSecurityProperties;
     private final PasswordEncoder passwordEncoder;
+    private final EmailHashService emailHashService;
 
     @Transactional
     public User resolve(String userIdHeader) {
@@ -47,7 +49,8 @@ public class CurrentUserResolver {
             throw new UnauthorizedException("X-USER-ID header is required");
         }
 
-        return userRepository.findByEmail(DEMO_EMAIL).orElseGet(this::createDemoUser);
+        return userRepository.findByEmailHash(emailHashService.hashEmail(DEMO_EMAIL))
+                .orElseGet(this::createDemoUser);
     }
 
     private User createDemoUser() {
@@ -56,6 +59,7 @@ public class CurrentUserResolver {
         user.setUsername(DEMO_USERNAME);
         user.setPassword(passwordEncoder.encode(DEMO_PASSWORD));
         user.setPhone(null);
+        user.setEmailHash(emailHashService.hashEmail(DEMO_EMAIL));
         user.setHealthProfile(new UserHealthProfile());
         return userRepository.save(user);
     }

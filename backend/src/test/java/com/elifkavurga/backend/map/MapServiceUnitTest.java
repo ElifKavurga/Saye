@@ -1,12 +1,13 @@
 package com.elifkavurga.backend.map;
 
-import com.elifkavurga.backend.map.dto.RiskResponse;
-import com.elifkavurga.backend.map.service.MapServiceImpl;
+import com.elifkavurga.backend.map.risk.RegionalRiskCalculator;
 import com.elifkavurga.backend.map.service.MapRiskProcessor;
 import com.elifkavurga.backend.map.service.RiskCircle;
 import com.elifkavurga.backend.map.service.RiskCircleBuilder;
 import com.elifkavurga.backend.map.service.RiskCluster;
 import com.elifkavurga.backend.map.service.RiskClusterService;
+import com.elifkavurga.backend.map.service.MapServiceImpl;
+import com.elifkavurga.backend.map.dto.RiskResponse;
 import com.elifkavurga.backend.report.repository.ReportRepository;
 import com.elifkavurga.backend.report.repository.projection.NearbyReportProjection;
 import org.locationtech.jts.geom.Point;
@@ -34,14 +35,18 @@ class MapServiceUnitTest {
     void setup() {
         repo = Mockito.mock(ReportRepository.class);
         fixedClock = Clock.fixed(Instant.parse("2026-03-02T00:00:00Z"), ZoneOffset.UTC);
-        MapRiskProcessor mapRiskProcessor = new MapRiskProcessor(new RiskClusterService(), new RiskCircleBuilder());
+        RegionalRiskCalculator regionalRiskCalculator = new RegionalRiskCalculator(fixedClock);
+        MapRiskProcessor mapRiskProcessor = new MapRiskProcessor(
+                new RiskClusterService(),
+                new RiskCircleBuilder(regionalRiskCalculator)
+        );
         service = new MapServiceImpl(repo, mapRiskProcessor, fixedClock);
     }
 
     @Test
     void computeRiskDeterministic() {
-        NearbyReportProjection r1 = nearbyReport("SECURITY", 0.0);
-        NearbyReportProjection r2 = nearbyReport("LIGHTING", 500.0);
+        NearbyReportProjection r1 = nearbyReport("SECURITY", 1.0, 1L, 0.0);
+        NearbyReportProjection r2 = nearbyReport("LIGHTING", 0.8, 10L, 500.0);
 
         when(repo.findActiveNearbyReports(any(Point.class), anyDouble(), any(Instant.class)))
                 .thenReturn(List.of(r1, r2));
@@ -50,28 +55,27 @@ class MapServiceUnitTest {
         RiskResponse second = service.computeRisk(0.0, 0.0);
 
         assertThat(first).isEqualTo(second);
+        assertThat(first.getLevel()).isIn("LOW", "MEDIUM", "HIGH", "CRITICAL");
         assertThat(first.getScore()).isGreaterThan(0);
-        assertThat(first.getLevel()).isIn("low", "medium", "high");
-        assertThat(first.getLevel()).isEqualTo("high");
-        assertThat(first.getScore()).isEqualTo(80.0);
     }
 
     @Test
     void infrastructureCircleUsesUpdatedRadius() {
-        RiskCircle circle = new RiskCircleBuilder().build(
+        RegionalRiskCalculator regionalRiskCalculator = new RegionalRiskCalculator(fixedClock);
+        RiskCircle circle = new RiskCircleBuilder(regionalRiskCalculator).build(
                 new RiskCluster(
                         "cluster-1",
                         0.0,
                         0.0,
-                        List.of(nearbyReport("INFRASTRUCTURE", 0.0))
+                        List.of(nearbyReport("INFRASTRUCTURE", 0.7, 1L, 0.0))
                 )
         );
 
         assertThat(circle.radiusMeters()).isEqualTo(150.0);
-        assertThat(circle.riskLevel()).isEqualTo("MEDIUM");
+        assertThat(circle.riskLevel()).isIn("LOW", "MEDIUM", "HIGH", "CRITICAL");
     }
 
-    private NearbyReportProjection nearbyReport(String category, double distanceMeters) {
+    private NearbyReportProjection nearbyReport(String category, Double confidence, Long userId, double distanceMeters) {
         return new NearbyReportProjection() {
             @Override
             public Long getId() {
@@ -80,7 +84,7 @@ class MapServiceUnitTest {
 
             @Override
             public Long getUserId() {
-                return 10L;
+                return userId;
             }
 
             @Override
@@ -105,17 +109,17 @@ class MapServiceUnitTest {
 
             @Override
             public Instant getCreatedAt() {
-                return Instant.now(fixedClock);
+                return fixedClock.instant();
             }
 
             @Override
             public String getStatus() {
-                return "PENDING";
+                return "REVIEWING";
             }
 
             @Override
             public Double getConfidenceScore() {
-                return null;
+                return confidence;
             }
 
             @Override

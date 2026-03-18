@@ -89,7 +89,7 @@ public class MapServiceIntegrationTest {
         RiskResponse resp = mapService.computeRisk(0.0, 0.0);
         // r1 has high weight, r2 medium; r3 excluded by distance, r4 excluded by age
         assertThat(resp.getScore()).isGreaterThan(0);
-        assertThat(resp.getLevel()).isIn("low", "medium", "high");
+        assertThat(resp.getLevel()).isIn("LOW", "MEDIUM", "HIGH", "CRITICAL");
     }
 
     @Test

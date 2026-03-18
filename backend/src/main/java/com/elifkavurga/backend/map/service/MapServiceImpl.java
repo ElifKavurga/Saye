@@ -12,8 +12,8 @@ import org.locationtech.jts.geom.Point;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -27,19 +27,22 @@ public class MapServiceImpl implements MapService {
     private final MapRiskProcessor mapRiskProcessor;
     private final Clock clock;
 
-    private List<NearbyReportProjection> queryNearby(double lat, double lng, double radiusMeters) {
-        Instant cutoff = Instant.now(clock).minus(12, ChronoUnit.HOURS);
+    private static final Duration REPORT_LIST_LOOKBACK = Duration.ofHours(12);
+    private static final Duration RISK_LOOKBACK = Duration.ofDays(14);
+
+    private List<NearbyReportProjection> queryNearby(double lat, double lng, double radiusMeters, Duration lookbackDuration) {
+        Instant cutoff = Instant.now(clock).minus(lookbackDuration);
         return reportRepository.findActiveNearbyReports(createPoint(lat, lng), radiusMeters, cutoff);
     }
 
     @Override
     public List<ReportResponse> findReportsNearby(double lat, double lng, double radiusMeters) {
-        return mapRiskProcessor.buildRiskReports(queryNearby(lat, lng, radiusMeters));
+        return mapRiskProcessor.buildRiskReports(queryNearby(lat, lng, radiusMeters, REPORT_LIST_LOOKBACK));
     }
 
     @Override
     public RiskResponse computeRisk(double lat, double lng) {
-        return mapRiskProcessor.computeOverallRisk(queryNearby(lat, lng, 1000.0));
+        return mapRiskProcessor.computeOverallRisk(queryNearby(lat, lng, 1000.0, RISK_LOOKBACK));
     }
 
     private Point createPoint(double lat, double lng) {

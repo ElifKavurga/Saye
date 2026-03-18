@@ -2,9 +2,11 @@ package com.elifkavurga.backend.userhealthprofile.entity;
 
 import com.elifkavurga.backend.common.entity.BaseEntity;
 import com.elifkavurga.backend.user.entity.User;
+import com.elifkavurga.backend.security.AesStringAttributeConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Convert;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -25,12 +27,15 @@ public class UserHealthProfile extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Convert(converter = AesStringAttributeConverter.class)
     @Column(name = "blood_type", length = 32)
     private String bloodType;
 
+    @Convert(converter = AesStringAttributeConverter.class)
     @Column(name = "allergy_notes", columnDefinition = "text")
     private String allergyNotes;
 
+    @Convert(converter = AesStringAttributeConverter.class)
     @Column(name = "emergency_note", columnDefinition = "text")
     private String emergencyNote;
 

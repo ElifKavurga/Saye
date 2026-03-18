@@ -6,6 +6,7 @@ import com.elifkavurga.backend.security.AesStringAttributeConverter;
 import com.elifkavurga.backend.userhealthprofile.entity.UserHealthProfile;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Index;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -25,13 +26,16 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        @Index(name = "uq_users_email_hash", columnList = "email_hash", unique = true)
+})
 public class User extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
+    @Convert(converter = AesStringAttributeConverter.class)
     private String email;
 
     @Column(nullable = false, unique = true)
@@ -39,6 +43,9 @@ public class User extends BaseEntity {
 
     @Column(nullable = false)
     private String password;
+
+    @Column(name = "email_hash", nullable = false, length = 64)
+    private String emailHash;
 
     @Column
     @Convert(converter = AesStringAttributeConverter.class)
