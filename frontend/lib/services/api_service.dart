@@ -209,7 +209,7 @@ class ApiService {
           headers: headers,
           includeAuthorizationHeader: includeAuthorizationHeader,
         ),
-      );
+      ).timeout(const Duration(seconds: 12));
 
       if (response.statusCode == 401 &&
           allowRefresh &&
@@ -246,7 +246,9 @@ class ApiService {
 
       return _handleResponse(response);
     } on http.ClientException catch (e) {
-      throw ApiException('Network error: ${e.message}');
+      throw ApiException('Backend ile ağ bağlantısı kurulamadı. Hedef: $baseUrl');
+    } on TimeoutException catch (_) {
+      throw ApiException('Backend yanıt vermedi (timeout). Hedef: $baseUrl');
     } catch (e) {
       if (e is ApiException) {
         rethrow;

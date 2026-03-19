@@ -10,4 +10,6 @@ public class AuthUserResponse {
     private final String email;
     private final String username;
     private final String phone;
+    private final String role;
+    private final Boolean isActive;
 }

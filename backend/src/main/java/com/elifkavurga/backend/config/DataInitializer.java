@@ -5,6 +5,7 @@ import com.elifkavurga.backend.report.entity.ReportCategory;
 import com.elifkavurga.backend.report.entity.ReportStatus;
 import com.elifkavurga.backend.report.repository.ReportRepository;
 import com.elifkavurga.backend.user.entity.User;
+import com.elifkavurga.backend.user.entity.UserRole;
 import com.elifkavurga.backend.user.repository.UserRepository;
 import com.elifkavurga.backend.security.EmailHashService;
 import com.elifkavurga.backend.userhealthprofile.entity.UserHealthProfile;
@@ -15,9 +16,10 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +27,8 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
+
+    private static final Logger logger = LoggerFactory.getLogger(DataInitializer.class);
 
     private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -35,9 +39,12 @@ public class DataInitializer implements CommandLineRunner {
     private final EmailHashService emailHashService;
 
     @Override
-    @Transactional
     public void run(String... args) {
-        ensureSpatialDatabaseObjects();
+        try {
+            ensureSpatialDatabaseObjects();
+        } catch (Exception ex) {
+            logger.warn("DataInitializer migration step skipped due to DB schema issue: {}", ex.getMessage());
+        }
 
         List<User> seededUsers = new ArrayList<>();
 
@@ -48,6 +55,8 @@ public class DataInitializer implements CommandLineRunner {
             admin.setPassword(passwordEncoder.encode("Admin123!"));
             admin.setUsername("admin");
             admin.setPhone("5550000000");
+            admin.setIsActive(true);
+            admin.setRole(UserRole.ADMIN);
             admin.setHealthProfile(new UserHealthProfile());
 
             User user = new User();
@@ -56,9 +65,16 @@ public class DataInitializer implements CommandLineRunner {
             user.setPassword(passwordEncoder.encode("User123!"));
             user.setUsername("test-user");
             user.setPhone("5551112233");
+            user.setIsActive(true);
+            user.setRole(UserRole.USER);
             user.setHealthProfile(new UserHealthProfile());
 
-            seededUsers = userRepository.saveAll(List.of(admin, user));
+            try {
+                seededUsers = userRepository.saveAll(List.of(admin, user));
+            } catch (Exception ex) {
+                logger.warn("Default user seed could not be created: {}", ex.getMessage());
+                return;
+            }
         }
 
         if (reportRepository.count() == 0) {
@@ -78,8 +94,11 @@ public class DataInitializer implements CommandLineRunner {
                     buildReport(defaultUser, ReportCategory.TRAFFIC, "Kampus ana kapida trafik sikisiyor", 38.3519, 38.3142),
                     buildReport(defaultUser, ReportCategory.INFRASTRUCTURE, "Yuruyus yolunda kaldirim hasari var", 38.3564, 38.3058)
             );
-
-            reportRepository.saveAll(seedReports);
+            try {
+                reportRepository.saveAll(seedReports);
+            } catch (Exception ex) {
+                logger.warn("Default report seed could not be created: {}", ex.getMessage());
+            }
         }
     }
 
@@ -101,6 +120,20 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void ensureSpatialDatabaseObjects() {
+        jdbcTemplate.execute("ALTER TABLE users DROP COLUMN IF EXISTS first_name CASCADE");
+        jdbcTemplate.execute("ALTER TABLE users DROP COLUMN IF EXISTS last_name CASCADE");
+        jdbcTemplate.execute(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true"
+        );
+        jdbcTemplate.execute("UPDATE users SET is_active = true WHERE is_active IS NULL");
+        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN is_active SET DEFAULT true");
+        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN is_active SET NOT NULL");
+        jdbcTemplate.execute(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS role varchar(20) NOT NULL DEFAULT 'USER'"
+        );
+        jdbcTemplate.execute("UPDATE users SET role = 'USER' WHERE role IS NULL");
+        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN role SET DEFAULT 'USER'");
+        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN role SET NOT NULL");
         jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS postgis");
         jdbcTemplate.execute("""
                 CREATE INDEX IF NOT EXISTS idx_reports_location

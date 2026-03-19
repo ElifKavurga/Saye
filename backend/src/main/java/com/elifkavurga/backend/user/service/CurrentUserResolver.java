@@ -4,6 +4,7 @@ import com.elifkavurga.backend.common.exceptions.ResourceNotFoundException;
 import com.elifkavurga.backend.common.exceptions.UnauthorizedException;
 import com.elifkavurga.backend.config.AppSecurityProperties;
 import com.elifkavurga.backend.user.entity.User;
+import com.elifkavurga.backend.user.entity.UserRole;
 import com.elifkavurga.backend.user.repository.UserRepository;
 import com.elifkavurga.backend.userhealthprofile.entity.UserHealthProfile;
 import com.elifkavurga.backend.security.EmailHashService;
@@ -60,6 +61,8 @@ public class CurrentUserResolver {
         user.setPassword(passwordEncoder.encode(DEMO_PASSWORD));
         user.setPhone(null);
         user.setEmailHash(emailHashService.hashEmail(DEMO_EMAIL));
+        user.setIsActive(true);
+        user.setRole(UserRole.USER);
         user.setHealthProfile(new UserHealthProfile());
         return userRepository.save(user);
     }

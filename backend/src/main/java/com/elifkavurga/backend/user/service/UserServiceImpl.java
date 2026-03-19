@@ -5,6 +5,7 @@ import com.elifkavurga.backend.user.dto.CreateUserRequest;
 import com.elifkavurga.backend.user.dto.UpdateMeRequest;
 import com.elifkavurga.backend.user.dto.UserResponse;
 import com.elifkavurga.backend.user.entity.User;
+import com.elifkavurga.backend.user.entity.UserRole;
 import com.elifkavurga.backend.user.repository.UserRepository;
 import com.elifkavurga.backend.userhealthprofile.entity.UserHealthProfile;
 import com.elifkavurga.backend.security.EmailHashService;
@@ -45,6 +46,8 @@ public class UserServiceImpl implements UserService {
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhone(normalizeNullable(request.getPhone()));
+        user.setIsActive(true);
+        user.setRole(UserRole.USER);
         user.setHealthProfile(new UserHealthProfile());
 
         User savedUser = userRepository.save(user);
@@ -85,6 +88,8 @@ public class UserServiceImpl implements UserService {
                 .email(user.getEmail())
                 .username(user.getUsername())
                 .phone(user.getPhone())
+                .role(user.getRole().name())
+                .isActive(user.getIsActive())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();

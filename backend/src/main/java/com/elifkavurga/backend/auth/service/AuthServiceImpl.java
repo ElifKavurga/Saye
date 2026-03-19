@@ -7,6 +7,7 @@ import com.elifkavurga.backend.auth.dto.RegisterRequest;
 import com.elifkavurga.backend.common.exceptions.BadRequestException;
 import com.elifkavurga.backend.config.AppSecurityProperties;
 import com.elifkavurga.backend.user.entity.User;
+import com.elifkavurga.backend.user.entity.UserRole;
 import com.elifkavurga.backend.user.repository.UserRepository;
 import com.elifkavurga.backend.user.service.CurrentUserResolver;
 import com.elifkavurga.backend.userhealthprofile.entity.UserHealthProfile;
@@ -46,6 +47,8 @@ public class AuthServiceImpl implements AuthService {
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setPhone(normalizeNullable(registerRequest.getPhone()));
+        user.setIsActive(true);
+        user.setRole(UserRole.USER);
         user.setHealthProfile(new UserHealthProfile());
 
         User savedUser = userRepository.save(user);
@@ -89,6 +92,8 @@ public class AuthServiceImpl implements AuthService {
                         .email(user.getEmail())
                         .username(user.getUsername())
                         .phone(user.getPhone())
+                        .role(user.getRole().name())
+                        .isActive(user.getIsActive())
                         .build())
                 .build();
     }

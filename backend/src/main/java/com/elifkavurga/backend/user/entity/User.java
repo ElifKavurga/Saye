@@ -6,6 +6,8 @@ import com.elifkavurga.backend.security.AesStringAttributeConverter;
 import com.elifkavurga.backend.userhealthprofile.entity.UserHealthProfile;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Index;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -50,6 +52,13 @@ public class User extends BaseEntity {
     @Column
     @Convert(converter = AesStringAttributeConverter.class)
     private String phone;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, length = 20)
+    private UserRole role = UserRole.USER;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private UserHealthProfile healthProfile;

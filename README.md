@@ -44,3 +44,10 @@ Projemiz, modern ve ölçeklenebilir bir mimari ile geliştirilmiştir:
 1. `lib/services/api_service.dart` içerisindeki IP adresini kendi ortamınıza göre yapılandırın (Emülatör için `10.0.2.2`).
 2. `flutter pub get` ile bağımlılıkları indirin.
 3. `flutter run` komutu ile uygulamayı başlatın.
+
+## Hızlı Hata Ayıklama
+
+1. Backend çalışıyor mu kontrol et: `http://localhost:8080/health` endpointini aç.
+2. DB bağlantısı için kontrol et: `http://localhost:8080/health/db` endpointi
+3. Emülatör kullanıyorsan base URL `http://10.0.2.2:8080` olmalı.
+4. Android sürümü (ör. 8.x) tek başına çoğu zaman sebep olmaz, yanlış URL/port veya backend-db bağlantısı daha olasıdır.
