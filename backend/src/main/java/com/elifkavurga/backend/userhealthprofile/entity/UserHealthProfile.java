@@ -28,15 +28,15 @@ public class UserHealthProfile extends BaseEntity {
     private Long id;
 
     @Convert(converter = AesStringAttributeConverter.class)
-    @Column(name = "blood_type", length = 255)
+    @Column(name = "blood_type", columnDefinition = "text")
     private String bloodType;
 
     @Convert(converter = AesStringAttributeConverter.class)
-    @Column(name = "allergy_notes", columnDefinition = "TEXT")
+    @Column(name = "allergy_notes", columnDefinition = "text")
     private String allergyNotes;
 
     @Convert(converter = AesStringAttributeConverter.class)
-    @Column(name = "emergency_note", columnDefinition = "TEXT")
+    @Column(name = "emergency_note", columnDefinition = "text")
     private String emergencyNote;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)

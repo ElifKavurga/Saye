@@ -18,54 +18,44 @@ class RiskAlertHomeScreen extends StatelessWidget {
   final VoidCallback onOpenMap;
   final VoidCallback onOpenProfile;
 
-  void _openNotifications(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => AlertsFeedScreen(appState: appState),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              120,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const _LogoStrip(),
-                    const SizedBox(height: AppSpacing.sm),
-                    _LocationRow(
-                      location: appState.currentLocationName,
-                      onNotificationTap: () => _openNotifications(context),
-                      onProfileTap: onOpenProfile,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    const _RiskCircle(),
-                    const SizedBox(height: AppSpacing.md),
-                    _MapCard(onTap: onOpenMap),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      AppStrings.middleButtonHelp,
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.body.copyWith(color: Colors.white70),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    const Divider(color: Colors.white24),
-                    const SizedBox(height: AppSpacing.sm),
-                    Center(
-                      child: GestureDetector(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          120,
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _LogoStrip(),
+                const SizedBox(height: AppSpacing.sm),
+                _LocationRow(
+                  location: appState.currentLocationName,
+                  onNotificationsTap: () => _openAlertsFeed(context),
+                  onProfileTap: onOpenProfile,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _RiskCircle(level: appState.riskLevel),
+                const SizedBox(height: AppSpacing.md),
+                _MapCard(onTap: onOpenMap),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  AppStrings.middleButtonHelp,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.body.copyWith(color: Colors.white70),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                const Divider(color: Colors.white24),
+                const SizedBox(height: AppSpacing.sm),
+                Center(
+                  child: GestureDetector(
                         onTap: () async {
                           try {
                             await appState.activateEmergencyDynamic();
@@ -141,91 +131,20 @@ class RiskAlertHomeScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -8,
-            top: 186,
-            child: _LeftQuickTrigger(onTap: () => _openQuickPanel(context)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _openQuickPanel(BuildContext context) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF0F2B4E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: ListTile(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              tileColor: const Color(0xFF244A73),
-              leading: const Icon(
-                Icons.notifications_active_rounded,
-                color: Color(0xFF84F5BB),
-              ),
-              title: const Text('Güncel bildirim ve ihbarlar'),
-              subtitle: const Text('Konum tabanlı canlı akış'),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => AlertsFeedScreen(appState: appState),
                   ),
-                );
-              },
+                ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
-}
 
-class _LeftQuickTrigger extends StatelessWidget {
-  const _LeftQuickTrigger({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 52,
-        height: 106,
-        decoration: const BoxDecoration(
-          color: Color(0xFF3B8B72),
-          borderRadius: BorderRadius.only(
-            topRight: Radius.circular(50),
-            bottomRight: Radius.circular(50),
-          ),
-        ),
-        child: const Align(
-          alignment: Alignment.centerRight,
-          child: Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: Icon(
-              Icons.chevron_right_rounded,
-              color: Colors.white,
-              size: 34,
-            ),
-          ),
-        ),
+  void _openAlertsFeed(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AlertsFeedScreen(appState: appState),
       ),
     );
   }
@@ -277,12 +196,12 @@ class _LogoStrip extends StatelessWidget {
 class _LocationRow extends StatelessWidget {
   const _LocationRow({
     required this.location,
-    required this.onNotificationTap,
+    required this.onNotificationsTap,
     required this.onProfileTap,
   });
 
   final String location;
-  final VoidCallback onNotificationTap;
+  final VoidCallback onNotificationsTap;
   final VoidCallback onProfileTap;
 
   @override
@@ -302,12 +221,9 @@ class _LocationRow extends StatelessWidget {
           ),
         ),
         IconButton(
-          onPressed: onNotificationTap,
+          onPressed: onNotificationsTap,
           icon: const Icon(Icons.notifications_rounded, color: Colors.white),
-          tooltip: 'Bildirimleri ac',
-          splashRadius: 22,
-          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-          padding: EdgeInsets.zero,
+          tooltip: 'Güncel bildirimler',
         ),
         const SizedBox(width: AppSpacing.sm),
         GestureDetector(
@@ -332,20 +248,29 @@ class _LocationRow extends StatelessWidget {
 }
 
 class _RiskCircle extends StatelessWidget {
-  const _RiskCircle();
+  const _RiskCircle({required this.level});
+
+  final RiskLevel level;
 
   @override
   Widget build(BuildContext context) {
+    final color = level == RiskLevel.critical
+        ? const Color(0xFFFF2638)
+        : const Color(0xFFFF5D66);
+    final label = level == RiskLevel.critical
+        ? AppStrings.criticalRisk
+        : AppStrings.highRisk;
+
     return Center(
       child: Container(
         width: 170,
         height: 170,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: const Color(0xFFFF5D66), width: 4),
+          border: Border.all(color: color, width: 4),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFFF5D66).withValues(alpha: 0.4),
+              color: color.withValues(alpha: 0.4),
               blurRadius: 20,
             ),
           ],
@@ -357,14 +282,14 @@ class _RiskCircle extends StatelessWidget {
               Text(
                 AppStrings.riskyArea,
                 style: AppTextStyles.title.copyWith(
-                  color: const Color(0xFFFF5D66),
+                  color: color,
                   fontSize: 23,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Risk Seviyesi: ${AppStrings.highRisk}',
+                'Risk Seviyesi: $label',
                 style: AppTextStyles.body.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,

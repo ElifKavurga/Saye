@@ -82,7 +82,6 @@ class _SayeAppState extends State<SayeApp> {
                           phone: phone,
                         ),
                     isLoading: _appState.isLoading,
-                    onDemoLogin: () => _appState.demoLogin(),
                   ),
           );
         },

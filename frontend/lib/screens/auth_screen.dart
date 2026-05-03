@@ -9,7 +9,6 @@ class AuthScreen extends StatefulWidget {
     super.key,
     required this.onLogin,
     required this.onRegister,
-    required this.onDemoLogin,
     required this.isLoading,
   });
 
@@ -21,7 +20,6 @@ class AuthScreen extends StatefulWidget {
     required String phone,
   })
   onRegister;
-  final Future<void> Function() onDemoLogin;
   final bool isLoading;
 
   @override
@@ -104,30 +102,23 @@ class _AuthScreenState extends State<AuthScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: AppSpacing.lg),
-                                SizedBox(
-                                  height: constraints.maxWidth < 380
-                                      ? 540
-                                      : 470,
-                                  child: TabBarView(
-                                    children: [
-                                      _buildLoginTab(),
-                                      _buildRegisterTab(),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.sm),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: TextButton(
-                                    onPressed: widget.isLoading
-                                        ? null
-                                        : () async {
-                                            await _submitAuthAction(
-                                              widget.onDemoLogin,
-                                            );
-                                          },
-                                    child: const Text('Demo Giris'),
-                                  ),
+                                Builder(
+                                  builder: (context) {
+                                    final tabController =
+                                        DefaultTabController.of(context);
+                                    return AnimatedBuilder(
+                                      animation: tabController,
+                                      builder: (context, _) {
+                                        return IndexedStack(
+                                          index: tabController.index,
+                                          children: [
+                                            _buildLoginTab(),
+                                            _buildRegisterTab(),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
                                 ),
                               ],
                             ),

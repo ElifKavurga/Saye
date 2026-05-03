@@ -297,6 +297,10 @@ public class RegionalRiskCalculator {
             return Math.max(score, 60.0);
         }
 
+        if (!hasCrime) {
+            return Math.min(59.99, score);
+        }
+
         double maxConfidence = signals.stream()
                 .map(confidenceResolver)
                 .max(Double::compareTo)

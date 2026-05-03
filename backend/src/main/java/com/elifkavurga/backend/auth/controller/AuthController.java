@@ -41,16 +41,6 @@ public class AuthController {
                 .build());
     }
 
-    @PostMapping("/demo-login")
-    public ResponseEntity<ApiResponse<AuthResponse>> demoLogin() {
-        AuthResponse response = authService.demoLogin();
-        return ResponseEntity.ok(ApiResponse.<AuthResponse>builder()
-                .success(true)
-                .message("Demo login completed")
-                .data(response)
-                .build());
-    }
-
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<AuthResponse>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         AuthResponse response = authService.refresh(request.getRefreshToken());

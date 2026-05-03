@@ -40,10 +40,13 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isElevatedRisk =
+        appState.riskLevel == RiskLevel.high ||
+        appState.riskLevel == RiskLevel.critical;
     final pages = [
       appState.emergencyActive
           ? EmergencyActiveScreen(appState: appState)
-          : appState.riskLevel == RiskLevel.high
+          : isElevatedRisk
           ? RiskAlertHomeScreen(
               appState: appState,
               onOpenMap: () => appState.setIndex(1),

@@ -42,7 +42,7 @@ public class MapServiceImpl implements MapService {
 
     @Override
     public RiskResponse computeRisk(double lat, double lng) {
-        return mapRiskProcessor.computeOverallRisk(queryNearby(lat, lng, 1000.0, RISK_LOOKBACK));
+        return mapRiskProcessor.computeOverallRisk(queryNearby(lat, lng, 250.0, RISK_LOOKBACK));
     }
 
     private Point createPoint(double lat, double lng) {

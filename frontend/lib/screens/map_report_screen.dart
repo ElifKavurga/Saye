@@ -468,10 +468,10 @@ class _LiveMap extends StatelessWidget {
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.elifkavurga.frontend',
+                userAgentPackageName: 'com.saye.app',
                 tileProvider: NetworkTileProvider(
                   headers: {
-                    'User-Agent': 'Saye/1.0 (com.elifkavurga.frontend)',
+                    'User-Agent': 'Saye/1.0 (com.saye.app)',
                   },
                 ),
               ),
@@ -500,7 +500,7 @@ class _LiveMap extends StatelessWidget {
                       point: LatLng(report.latitude, report.longitude),
                       child: Tooltip(
                         message:
-                            '${_displayCategory(report.category)} - ${report.status.isEmpty ? 'Bildirildi' : report.status}',
+                            '${_displayCategory(report.category)} - ${_displayStatus(report.status)}',
                         child: Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -733,6 +733,7 @@ class _LiveMap extends StatelessWidget {
   static Color _colorForRiskLevel(String riskLevel) {
     switch (riskLevel.trim().toUpperCase()) {
       case 'HIGH':
+      case 'CRITICAL':
         return const Color(0xFFE53935);
       case 'MEDIUM':
         return const Color(0xFFFFA000);
@@ -747,6 +748,7 @@ class _LiveMap extends StatelessWidget {
     final normalizedRiskLevel = report.riskLevel.trim().toUpperCase();
     switch (normalizedRiskLevel) {
       case 'HIGH':
+      case 'CRITICAL':
         return _RiskSeverity.high;
       case 'MEDIUM':
         return _RiskSeverity.medium;
@@ -836,6 +838,21 @@ class _LiveMap extends StatelessWidget {
         return 'Altyapı';
       default:
         return category;
+    }
+  }
+
+  static String _displayStatus(String status) {
+    switch (status.trim().toUpperCase()) {
+      case 'PENDING':
+        return 'Beklemede';
+      case 'REVIEWING':
+        return 'İnceleniyor';
+      case 'RESOLVED':
+        return 'Çözüldü';
+      case 'REJECTED':
+        return 'Reddedildi';
+      default:
+        return status.isEmpty ? 'Bildirildi' : status;
     }
   }
 }

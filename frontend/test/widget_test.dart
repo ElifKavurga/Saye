@@ -14,6 +14,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byType(AuthScreen), findsOneWidget);
-    expect(find.text('Demo Giris'), findsOneWidget);
+    expect(find.text('Giriş Yap'), findsWidgets);
   });
 }

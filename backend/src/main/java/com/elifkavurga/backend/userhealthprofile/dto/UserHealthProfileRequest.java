@@ -8,12 +8,12 @@ import lombok.Setter;
 @Setter
 public class UserHealthProfileRequest {
 
-    @Size(max = 32)
+    @Size(max = 255)
     private String bloodType;
 
-    @Size(max = 2000)
+    @Size(max = 1000)
     private String allergyNotes;
 
-    @Size(max = 2000)
+    @Size(max = 1000)
     private String emergencyNote;
 }

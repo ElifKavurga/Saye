@@ -9,7 +9,5 @@ public interface AuthService {
 
     AuthResponse login(LoginRequest loginRequest);
 
-    AuthResponse demoLogin();
-
     AuthResponse refresh(String refreshToken);
 }
