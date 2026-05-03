@@ -5,11 +5,9 @@ import com.elifkavurga.backend.auth.dto.AuthUserResponse;
 import com.elifkavurga.backend.auth.dto.LoginRequest;
 import com.elifkavurga.backend.auth.dto.RegisterRequest;
 import com.elifkavurga.backend.common.exceptions.BadRequestException;
-import com.elifkavurga.backend.config.AppSecurityProperties;
 import com.elifkavurga.backend.user.entity.User;
 import com.elifkavurga.backend.user.entity.UserRole;
 import com.elifkavurga.backend.user.repository.UserRepository;
-import com.elifkavurga.backend.user.service.CurrentUserResolver;
 import com.elifkavurga.backend.userhealthprofile.entity.UserHealthProfile;
 import com.elifkavurga.backend.security.EmailHashService;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +19,9 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    private final AppSecurityProperties appSecurityProperties;
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final TokenService tokenService;
-    private final CurrentUserResolver currentUserResolver;
     private final EmailHashService emailHashService;
 
     @Override
@@ -65,14 +61,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return toAuthResponse(user);
-    }
-
-    @Override
-    public AuthResponse demoLogin() {
-        if (!appSecurityProperties.isDemoLoginEnabled()) {
-            throw new BadRequestException("Demo login is disabled");
-        }
-        return toAuthResponse(currentUserResolver.getOrCreateDemoUser());
     }
 
     @Override

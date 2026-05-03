@@ -28,7 +28,7 @@ public class UserHealthProfile extends BaseEntity {
     private Long id;
 
     @Convert(converter = AesStringAttributeConverter.class)
-    @Column(name = "blood_type", length = 32)
+    @Column(name = "blood_type", columnDefinition = "text")
     private String bloodType;
 
     @Convert(converter = AesStringAttributeConverter.class)

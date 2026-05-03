@@ -23,6 +23,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class MapServiceUnitTest {
@@ -57,6 +59,7 @@ class MapServiceUnitTest {
         assertThat(first).isEqualTo(second);
         assertThat(first.getLevel()).isIn("LOW", "MEDIUM", "HIGH", "CRITICAL");
         assertThat(first.getScore()).isGreaterThan(0);
+        verify(repo, Mockito.times(2)).findActiveNearbyReports(any(Point.class), eq(250.0), any(Instant.class));
     }
 
     @Test

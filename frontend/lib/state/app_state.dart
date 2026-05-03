@@ -28,7 +28,7 @@ class SessionUser {
   final String phone;
 }
 
-enum RiskLevel { low, medium, high }
+enum RiskLevel { low, medium, high, critical }
 
 class LocalReportNotification {
   const LocalReportNotification({
@@ -498,19 +498,6 @@ class AppState extends ChangeNotifier {
     });
   }
 
-  Future<void> demoLogin() async {
-    await _withLoading(() async {
-      try {
-        final response = await _apiService.post('/auth/demo-login');
-        await _applyAuthenticatedSession(response);
-      } catch (e) {
-        throw AppStateException(
-          _toUserMessage(e, fallback: 'Demo oturumu başlatılamadı.'),
-        );
-      }
-    });
-  }
-
   void cycleRiskLevel() {
     switch (_riskLevel) {
       case RiskLevel.low:
@@ -520,6 +507,9 @@ class AppState extends ChangeNotifier {
         _riskLevel = RiskLevel.high;
         break;
       case RiskLevel.high:
+        _riskLevel = RiskLevel.critical;
+        break;
+      case RiskLevel.critical:
         _riskLevel = RiskLevel.low;
         break;
     }
@@ -1443,17 +1433,24 @@ class AppState extends ChangeNotifier {
       case 'HIGH':
         _riskLevel = RiskLevel.high;
         break;
+      case 'CRITICAL':
+        _riskLevel = RiskLevel.critical;
+        break;
       default:
         throw ApiException('Unknown risk level: $levelRaw');
     }
 
-    if (_riskLevel != RiskLevel.high) {
+    final isHighRisk = _riskLevel == RiskLevel.high ||
+        _riskLevel == RiskLevel.critical;
+    if (!isHighRisk) {
       _showRiskDecision = false;
       _hasAcknowledgedHighRisk = false;
       return;
     }
 
-    final enteredHighRisk = previousRiskLevel != RiskLevel.high;
+    final previouslyHighRisk = previousRiskLevel == RiskLevel.high ||
+        previousRiskLevel == RiskLevel.critical;
+    final enteredHighRisk = !previouslyHighRisk;
     if (!_emergencyActive && enteredHighRisk && !_hasAcknowledgedHighRisk) {
       _showRiskDecision = true;
     }
@@ -1974,12 +1971,12 @@ class AppState extends ChangeNotifier {
 
   _EmergencyActivationPlan _buildEmergencyActivationPlan() {
     final currentRiskLevel = _riskLevelToBackendValue(_riskLevel);
-    if (_riskLevel == RiskLevel.high) {
-      return const _EmergencyActivationPlan(
+    if (_riskLevel == RiskLevel.high || _riskLevel == RiskLevel.critical) {
+      return _EmergencyActivationPlan(
         callTarget: '112',
         callTargetName: '112 Acil Cagri Merkezi',
-        currentRiskLevel: 'HIGH',
-        smsRecipients: [],
+        currentRiskLevel: currentRiskLevel,
+        smsRecipients: const [],
       );
     }
 
@@ -2013,6 +2010,8 @@ class AppState extends ChangeNotifier {
         return 'MEDIUM';
       case RiskLevel.high:
         return 'HIGH';
+      case RiskLevel.critical:
+        return 'CRITICAL';
     }
   }
 

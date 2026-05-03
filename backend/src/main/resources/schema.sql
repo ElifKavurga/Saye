@@ -5,3 +5,7 @@ ALTER TABLE users ALTER COLUMN is_active SET NOT NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS role varchar(20) NOT NULL DEFAULT 'USER';
 UPDATE users SET role = 'USER' WHERE role IS NULL;
 ALTER TABLE users ALTER COLUMN role SET NOT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_hash varchar(64);
+ALTER TABLE user_health_profiles ALTER COLUMN blood_type TYPE text;
+ALTER TABLE user_health_profiles ALTER COLUMN allergy_notes TYPE text;
+ALTER TABLE user_health_profiles ALTER COLUMN emergency_note TYPE text;

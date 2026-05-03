@@ -57,7 +57,7 @@ public class MapRiskProcessor {
                 .map(riskCircleBuilder::build)
                 .collect(Collectors.toList());
 
-        double score = circles.stream().mapToDouble(RiskCircle::riskScore).sum();
+        double score = calculateWeightedOverallScore(circles);
         score = Math.min(100.0, score);
         RiskLevel level = RiskLevel.fromScore(score);
 
@@ -80,6 +80,21 @@ public class MapRiskProcessor {
                 .level(level.name())
                 .score(score)
                 .build();
+    }
+
+    private double calculateWeightedOverallScore(List<RiskCircle> circles) {
+        if (circles.isEmpty()) {
+            return 0.0;
+        }
+
+        double highestScore = circles.stream()
+                .mapToDouble(RiskCircle::riskScore)
+                .max()
+                .orElse(0.0);
+        double supportingScore = circles.stream()
+                .mapToDouble(RiskCircle::riskScore)
+                .sum() - highestScore;
+        return highestScore + (supportingScore * 0.15);
     }
 
     private ReportResponse toResponse(NearbyReportProjection report, RiskCircle riskCircle) {

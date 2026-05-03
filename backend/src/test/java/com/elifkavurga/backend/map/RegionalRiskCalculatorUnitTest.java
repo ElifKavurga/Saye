@@ -74,14 +74,14 @@ class RegionalRiskCalculatorUnitTest {
     }
 
     @Test
-    void twoInfrastructureReportsShouldSaturateAt70() {
+    void twoInfrastructureReportsShouldStayBelowHighWithoutCrime() {
         RiskResult result = calculator.calculate(List.of(
                 report("INFRASTRUCTURE", 1.0, 1L, 1, 20, REVIEWING),
                 report("INFRASTRUCTURE", 1.0, 2L, 1, 30, REVIEWING)
         ));
 
-        assertThat(result.score()).isBetween(69d, 70d);
-        assertThat(result.level()).isIn(RiskLevel.HIGH, RiskLevel.CRITICAL);
+        assertThat(result.score()).isEqualTo(59.99);
+        assertThat(result.level()).isEqualTo(RiskLevel.MEDIUM);
     }
 
     @Test
@@ -121,8 +121,8 @@ class RegionalRiskCalculatorUnitTest {
                 report("INFRASTRUCTURE", 1.0, 2L, 1, 450, REVIEWING)
         ));
 
-        assertThat(result.score()).isBetween(52d, 53.5);
-        assertThat(result.level()).isIn(RiskLevel.HIGH, RiskLevel.MEDIUM);
+        assertThat(result.score()).isEqualTo(49.0);
+        assertThat(result.level()).isEqualTo(RiskLevel.MEDIUM);
     }
 
     @Test

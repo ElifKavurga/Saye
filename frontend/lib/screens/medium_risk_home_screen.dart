@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../config/app_strings.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
+import 'alerts_feed_screen.dart';
 
 class MediumRiskHomeScreen extends StatelessWidget {
   const MediumRiskHomeScreen({
@@ -37,6 +38,7 @@ class MediumRiskHomeScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 _LocationRow(
                   location: appState.currentLocationName,
+                  onNotificationsTap: () => _openAlertsFeed(context),
                   onProfileTap: onOpenProfile,
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -138,6 +140,14 @@ class MediumRiskHomeScreen extends StatelessWidget {
       ),
     );
   }
+
+  void _openAlertsFeed(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AlertsFeedScreen(appState: appState),
+      ),
+    );
+  }
 }
 
 class _LogoStrip extends StatelessWidget {
@@ -184,9 +194,14 @@ class _LogoStrip extends StatelessWidget {
 }
 
 class _LocationRow extends StatelessWidget {
-  const _LocationRow({required this.location, required this.onProfileTap});
+  const _LocationRow({
+    required this.location,
+    required this.onNotificationsTap,
+    required this.onProfileTap,
+  });
 
   final String location;
+  final VoidCallback onNotificationsTap;
   final VoidCallback onProfileTap;
 
   @override
@@ -205,7 +220,11 @@ class _LocationRow extends StatelessWidget {
             style: AppTextStyles.title.copyWith(fontSize: 22),
           ),
         ),
-        const Icon(Icons.notifications_rounded, color: Colors.white),
+        IconButton(
+          onPressed: onNotificationsTap,
+          icon: const Icon(Icons.notifications_rounded, color: Colors.white),
+          tooltip: 'Güncel bildirimler',
+        ),
         const SizedBox(width: AppSpacing.sm),
         GestureDetector(
           onTap: onProfileTap,

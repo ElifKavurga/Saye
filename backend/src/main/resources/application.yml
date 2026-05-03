@@ -5,7 +5,7 @@ spring:
     url: jdbc:postgresql://localhost:5432/saye_db
     driver-class-name: org.postgresql.Driver
     username: postgres
-    password: ${POSTGRES_PASSWORD:1234}
+    password: ${POSTGRES_PASSWORD:postgres}
   jpa:
     hibernate:
       ddl-auto: update
@@ -20,7 +20,7 @@ spring:
 
 app:
   security:
-    demo-login-enabled: true
+    demo-login-enabled: false
     jwt-secret: ${APP_JWT_SECRET:saye-development-jwt-secret-key-change-me-2026}
     access-token-ttl: 15m
     refresh-token-ttl: 30d

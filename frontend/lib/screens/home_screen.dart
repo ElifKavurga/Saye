@@ -82,6 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       riskLabel: riskLabel,
                       riskLevelLabel: riskLevelLabel,
                       color: riskColor,
+                      onNotificationsTap: () => _openAlertsFeed(context),
                       onDebugCycle: widget.appState.cycleRiskLevel,
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -196,68 +197,16 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          Positioned(
-            left: -8,
-            top: 186,
-            child: _LeftQuickTrigger(onTap: () => _openQuickPanel(context)),
-          ),
         ],
       ),
     );
   }
 
-  Future<void> _openQuickPanel(BuildContext context) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF0F2B4E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+  void _openAlertsFeed(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AlertsFeedScreen(appState: widget.appState),
       ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hızlı Panel',
-                  style: AppTextStyles.title.copyWith(fontSize: 22),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  '${widget.appState.currentLocationName} konumundaki en güncel bildirimleri görüntüle.',
-                  style: AppTextStyles.body.copyWith(color: Colors.white70),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  tileColor: const Color(0xFF244A73),
-                  leading: const Icon(
-                    Icons.notifications_active_rounded,
-                    color: Color(0xFF84F5BB),
-                  ),
-                  title: const Text('Güncel bildirim ve ihbarlar'),
-                  subtitle: const Text('Konum tabanlı canlı akış'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            AlertsFeedScreen(appState: widget.appState),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -267,6 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return AppStrings.safeZone;
       case RiskLevel.medium:
       case RiskLevel.high:
+      case RiskLevel.critical:
         return AppStrings.riskyArea;
     }
   }
@@ -279,6 +229,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return 'Orta';
       case RiskLevel.high:
         return AppStrings.highRisk;
+      case RiskLevel.critical:
+        return AppStrings.criticalRisk;
     }
   }
 
@@ -290,6 +242,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return const Color(0xFFFF8A3A);
       case RiskLevel.high:
         return const Color(0xFFFF5D66);
+      case RiskLevel.critical:
+        return const Color(0xFFFF2638);
     }
   }
 
@@ -302,42 +256,9 @@ class _HomeScreenState extends State<HomeScreen> {
         return 'Aktif Tarama: Şüpheli cihaz yakınlığı tespit edildi.';
       case RiskLevel.high:
         return 'Aktif Tarama: Şüpheli cihaz yakınlığı var. Uzun süreli takip görünüyor.';
+      case RiskLevel.critical:
+        return 'Aktif Tarama: Kritik risk algılandı. Yardım akışı hazır.';
     }
-  }
-}
-
-class _LeftQuickTrigger extends StatelessWidget {
-  const _LeftQuickTrigger({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 52,
-        height: 106,
-        decoration: const BoxDecoration(
-          color: Color(0xFF3B8B72),
-          borderRadius: BorderRadius.only(
-            topRight: Radius.circular(50),
-            bottomRight: Radius.circular(50),
-          ),
-        ),
-        child: const Align(
-          alignment: Alignment.centerRight,
-          child: Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: Icon(
-              Icons.chevron_right_rounded,
-              color: Colors.white,
-              size: 34,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -385,7 +306,10 @@ class _LogoStrip extends StatelessWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.location, required this.onProfileTap});
+  const _TopBar({
+    required this.location,
+    required this.onProfileTap,
+  });
 
   final String location;
   final VoidCallback onProfileTap;
@@ -444,12 +368,14 @@ class _RiskSection extends StatelessWidget {
     required this.riskLabel,
     required this.riskLevelLabel,
     required this.color,
+    required this.onNotificationsTap,
     required this.onDebugCycle,
   });
 
   final String riskLabel;
   final String riskLevelLabel;
   final Color color;
+  final VoidCallback onNotificationsTap;
   final VoidCallback onDebugCycle;
 
   @override
@@ -470,14 +396,14 @@ class _RiskSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.notifications_rounded,
-                color: Colors.white.withValues(alpha: 0.0),
-              ),
               const Spacer(),
-              Icon(
-                Icons.notifications_rounded,
-                color: Colors.white.withValues(alpha: 0.9),
+              IconButton(
+                onPressed: onNotificationsTap,
+                icon: Icon(
+                  Icons.notifications_rounded,
+                  color: Colors.white.withValues(alpha: 0.9),
+                ),
+                tooltip: 'Güncel bildirimler',
               ),
             ],
           ),

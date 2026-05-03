@@ -17,16 +17,16 @@ class AlertsFeedScreen extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(gradient: AppGradients.mainBackground),
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.lg,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -34,38 +34,48 @@ class AlertsFeedScreen extends StatelessWidget {
                     const SizedBox(height: AppSpacing.md),
                     _LocationCard(location: appState.currentLocationName),
                     const SizedBox(height: AppSpacing.md),
-                    Text(
-                      'Güncel İhbarlar',
-                      style: AppTextStyles.title.copyWith(fontSize: 20),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    if (!hasLocal) const _EmptyStateCard(),
-                    if (hasLocal)
-                      ...appState.localReports.map(
-                        (item) => Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                          child: _AlertTile(
-                            category: item.category,
-                            location: item.locationLabel,
-                            note: item.description,
-                            createdAt: item.createdAt,
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          Text(
+                            'Güncel İhbarlar',
+                            style: AppTextStyles.title.copyWith(fontSize: 20),
                           ),
-                        ),
+                          const SizedBox(height: AppSpacing.sm),
+                          if (!hasLocal) const _EmptyStateCard(),
+                          if (hasLocal)
+                            ...appState.localReports.map(
+                              (item) => Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: AppSpacing.sm,
+                                ),
+                                child: _AlertTile(
+                                  category: item.category,
+                                  location: item.locationLabel,
+                                  note: item.description,
+                                  createdAt: item.createdAt,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            'Bölgesel Akış',
+                            style: AppTextStyles.title.copyWith(fontSize: 20),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          if (!hasNearby) const _EmptyNearbyCard(),
+                          if (hasNearby)
+                            ...appState.nearbyReports.map(
+                              (report) => Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: AppSpacing.sm,
+                                ),
+                                child: _NearbyAlertTile(report: report),
+                              ),
+                            ),
+                        ],
                       ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      'Bölgesel Akış',
-                      style: AppTextStyles.title.copyWith(fontSize: 20),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    if (!hasNearby) const _EmptyNearbyCard(),
-                    if (hasNearby)
-                      ...appState.nearbyReports.map(
-                        (report) => Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                          child: _NearbyAlertTile(report: report),
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -185,7 +195,10 @@ class _AlertTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(category, style: AppTextStyles.title.copyWith(fontSize: 18)),
+              Text(
+                _displayCategory(category),
+                style: AppTextStyles.title.copyWith(fontSize: 18),
+              ),
               const Spacer(),
               Text('$hh:$mm', style: AppTextStyles.caption),
             ],
@@ -234,12 +247,12 @@ class _NearbyAlertTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  report.category,
+                  _displayCategory(report.category),
                   style: AppTextStyles.title.copyWith(fontSize: 16),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${report.latitude.toStringAsFixed(4)}, ${report.longitude.toStringAsFixed(4)}  - ${report.status}',
+                  '${report.latitude.toStringAsFixed(4)}, ${report.longitude.toStringAsFixed(4)}  - ${_displayStatus(report.status)}',
                   style: AppTextStyles.caption.copyWith(color: Colors.white70),
                 ),
               ],
@@ -258,6 +271,52 @@ class _NearbyAlertTile extends StatelessWidget {
     final hh = value.hour.toString().padLeft(2, '0');
     final mm = value.minute.toString().padLeft(2, '0');
     return '$hh:$mm';
+  }
+}
+
+String _displayCategory(String category) {
+  switch (category.trim().toUpperCase()) {
+    case 'TRAFFIC':
+    case 'TRAFIK':
+    case 'TRAFİK':
+      return 'Trafik';
+    case 'LIGHTING':
+    case 'AYDINLATMA':
+      return 'Aydınlatma';
+    case 'SECURITY':
+    case 'SUC':
+    case 'SUÇ':
+      return 'Güvenlik';
+    case 'ANIMALS':
+    case 'ANIMAL':
+    case 'HAYVAN':
+      return 'Hayvan';
+    case 'INFRASTRUCTURE':
+    case 'ALTYAPI':
+      return 'Altyapı';
+    default:
+      return category;
+  }
+}
+
+String _displayStatus(String status) {
+  switch (status.trim().toUpperCase()) {
+    case 'PENDING':
+      return 'Beklemede';
+    case 'REVIEWING':
+      return 'İnceleniyor';
+    case 'RESOLVED':
+      return 'Çözüldü';
+    case 'REJECTED':
+      return 'Reddedildi';
+    case 'SENT':
+      return 'Gönderildi';
+    case 'QUEUED':
+      return 'Sırada';
+    case 'FAILED':
+      return 'Başarısız';
+    default:
+      return status.isEmpty ? 'Bildirildi' : status;
   }
 }
 

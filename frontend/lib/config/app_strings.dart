@@ -5,6 +5,7 @@ class AppStrings {
   static const String lowRisk = 'Düşük';
   static const String mediumRisk = 'Orta';
   static const String highRisk = 'Yüksek';
+  static const String criticalRisk = 'Kritik';
 
   static const String middleButtonHelp = 'ORTADAKİ BUTONA BAS: YARDIM ÇAĞIR';
   static const String sosStartFailedPrefix = 'SOS başlatılamadı: ';
