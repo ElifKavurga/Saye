@@ -83,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       riskLevelLabel: riskLevelLabel,
                       color: riskColor,
                       onDebugCycle: widget.appState.cycleRiskLevel,
+                      onNotificationTap: _openNotifications,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _MapPreviewCard(onTap: widget.onOpenMap),
@@ -258,6 +259,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
+    );
+  }
+
+  void _openNotifications() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AlertsFeedScreen(appState: widget.appState),
+      ),
     );
   }
 
@@ -445,12 +454,14 @@ class _RiskSection extends StatelessWidget {
     required this.riskLevelLabel,
     required this.color,
     required this.onDebugCycle,
+    required this.onNotificationTap,
   });
 
   final String riskLabel;
   final String riskLevelLabel;
   final Color color;
   final VoidCallback onDebugCycle;
+  final VoidCallback onNotificationTap;
 
   @override
   Widget build(BuildContext context) {
@@ -475,9 +486,16 @@ class _RiskSection extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.0),
               ),
               const Spacer(),
-              Icon(
-                Icons.notifications_rounded,
-                color: Colors.white.withValues(alpha: 0.9),
+              IconButton(
+                onPressed: onNotificationTap,
+                icon: Icon(
+                  Icons.notifications_rounded,
+                  color: Colors.white.withValues(alpha: 0.9),
+                ),
+                tooltip: 'Bildirimleri ac',
+                splashRadius: 22,
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                padding: EdgeInsets.zero,
               ),
             ],
           ),

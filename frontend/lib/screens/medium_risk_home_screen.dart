@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../config/app_strings.dart';
+import 'alerts_feed_screen.dart';
 import '../state/app_state.dart';
 import '../theme/design_system.dart';
 
@@ -16,6 +17,14 @@ class MediumRiskHomeScreen extends StatelessWidget {
   final AppState appState;
   final VoidCallback onOpenMap;
   final VoidCallback onOpenProfile;
+
+  void _openNotifications(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AlertsFeedScreen(appState: appState),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +46,7 @@ class MediumRiskHomeScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 _LocationRow(
                   location: appState.currentLocationName,
+                  onNotificationTap: () => _openNotifications(context),
                   onProfileTap: onOpenProfile,
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -184,9 +194,14 @@ class _LogoStrip extends StatelessWidget {
 }
 
 class _LocationRow extends StatelessWidget {
-  const _LocationRow({required this.location, required this.onProfileTap});
+  const _LocationRow({
+    required this.location,
+    required this.onNotificationTap,
+    required this.onProfileTap,
+  });
 
   final String location;
+  final VoidCallback onNotificationTap;
   final VoidCallback onProfileTap;
 
   @override
@@ -205,7 +220,14 @@ class _LocationRow extends StatelessWidget {
             style: AppTextStyles.title.copyWith(fontSize: 22),
           ),
         ),
-        const Icon(Icons.notifications_rounded, color: Colors.white),
+        IconButton(
+          onPressed: onNotificationTap,
+          icon: const Icon(Icons.notifications_rounded, color: Colors.white),
+          tooltip: 'Bildirimleri ac',
+          splashRadius: 22,
+          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+          padding: EdgeInsets.zero,
+        ),
         const SizedBox(width: AppSpacing.sm),
         GestureDetector(
           onTap: onProfileTap,
