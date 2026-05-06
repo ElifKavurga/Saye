@@ -1,53 +1,121 @@
-# Saye - Proaktif Güvenlik ve Risk Uyarı Sistemi 
+# SAYE — Konum tabanlı risk analizi ve proaktif acil durum
 
-Saye, bireylerin günlük yaşamda karşılaşabileceği güvenlik risklerini (fiziksel ve psikolojik) olay yaşanmadan önce tespit eden ve kullanıcıyı uyaran yenilikçi bir mobil uygulamadır. Klasik panik butonlarının aksine proaktif bir yaklaşım sunarak, harita üzerindeki riskli bölgeleri analiz eder.
+**SAYE** (uygulama adı: **SAYE'nde**), kentsel alanlarda konum verisi ve topluluk bildirimleriyle riskleri önceden görünür kılan, PostGIS destekli coğrafi analiz ve bağlama duyarlı acil durum akışları sunan bir mobil platformdur. Kullanıcılar çevrelerindeki ihbarları haritada izler; risk seviyesine göre arayüz ve acil durum yönlendirmeleri (ör. 112 veya kayıtlı kişilere konum/SMS) devreye girer. Amaç, olay öncesi bilgilendirme ve hızlı müdahale yoluyla güvenlik algısını güçlendirmektir.
 
-> 📸 *Proje arayüzüne ait fotoğraflar ve ekran görüntüleri yakında eklenecektir.*
+Bu depo yalnızca ürün kaynak kodu ve çalıştırma bilgisini içerir; yarışma başvuru raporu, puanlama kriterleri veya jüri metinleri burada yayımlanmaz.
 
-## 🌟 Temel Özellikler
-* **Proaktif Risk Haritası:** Kullanıcının anlık konumuna göre belirli bir yarıçaptaki (örn. 1 km) aydınlatma yetersizliği, asayiş sorunları veya sahipsiz hayvan gibi ihbarları analiz ederek bölgenin risk seviyesini (Düşük, Orta, Yüksek) hesaplar.
-* **Akıllı İhbar Sistemi:** Kullanıcılar bulundukları bölgedeki olumsuz durumları harita üzerinden anlık olarak sisteme bildirebilir.
-* **Tek Tıkla SOS (Acil Durum):** Acil durumlarda tek bir dokunuşla önceden belirlenen güvenli kişilere canlı konum gönderilir ve yardım istenir.
-* **Takip Algılama (Yakında):** Bluetooth sinyalleri üzerinden uzun süreli aynı cihaz yakınlığını tespit ederek olası "takip edilme" durumlarında kullanıcıyı uyarır.
+## Ekip
 
-## 🚀 İşleyiş (Nasıl Çalışır?)
-1. **Veri Toplama:** Mobil uygulama (Frontend), kullanıcının konum (GPS) verilerini anlık olarak sunucuya (Backend) iletir.
-2. **Coğrafi Analiz (Spatial Query):** Backend, PostGIS yeteneklerini kullanarak kullanıcının etrafındaki güncel ihbarları tarar. Olayların uzaklığına ve kategorisine göre özel bir algoritmada risk puanı üretilir.
-3. **Dinamik Arayüz:** Çıkan risk puanı uygulamaya iletilir. Eğer kullanıcı riskli bir bölgeye giriyorsa uygulama arayüzü renk değiştirerek uyarı verir ve gerekirse kullanıcıdan riskli bölgeye giriş için onay ister.
+Başvuru belgesinde yer alan yapıya göre **5 kişilik** takım: **1 akademik danışman**, **1 ekip kaptanı** ve **3 üye** (literatür, arayüz/harita, risk algoritması ve veri/UI-DB desteği rolleri). Ad ve iletişim bilgileri başvuru formunda tutulur; bu README’de paylaşılmaz.
 
-## 💻 Kullanılan Teknolojiler
-Projemiz, modern ve ölçeklenebilir bir mimari ile geliştirilmiştir:
+## Kullanılan teknolojiler
 
-**Frontend (Mobil):**
-* Flutter (Dart)
-* Provider / ChangeNotifier (State Management)
-* Secure Storage (Token Yönetimi)
+### Mobil (Flutter)
 
-**Backend:**
-* Java 17 & Spring Boot 3.x
-* Katmanlı Mimari (Controller, Service, Repository)
-* Spring Security & JWT (Kimlik Doğrulama)
+- Flutter (Dart 3.x), Material arayüz, `flutter_localizations` (TR / EN)
+- Durum yönetimi: `ChangeNotifier` tabanlı uygulama durumu
+- Ağ ve oturum: `http`, `flutter_secure_storage`
+- Harita ve konum: `flutter_map`, `latlong2`, `geolocator`, `geocoding`
+- Diğer: `permission_handler`, `shared_preferences`, `url_launcher`, `google_fonts`
 
-**Veritabanı:**
-* PostgreSQL
-* PostGIS (Coğrafi Veri İşleme ve Mesafe Hesaplamaları)
-* Hibernate Spatial
+### Backend
 
-## 🛠️ Kurulum ve Çalıştırma
+- Java 17, **Spring Boot 3.5** (Web, Data JPA, Security, Validation)
+- Kimlik doğrulama: JWT (jjwt), Spring Security
+- API dokümantasyonu: **springdoc-openapi** (Swagger UI)
+- Coğrafi veri: **PostgreSQL** + **PostGIS**, **Hibernate Spatial**, JTS
 
-**Backend:**
-1. Bilgisayarınızda PostgreSQL ve PostGIS kurulu olmalıdır.
-2. `saye_db` adında boş bir veritabanı oluşturun.
-3. Spring Boot projesini çalıştırdığınızda tablo yapıları ve `CREATE EXTENSION postgis;` komutu otomatik çalışacaktır.
+### Altyapı ve entegrasyon
 
-**Frontend:**
-1. `lib/services/api_service.dart` içerisindeki IP adresini kendi ortamınıza göre yapılandırın (Emülatör için `10.0.2.2`).
-2. `flutter pub get` ile bağımlılıkları indirin.
-3. `flutter run` komutu ile uygulamayı başlatın.
+- PostgreSQL veritabanı (`saye_db`), PostGIS uzantısı
+- İsteğe bağlı SMS: **Twilio** (ortam değişkenleri ile; boş bırakılırsa ilgili özellikler devre dışı kalabilir)
+- Yerel API varsayılanı: `http://localhost:8080` (Android emülatör: `http://10.0.2.2:8080`); üretim için derleme bayrağı `API_BASE_URL` kullanılır
 
-## Hızlı Hata Ayıklama
+## Ekran görüntüleri
 
-1. Backend çalışıyor mu kontrol et: `http://localhost:8080/health` endpointini aç.
-2. DB bağlantısı için kontrol et: `http://localhost:8080/health/db` endpointi
-3. Emülatör kullanıyorsan base URL `http://10.0.2.2:8080` olmalı.
-4. Android sürümü (ör. 8.x) tek başına çoğu zaman sebep olmaz, yanlış URL/port veya backend-db bağlantısı daha olasıdır.
+Görseller `resimler/` klasöründedir. Ham çekim için öneri: **dikey (portrait)** yön, uygulamanın gerçek kullanımına uygun akış, mümkünse **tutarlı durum çubuğu**; **PNG**, yüksek çözünürlükte kayıt; repo boyutu için gerektiğinde sıkıştırma. README’de gösterim genişliği sabittir.
+
+### Giriş ve kayıt
+
+<p align="center">
+  <img width="210" alt="Giriş yap ekranı" src="resimler/giris_yap.png" />
+  <img width="210" alt="Kayıt ol ekranı" src="resimler/kayit_ol.png" />
+</p>
+
+### İzinler ve kurallar
+
+<p align="center">
+  <img width="210" alt="Uygulama izinleri" src="resimler/izinler.png" />
+  <img width="210" alt="Kullanım kuralları" src="resimler/kurallar.png" />
+</p>
+
+### Ana akış ve bildirimler
+
+<p align="center">
+  <img width="210" alt="Ana sayfa ve harita özeti" src="resimler/ana_sayfa.png" />
+  <img width="210" alt="Bildirimler ve uyarı akışı" src="resimler/bildirimler.png" />
+</p>
+
+### Acil durum
+
+<p align="center">
+  <img width="210" alt="Acil durum bilgileri" src="resimler/acil_durum_bilgileri.png" />
+  <img width="210" alt="Acil durum kişileri" src="resimler/acil_durum_kisileri.png" />
+</p>
+
+### Profil ve ayarlar
+
+<p align="center">
+  <img width="210" alt="Kullanıcı profili" src="resimler/profil.png" />
+  <img width="210" alt="Genel ayarlar" src="resimler/ayarlar-genel.png" />
+</p>
+
+## Depo yapısı
+
+| Yol | Açıklama |
+| --- | --- |
+| `backend/` | Spring Boot REST API, güvenlik ve veri katmanı |
+| `frontend/` | Flutter mobil uygulama (`SAYE'nde`) |
+| `resimler/` | Tanıtım ekran görüntüleri (PNG) |
+
+## Yerel çalıştırma ve dağıtım
+
+### Backend
+
+1. PostgreSQL kurulu olsun; `saye_db` veritabanını oluşturun (kullanıcı/şifre `application.yml` ile uyumlu).
+2. Gerekirse ortam değişkenlerini ayarlayın (üretimde mutlaka güçlü değerler kullanın):
+
+   - `POSTGRES_PASSWORD` — veritabanı parolası (yoksa varsayılan `postgres` ile denenir)
+   - `APP_JWT_SECRET` — JWT imza anahtarı
+   - `APP_AES_SECRET_KEY` — şifreleme için 32 karakter anahtar
+   - `APP_EMAIL_LOOKUP_HMAC_SECRET` — e-posta arama HMAC
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` — SMS için (isteğe bağlı)
+
+3. Proje kökünde:
+
+   ```bash
+   cd backend
+   ./mvnw spring-boot:run
+   ```
+
+   Windows (PowerShell):
+
+   ```powershell
+   cd backend
+   .\mvnw.cmd spring-boot:run
+   ```
+
+4. Sağlık kontrolleri: `http://localhost:8080/health`, veritabanı: `http://localhost:8080/health/db`  
+   Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+
+### Flutter
+
+1. Bağımlılıklar: `cd frontend` → `flutter pub get`
+2. API adresi: Kaynakta `API_BASE_URL` tanımlı değilse Android emülatörde `http://10.0.2.2:8080`, diğer platformlarda `http://localhost:8080` kullanılır. Fiziksel cihaz veya özel sunucu için:
+
+   ```bash
+   flutter run --dart-define=API_BASE_URL=https://ornek.sunucu.adresi
+   ```
+
+3. Çalıştırma: `flutter run` (hedef cihaz/emülatör seçimi ortamınıza göre)
+
