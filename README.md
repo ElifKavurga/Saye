@@ -3,10 +3,11 @@
 **SAYE** (uygulama adı: **SAYE'nde**), kentsel alanlarda konum verisi ve topluluk bildirimleriyle riskleri önceden görünür kılan, PostGIS destekli coğrafi analiz ve bağlama duyarlı acil durum akışları sunan bir mobil platformdur. Kullanıcılar çevrelerindeki ihbarları haritada izler; risk seviyesine göre arayüz ve acil durum yönlendirmeleri (ör. 112 veya kayıtlı kişilere konum/SMS) devreye girer. Amaç, olay öncesi bilgilendirme ve hızlı müdahale yoluyla güvenlik algısını güçlendirmektir.
 
 Proje 4 kişilik bir ekip tarafından geliştirilmiştir.
--Elif Kavurga
--Nisa Yakar
--Emine Gül
--Sinem Yaman
+
+- Elif Kavurga
+- Nisa Yakar
+- Emine Gül
+- Sinem Yaman
 
 ## Kullanılan teknolojiler
 
